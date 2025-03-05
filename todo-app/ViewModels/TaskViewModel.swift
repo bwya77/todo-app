@@ -139,4 +139,85 @@ class TaskViewModel: ObservableObject {
             saveContext()
         }
     }
+    
+    // MARK: - Task Counts
+    
+    func getInboxTaskCount() -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND project == nil")
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching inbox task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getTodayTaskCount() -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@ AND dueDate < %@", today as NSDate, tomorrow as NSDate)
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching today task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getUpcomingTaskCount() -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@", today as NSDate)
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching upcoming task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getCompletedTaskCount() -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == YES")
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching completed task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getProjectTaskCount(project: Project) -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND project == %@", project)
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching project task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getFilteredTaskCount() -> Int {
+        // This is a placeholder for the Filters & Labels count
+        // In a real implementation, this would count tasks with tags/filters
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND tags.@count > 0")
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching filtered task count: \(error)")
+            return 0
+        }
+    }
 }

@@ -13,16 +13,13 @@ struct CustomSidebarButtonStyle: ButtonStyle {
     let isSelected: Bool
     
     func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            configuration.label
-            Spacer()
-        }
+        configuration.label
         .padding(.horizontal, 14)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .background(isSelected ? AppColors.todayHighlight.opacity(0.3) : 
-                   (configuration.isPressed ? Color(red: 226/255, green: 237/255, blue: 250/255) : Color.clear))
+                   (configuration.isPressed ? AppColors.sidebarHover : Color.clear))
         .cornerRadius(4)
     }
 }
@@ -55,33 +52,47 @@ struct SidebarView: View {
             Color(red: 248/255, green: 250/255, blue: 251/255).edgesIgnoringSafeArea(.all)
             
             List {
-            // No empty space needed since we have a proper title bar now
+            // Add top padding to push Inbox lower
+            Spacer().frame(height: 12)
+            
             Group {
                 Button(action: {
                     selectedViewType = .inbox
                     selectedProject = nil
                 }) {
-                    Label("Inbox", systemImage: "tray")
-                        .font(.system(size: 16))
+                    HStack {
+                        Label("Inbox", systemImage: "tray")
+                            .font(.system(size: 16))
+                            .imageScale(.medium)
+                            .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
+                        Spacer()
+                        Text("\(taskViewModel.getInboxTaskCount())")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
+                    }
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .inbox))
+                
+                Spacer().frame(height: 16)
                 
                 Button(action: {
                     showingAddTask = true
                 }) {
-                    Label {
-                        Text("Add task")
-                    } icon: {
-                        ZStack {
-                            Circle()
-                                .fill(AppColors.todayHighlight)
-                                .frame(width: 20, height: 20)
-                            Image(systemName: "plus")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                    HStack {
+                        Label {
+                            Text("Add task")
+                        } icon: {
+                            ZStack {
+                                Circle()
+                                    .fill(AppColors.addTaskButtonColor)
+                                    .frame(width: 20, height: 20)
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .font(.system(size: 16))
                     }
-                    .font(.system(size: 16))
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
                 
@@ -89,12 +100,18 @@ struct SidebarView: View {
                     selectedViewType = .today
                     selectedProject = nil
                 }) {
-                    Label {
-                        Text("Today")
-                    } icon: {
-                        CalendarDayIcon()
+                    HStack {
+                        Label {
+                            Text("Today")
+                        } icon: {
+                            CalendarDayIcon(selected: selectedViewType == .today)
+                        }
+                        .font(.system(size: 16))
+                        Spacer()
+                        Text("\(taskViewModel.getTodayTaskCount())")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
                     }
-                    .font(.system(size: 16))
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .today))
                 
@@ -102,8 +119,12 @@ struct SidebarView: View {
                     selectedViewType = .upcoming
                     selectedProject = nil
                 }) {
-                    Label("Upcoming", systemImage: "calendar")
-                        .font(.system(size: 16))
+                    HStack {
+                        Label("Upcoming", systemImage: "calendar")
+                            .font(.system(size: 16))
+                            .imageScale(.medium)
+                            .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
+                    }
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .upcoming))
                 
@@ -111,8 +132,12 @@ struct SidebarView: View {
                     selectedViewType = .filters
                     selectedProject = nil
                 }) {
-                    Label("Filters & Labels", systemImage: "tag")
-                        .font(.system(size: 16))
+                    HStack {
+                        Label("Filters & Labels", systemImage: "tag")
+                            .font(.system(size: 16))
+                            .imageScale(.medium)
+                            .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
+                    }
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .filters))
                 
@@ -120,8 +145,12 @@ struct SidebarView: View {
                     selectedViewType = .completed
                     selectedProject = nil
                 }) {
-                    Label("Completed", systemImage: "checkmark.circle")
-                        .font(.system(size: 16))
+                    HStack {
+                        Label("Completed", systemImage: "checkmark.circle")
+                            .font(.system(size: 16))
+                            .imageScale(.medium)
+                            .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
+                    }
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .completed))
             }
@@ -140,12 +169,14 @@ struct SidebarView: View {
                         selectedViewType = .project
                         selectedProject = project
                     }) {
-                        Label {
-                            Text(project.name ?? "Unnamed Project")
-                        } icon: {
-                            Circle()
-                                .fill(AppColors.getColor(from: project.color))
-                                .frame(width: 18, height: 18)
+                        HStack {
+                            Label {
+                                Text(project.name ?? "Unnamed Project")
+                            } icon: {
+                                Circle()
+                                    .fill(selectedViewType == .project && selectedProject?.id == project.id ? AppColors.selectedIconColor : AppColors.getColor(from: project.color))
+                                    .frame(width: 16, height: 16)
+                            }
                         }
                     }
                     .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .project && selectedProject?.id == project.id))
@@ -155,9 +186,12 @@ struct SidebarView: View {
                 Button(action: {
                     showingAddProject = true
                 }) {
-                    Label("Add Project", systemImage: "plus")
-                        .font(.system(size: 16))
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Label("Add Project", systemImage: "plus")
+                            .font(.system(size: 16))
+                            .imageScale(.medium)
+                            .foregroundColor(.black)
+                    }
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
             }
@@ -254,14 +288,16 @@ enum ViewType {
 }
 
 struct CalendarDayIcon: View {
+    var selected: Bool = false
+    
     var body: some View {
         ZStack {
             Image(systemName: "calendar")
-                .font(.system(size: 20))
-                .foregroundColor(AppColors.todayHighlight)
+                .font(.system(size: 16))
+                .foregroundColor(selected ? AppColors.selectedIconColor : .black)
             
             Text(String(Calendar.current.component(.day, from: Date())))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white)
                 .offset(y: 1)
         }

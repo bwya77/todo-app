@@ -9,11 +9,13 @@ import SwiftUI
 
 struct AppColors {
     // Make sure these colors are used consistently
-    static let sidebarBackground = Color(red: 248/255, green: 250/255, blue: 251/255) // RGB(248,250,251)
-    static let sidebarHover = Color(red: 226/255, green: 237/255, blue: 250/255) // RGB(226,237,250)
-    static let contentBackground = Color.white
-    static let headerBackground = Color.white
-    static let todayHighlight = Color(red: 0.0, green: 0.47, blue: 0.9)
+    static let selectedIconColor: Color = Color(red: 41/255, green: 122/255, blue: 188/255) // RGB(41,122,188)
+    static let sidebarBackground: Color = Color(red: 248/255, green: 250/255, blue: 251/255) // RGB(248,250,251)
+    static let sidebarHover: Color = Color(red: 223/255, green: 237/255, blue: 251/255) // RGB(223,237,251)
+    static let contentBackground: Color = Color.white
+    static let headerBackground: Color = Color.white
+    static let todayHighlight: Color = Color(red: 0.0, green: 0.47, blue: 0.9)
+    static let addTaskButtonColor: Color = Color(red: 52/255, green: 152/255, blue: 219/255) // RGB(52,152,219)
     
     // Project and tag colors
     static let colorMap: [String: Color] = [
