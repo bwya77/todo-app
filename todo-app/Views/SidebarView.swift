@@ -64,7 +64,7 @@ struct SidebarView: View {
                         }) {
                             HStack {
                                 Label("Inbox", systemImage: "tray")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
                                 Spacer()
@@ -89,11 +89,11 @@ struct SidebarView: View {
                                             .fill(AppColors.addTaskButtonColor)
                                             .frame(width: 20, height: 20)
                                         Image(systemName: "plus")
-                                            .font(.system(size: 12, weight: .bold))
+                                            .font(.system(size: 14))
                                             .foregroundColor(.white)
                                     }
                                 }
-                                .font(.system(size: 16))
+                                .font(.system(size: 14))
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
@@ -108,7 +108,7 @@ struct SidebarView: View {
                                 } icon: {
                                     CalendarDayIcon(selected: selectedViewType == .today)
                                 }
-                                .font(.system(size: 16))
+                                .font(.system(size: 14))
                                 Spacer()
                                 Text("\(taskViewModel.getTodayTaskCount())")
                                     .foregroundColor(.secondary)
@@ -123,7 +123,7 @@ struct SidebarView: View {
                         }) {
                             HStack {
                                 Label("Upcoming", systemImage: "calendar")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
                             }
@@ -136,7 +136,7 @@ struct SidebarView: View {
                         }) {
                             HStack {
                                 Label("Filters & Labels", systemImage: "tag")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
                             }
@@ -149,7 +149,7 @@ struct SidebarView: View {
                         }) {
                             HStack {
                                 Label("Completed", systemImage: "checkmark.circle")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
                             }
@@ -190,7 +190,7 @@ struct SidebarView: View {
                         }) {
                             HStack {
                                 Label("Add Project", systemImage: "plus")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundColor(.black)
                             }
@@ -201,11 +201,11 @@ struct SidebarView: View {
                 .listStyle(SidebarListStyle())
                 .scrollContentBackground(.hidden)
                 .background(AppColors.sidebarBackground)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 
                 // Bottom Bar with New List button
                 VStack(spacing: 0) {
-                    Divider()
+                    Divider().padding(.trailing, -20)  // Extend divider past the right edge
                     HStack {
                         Button(action: {
                             // New list action
@@ -223,11 +223,10 @@ struct SidebarView: View {
                         Spacer()
                         
                         Button(action: {
-                            // Menu action
+                            // Settings action
                         }) {
-                            Image(systemName: "ellipsis")
+                            Image(systemName: "slider.horizontal.3")
                                 .font(.system(size: 14))
-                                .rotationEffect(.degrees(90))
                                 .padding(8)
                         }
                         .buttonStyle(.plain)
@@ -330,11 +329,11 @@ struct CalendarDayIcon: View {
     var body: some View {
         ZStack {
             Image(systemName: "calendar")
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .foregroundColor(selected ? AppColors.selectedIconColor : .black)
             
             Text(String(Calendar.current.component(.day, from: Date())))
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(.white)
                 .offset(y: 1)
         }
