@@ -2,6 +2,9 @@
 
 A macOS productivity app inspired by Todoist, built with SwiftUI and CoreData.
 
+![UI Screenshot](/images/UI_main.png)
+
+
 ## Features
 
 - Task management with due dates and priorities
