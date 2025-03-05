@@ -40,6 +40,7 @@ struct SidebarView: View {
     @Binding var selectedProject: Project?
     
     @State private var showingAddProject = false
+    @State private var showingAddTask = false
     @State private var newProjectName = ""
     @State private var newProjectColor = "blue"
     
@@ -64,6 +65,25 @@ struct SidebarView: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .inbox))
+                
+                Button(action: {
+                    showingAddTask = true
+                }) {
+                    Label {
+                        Text("Add task")
+                    } icon: {
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.todayHighlight)
+                                .frame(width: 20, height: 20)
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .font(.system(size: 16))
+                }
+                .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
                 
                 Button(action: {
                     selectedViewType = .today
@@ -147,6 +167,32 @@ struct SidebarView: View {
         .background(Color(red: 248/255, green: 250/255, blue: 251/255))
         .font(.system(size: 16))
         }
+        .sheet(isPresented: $showingAddTask) {
+            VStack(spacing: 20) {
+                Text("Add Task")
+                    .font(.headline)
+                
+                TextField("Task Name", text: .constant(""))
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                HStack {
+                    Button("Cancel") {
+                        showingAddTask = false
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Add") {
+                        // Add task logic will go here
+                        showingAddTask = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(.top)
+            }
+            .padding()
+            .frame(width: 300)
+        }
         .sheet(isPresented: $showingAddProject) {
             VStack(spacing: 20) {
                 Text("Add Project")
@@ -204,7 +250,7 @@ struct SidebarView: View {
 }
 
 enum ViewType {
-    case inbox, today, upcoming, filters, completed, project
+    case inbox, today, upcoming, filters, completed, project, addTask
 }
 
 struct CalendarDayIcon: View {

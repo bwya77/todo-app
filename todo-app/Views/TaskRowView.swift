@@ -15,15 +15,10 @@ struct TaskRowView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Complete button
-            Button(action: {
-                onToggleComplete(task)
-            }) {
-                Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(task.completed ? .green : .gray)
-                    .font(.title3)
-            }
-            .buttonStyle(PlainButtonStyle())
+            // Status indicator
+            Circle()
+                .fill(task.completed ? Color.green : Color.gray)
+                .frame(width: 16, height: 16)
             
             // Task title and details
             VStack(alignment: .leading, spacing: 4) {
@@ -46,20 +41,15 @@ struct TaskRowView: View {
             
             Spacer()
             
-            // Project indicator
-            if let project = task.project {
-                Circle()
-                    .fill(AppColors.getColor(from: project.color))
-                    .frame(width: 10, height: 10)
-                    .opacity(isHovering ? 1.0 : 0.6)
-            }
-            
-            // Priority indicator
-            if task.priority > 0 {
-                Circle()
-                    .fill(AppColors.priorityColor(for: task.priority))
-                    .frame(width: 10, height: 10)
-                    .opacity(isHovering ? 1.0 : 0.6)
+            // Actions only visible on hover
+            if isHovering {
+                Button(action: {
+                    onToggleComplete(task)
+                }) {
+                    Image(systemName: task.completed ? "arrow.uturn.backward" : "checkmark")
+                        .foregroundColor(task.completed ? .blue : .green)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.vertical, 6)
@@ -68,6 +58,11 @@ struct TaskRowView: View {
         .cornerRadius(6)
         .onHover { hovering in
             isHovering = hovering
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Allow clicking anywhere on the row to toggle completion
+            onToggleComplete(task)
         }
     }
     

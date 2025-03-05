@@ -49,18 +49,26 @@ struct ContentView: View {
                 .modifier(SidebarBackgroundModifier())
                 
                 // Main content
-                if selectedViewType == .upcoming {
+                switch selectedViewType {
+                case .upcoming:
                     // Calendar view for upcoming tasks
                     UpcomingView()
                         .edgesIgnoringSafeArea(.bottom)
                         .background(Color.white)
-                } else {
+
+                case .inbox, .today, .filters, .completed, .project:
                     // List view for other views
                     TaskListView(
                         viewType: selectedViewType,
                         selectedProject: selectedProject,
                         context: viewContext
                     )
+                    
+                case .addTask:
+                    // This case handles the Add Task view
+                    Text("Add Task View")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
                 }
             }
         }

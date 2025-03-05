@@ -14,6 +14,9 @@ struct TaskListView: View {
     
     @FetchRequest private var tasks: FetchedResults<Item>
     
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Project.name, ascending: true)])
+    private var projects: FetchedResults<Project>
+    
     @State private var showingAddTask = false
     @State private var newTaskTitle = ""
     @State private var newTaskDueDate = Date()
@@ -65,6 +68,10 @@ struct TaskListView: View {
                 title = project.name ?? "Project"
                 predicate = NSPredicate(format: "project == %@", project)
             }
+            
+        case .addTask:
+            title = "Add Task"
+            // No specific predicate for this view
         }
         
         // Set predicate and sort
@@ -77,6 +84,22 @@ struct TaskListView: View {
         
         self._tasks = FetchRequest(fetchRequest: request)
         self.title = title
+    }
+    
+    @State private var expandedGroups: Set<String> = ["Default"]
+    
+    func groupTasks() -> [String: [Item]] {
+        var groups: [String: [Item]] = [:]
+        
+        for task in tasks {
+            let groupName = task.project?.name ?? "Default"
+            if groups[groupName] == nil {
+                groups[groupName] = []
+            }
+            groups[groupName]?.append(task)
+        }
+        
+        return groups
     }
     
     var body: some View {
@@ -99,12 +122,42 @@ struct TaskListView: View {
             }
             .padding()
             
-            // Tasks list
+            // Tasks list grouped by project
             List {
-                ForEach(tasks) { task in
-                    TaskRowView(task: task, onToggleComplete: toggleTaskCompletion)
+                ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
+                    if let groupTasks = groupTasks()[groupName] {
+                        DisclosureGroup(
+                            isExpanded: Binding(
+                                get: { expandedGroups.contains(groupName) },
+                                set: { isExpanded in
+                                    if isExpanded {
+                                        expandedGroups.insert(groupName)
+                                    } else {
+                                        expandedGroups.remove(groupName)
+                                    }
+                                }
+                            ),
+                            content: {
+                                ForEach(groupTasks) { task in
+                                    TaskRowView(task: task, onToggleComplete: toggleTaskCompletion)
+                                }
+                                .onDelete(perform: { offsets in
+                                    deleteTasks(from: groupName, at: offsets)
+                                })
+                            },
+                            label: {
+                                HStack {
+                                    Label(groupName, systemImage: "circle.fill")
+                                        .foregroundColor(getGroupColor(for: groupName))
+                                    
+                                    Text("\(groupTasks.count) items")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        )
+                    }
                 }
-                .onDelete(perform: deleteTasks)
             }
             .listStyle(PlainListStyle())
         }
@@ -175,6 +228,25 @@ struct TaskListView: View {
     
     private func toggleTaskCompletion(_ task: Item) {
         taskViewModel.toggleTaskCompletion(task)
+    }
+    
+    private func getGroupColor(for groupName: String) -> Color {
+        if groupName == "Default" {
+            return .red
+        } else if let project = projects.first(where: { $0.name == groupName }) {
+            return AppColors.getColor(from: project.color)
+        } else {
+            return .gray
+        }
+    }
+    
+    private func deleteTasks(from group: String, at offsets: IndexSet) {
+        let groupTasks = self.groupTasks()[group] ?? []
+        withAnimation {
+            offsets.map { groupTasks[$0] }.forEach { task in
+                taskViewModel.deleteTask(task)
+            }
+        }
     }
     
     private func deleteTasks(offsets: IndexSet) {
