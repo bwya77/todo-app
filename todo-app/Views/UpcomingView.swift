@@ -73,8 +73,8 @@ struct CalendarView: View {
     @FetchRequest private var tasks: FetchedResults<Item>
     
     @Binding var currentDate: Date
-    @State private var selectedDay: Date? = Calendar.current.date(from: DateComponents(year: 2025, month: 3, day: 4))
-    @State private var currentDay: Date = Calendar.current.date(from: DateComponents(year: 2025, month: 3, day: 4)) ?? Date()
+    @State private var selectedDay: Date? = Date()
+    @State private var currentDay: Date = Date()
     
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
@@ -181,7 +181,6 @@ struct CalendarView: View {
                             ZStack {
                                 Rectangle()
                                     .fill(Color.white)
-                                    .border(Color.gray.opacity(0.2), width: 0.5, edges: .all)
                                 
                                 CustomDayCell(
                                     date: date,
@@ -191,6 +190,7 @@ struct CalendarView: View {
                                     isPast: date < startOfToday(),
                                     tasks: tasksForDate(date)
                                 )
+                                .border(Color.gray.opacity(0.2), width: 0.5, edges: .all)
                                 .overlay(isToday(date) ? RoundedRectangle(cornerRadius: 0)
                                          .stroke(Color.blue, lineWidth: 1.5) : nil)
                             }

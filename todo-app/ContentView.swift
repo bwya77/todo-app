@@ -81,6 +81,7 @@ struct ContentView: View {
                 case .upcoming:
                     // Calendar view for upcoming tasks
                     UpcomingView()
+                        .environment(\.managedObjectContext, viewContext)
                         .edgesIgnoringSafeArea(.bottom)
                         .background(Color.white)
 
