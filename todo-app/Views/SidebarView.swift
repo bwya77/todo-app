@@ -51,155 +51,192 @@ struct SidebarView: View {
         ZStack {
             Color(red: 248/255, green: 250/255, blue: 251/255).edgesIgnoringSafeArea(.all)
             
-            List {
-            // Add top padding to push Inbox lower
-            Spacer().frame(height: 12)
-            
-            Group {
-                Button(action: {
-                    selectedViewType = .inbox
-                    selectedProject = nil
-                }) {
-                    HStack {
-                        Label("Inbox", systemImage: "tray")
-                            .font(.system(size: 16))
-                            .imageScale(.medium)
-                            .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
-                        Spacer()
-                        Text("\(taskViewModel.getInboxTaskCount())")
+            VStack(spacing: 0) {
+                // Main list content
+                List {
+                    // Add top padding to push Inbox lower
+                    Spacer().frame(height: 12)
+                    
+                    Group {
+                        Button(action: {
+                            selectedViewType = .inbox
+                            selectedProject = nil
+                        }) {
+                            HStack {
+                                Label("Inbox", systemImage: "tray")
+                                    .font(.system(size: 16))
+                                    .imageScale(.medium)
+                                    .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
+                                Spacer()
+                                Text("\(taskViewModel.getInboxTaskCount())")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 14))
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .inbox))
+                        
+                        Spacer().frame(height: 16)
+                        
+                        Button(action: {
+                            showingAddTask = true
+                        }) {
+                            HStack {
+                                Label {
+                                    Text("Add task")
+                                } icon: {
+                                    ZStack {
+                                        Circle()
+                                            .fill(AppColors.addTaskButtonColor)
+                                            .frame(width: 20, height: 20)
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                .font(.system(size: 16))
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
+                        
+                        Button(action: {
+                            selectedViewType = .today
+                            selectedProject = nil
+                        }) {
+                            HStack {
+                                Label {
+                                    Text("Today")
+                                } icon: {
+                                    CalendarDayIcon(selected: selectedViewType == .today)
+                                }
+                                .font(.system(size: 16))
+                                Spacer()
+                                Text("\(taskViewModel.getTodayTaskCount())")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 14))
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .today))
+                        
+                        Button(action: {
+                            selectedViewType = .upcoming
+                            selectedProject = nil
+                        }) {
+                            HStack {
+                                Label("Upcoming", systemImage: "calendar")
+                                    .font(.system(size: 16))
+                                    .imageScale(.medium)
+                                    .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .upcoming))
+                        
+                        Button(action: {
+                            selectedViewType = .filters
+                            selectedProject = nil
+                        }) {
+                            HStack {
+                                Label("Filters & Labels", systemImage: "tag")
+                                    .font(.system(size: 16))
+                                    .imageScale(.medium)
+                                    .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .filters))
+                        
+                        Button(action: {
+                            selectedViewType = .completed
+                            selectedProject = nil
+                        }) {
+                            HStack {
+                                Label("Completed", systemImage: "checkmark.circle")
+                                    .font(.system(size: 16))
+                                    .imageScale(.medium)
+                                    .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .completed))
+                    }
+                    
+                    Group {
+                        Text("Projects")
+                            .font(.caption)
                             .foregroundColor(.secondary)
-                            .font(.system(size: 14))
+                            .padding(.top, 8)
+                            .padding(.bottom, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 14)
+                        
+                        ForEach(projects) { project in
+                            Button(action: {
+                                selectedViewType = .project
+                                selectedProject = project
+                            }) {
+                                HStack {
+                                    Label {
+                                        Text(project.name ?? "Unnamed Project")
+                                    } icon: {
+                                        Circle()
+                                            .fill(selectedViewType == .project && selectedProject?.id == project.id ? AppColors.selectedIconColor : AppColors.getColor(from: project.color))
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
+                            }
+                            .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .project && selectedProject?.id == project.id))
+                        }
+                        .onDelete(perform: deleteProjects)
+                        
+                        Button(action: {
+                            showingAddProject = true
+                        }) {
+                            HStack {
+                                Label("Add Project", systemImage: "plus")
+                                    .font(.system(size: 16))
+                                    .imageScale(.medium)
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
                     }
                 }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .inbox))
+                .listStyle(SidebarListStyle())
+                .scrollContentBackground(.hidden)
+                .background(AppColors.sidebarBackground)
+                .font(.system(size: 16))
                 
-                Spacer().frame(height: 16)
-                
-                Button(action: {
-                    showingAddTask = true
-                }) {
+                // Bottom Bar with New List button
+                VStack(spacing: 0) {
+                    Divider()
                     HStack {
-                        Label {
-                            Text("Add task")
-                        } icon: {
-                            ZStack {
-                                Circle()
-                                    .fill(AppColors.addTaskButtonColor)
-                                    .frame(width: 20, height: 20)
+                        Button(action: {
+                            // New list action
+                        }) {
+                            HStack {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 14))
+                                Text("New List")
+                                    .font(.system(size: 14))
                             }
+                            .padding(8)
                         }
-                        .font(.system(size: 16))
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
-                
-                Button(action: {
-                    selectedViewType = .today
-                    selectedProject = nil
-                }) {
-                    HStack {
-                        Label {
-                            Text("Today")
-                        } icon: {
-                            CalendarDayIcon(selected: selectedViewType == .today)
-                        }
-                        .font(.system(size: 16))
+                        .buttonStyle(.plain)
+                        
                         Spacer()
-                        Text("\(taskViewModel.getTodayTaskCount())")
-                            .foregroundColor(.secondary)
-                            .font(.system(size: 14))
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .today))
-                
-                Button(action: {
-                    selectedViewType = .upcoming
-                    selectedProject = nil
-                }) {
-                    HStack {
-                        Label("Upcoming", systemImage: "calendar")
-                            .font(.system(size: 16))
-                            .imageScale(.medium)
-                            .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .upcoming))
-                
-                Button(action: {
-                    selectedViewType = .filters
-                    selectedProject = nil
-                }) {
-                    HStack {
-                        Label("Filters & Labels", systemImage: "tag")
-                            .font(.system(size: 16))
-                            .imageScale(.medium)
-                            .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .filters))
-                
-                Button(action: {
-                    selectedViewType = .completed
-                    selectedProject = nil
-                }) {
-                    HStack {
-                        Label("Completed", systemImage: "checkmark.circle")
-                            .font(.system(size: 16))
-                            .imageScale(.medium)
-                            .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .completed))
-            }
-            
-            Group {
-                Text("Projects")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 8)
-                    .padding(.bottom, 4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                
-                ForEach(projects) { project in
-                    Button(action: {
-                        selectedViewType = .project
-                        selectedProject = project
-                    }) {
-                        HStack {
-                            Label {
-                                Text(project.name ?? "Unnamed Project")
-                            } icon: {
-                                Circle()
-                                    .fill(selectedViewType == .project && selectedProject?.id == project.id ? AppColors.selectedIconColor : AppColors.getColor(from: project.color))
-                                    .frame(width: 16, height: 16)
-                            }
+                        
+                        Button(action: {
+                            // Menu action
+                        }) {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 14))
+                                .rotationEffect(.degrees(90))
+                                .padding(8)
                         }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .project && selectedProject?.id == project.id))
+                    .padding(.horizontal, 8)
+                    .frame(height: 36)
+                    .background(AppColors.sidebarBackground)
                 }
-                .onDelete(perform: deleteProjects)
-                
-                Button(action: {
-                    showingAddProject = true
-                }) {
-                    HStack {
-                        Label("Add Project", systemImage: "plus")
-                            .font(.system(size: 16))
-                            .imageScale(.medium)
-                            .foregroundColor(.black)
-                    }
-                }
-                .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
             }
-        }
-        .listStyle(SidebarListStyle())
-        .scrollContentBackground(.hidden) // This prevents the default background
-        .background(Color(red: 248/255, green: 250/255, blue: 251/255))
-        .font(.system(size: 16))
         }
         .sheet(isPresented: $showingAddTask) {
             VStack(spacing: 20) {
