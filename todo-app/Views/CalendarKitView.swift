@@ -37,14 +37,16 @@ struct CalendarKitView: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             // Ensures VStack takes all available space
             Spacer().frame(height: 0)
             // Calendar header with navigation
             HStack(spacing: 16) {
+                // Month title with fixed width to prevent layout shifts
                 Text(monthFormatter.string(from: visibleMonth))
                     .font(.title2)
                     .fontWeight(.bold)
+                    .frame(width: 150, alignment: .leading)
                 
                 Spacer()
                 
@@ -68,7 +70,7 @@ struct CalendarKitView: View {
                 )
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
             
             // Calendar view based on display mode
             switch displayMode {
@@ -115,10 +117,20 @@ struct CalendarKitView: View {
                 object: nil,
                 queue: .main
             ) { notification in
+                print("Received notification to switch to day view")
                 // Switch to day view for the currently selected date
-                if let date = selectedDate {
-                    visibleMonth = date
-                    displayMode = .day
+                if let date = notification.userInfo?["date"] as? Date {
+                    // Ensure the date is visibly selected when switching to day view
+                    DispatchQueue.main.async {
+                        self.selectedDate = date
+                        self.visibleMonth = date
+                        self.displayMode = .day
+                    }
+                } else if let date = self.selectedDate {
+                    DispatchQueue.main.async {
+                        self.visibleMonth = date
+                        self.displayMode = .day
+                    }
                 }
             }
         }
@@ -131,6 +143,9 @@ struct CalendarKitView: View {
     }
     
     private func navigateToPrevious() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
         switch displayMode {
         case .month:
             visibleMonth = calendar.date(byAdding: .month, value: -1, to: visibleMonth) ?? visibleMonth
@@ -142,6 +157,9 @@ struct CalendarKitView: View {
     }
     
     private func navigateToNext() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
         switch displayMode {
         case .month:
             visibleMonth = calendar.date(byAdding: .month, value: 1, to: visibleMonth) ?? visibleMonth

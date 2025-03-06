@@ -22,7 +22,8 @@ struct CalendarNavigation: View {
                     .foregroundColor(.primary)
                     .frame(width: 30, height: 24)
             }
-            .buttonStyle(MacOSNavigationButtonStyle(position: .left))
+            .buttonStyle(SingleClickOnlyButtonStyle(position: .left))
+            .accessibilityLabel("calendar-navigation-button")
             
             // Today button in the middle
             Button(action: onToday) {
@@ -32,7 +33,8 @@ struct CalendarNavigation: View {
                     .frame(height: 24)
                     .padding(.horizontal, 8)
             }
-            .buttonStyle(MacOSNavigationButtonStyle(position: .center))
+            .buttonStyle(SingleClickOnlyButtonStyle(position: .center))
+            .accessibilityLabel("calendar-navigation-button")
             
             // Right arrow button in its own container
             Button(action: onNext) {
@@ -41,7 +43,8 @@ struct CalendarNavigation: View {
                     .foregroundColor(.primary)
                     .frame(width: 30, height: 24)
             }
-            .buttonStyle(MacOSNavigationButtonStyle(position: .right))
+            .buttonStyle(SingleClickOnlyButtonStyle(position: .right))
+            .accessibilityLabel("calendar-navigation-button")
         }
     }
 }
@@ -147,12 +150,11 @@ struct RoundedCorners: Shape {
     }
 }
 
-#Preview {
+#Preview(traits: .sizeThatFitsLayout) {
     CalendarNavigation(
         onPrevious: {},
         onToday: {},
         onNext: {}
     )
     .padding()
-    .previewLayout(.sizeThatFits)
 }

@@ -13,6 +13,11 @@ struct MonthCalendarView: View {
     @Binding var selectedDate: Date?
     let tasks: [Item]
     
+    // Track if a day is selected - will be used for double-click handling
+    private var isDaySelected: Bool {
+        selectedDate != nil
+    }
+    
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
     private let weekdaySymbols = Calendar.current.shortWeekdaySymbols
@@ -49,8 +54,14 @@ struct MonthCalendarView: View {
                                 },
                                 tasks: tasksForDate(day.date)
                             )
-                            .onTapGesture {
-                                selectedDate = day.date
+                            .handleDoubleClick(selectedDate: $selectedDate, date: day.date) {
+                                // Direct notification call on double-click
+                                print("Double-clicked day: \(day.date)")
+                                NotificationCenter.default.post(
+                                    name: CalendarKitView.switchToDayViewNotification,
+                                    object: nil,
+                                    userInfo: ["date": day.date]
+                                )
                             }
                             .frame(height: geometry.size.height / 6.001) // Force division to fill entire height
                             .overlay(
