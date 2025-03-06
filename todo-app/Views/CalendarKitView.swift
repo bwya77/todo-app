@@ -9,6 +9,7 @@ import SwiftUI
 import CoreData
 import EventKit
 import AppKit
+// Import our custom components
 
 // Main Calendar View implementation
 struct CalendarKitView: View {
@@ -36,11 +37,11 @@ struct CalendarKitView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             // Ensures VStack takes all available space
             Spacer().frame(height: 0)
             // Calendar header with navigation
-            HStack {
+            HStack(spacing: 16) {
                 Text(monthFormatter.string(from: visibleMonth))
                     .font(.title2)
                     .fontWeight(.bold)
@@ -55,28 +56,19 @@ struct CalendarKitView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 250)
+                .padding(.horizontal, 12)
                 
                 Spacer()
                 
-                // Navigation buttons
-                HStack(spacing: 16) {
-                    Button(action: navigateToPrevious) {
-                        Image(systemName: "chevron.left")
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Button("Today") {
-                        navigateToToday()
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button(action: navigateToNext) {
-                        Image(systemName: "chevron.right")
-                    }
-                    .buttonStyle(.plain)
-                }
+                // Custom navigation buttons
+                CalendarNavigation(
+                    onPrevious: navigateToPrevious,
+                    onToday: navigateToToday,
+                    onNext: navigateToNext
+                )
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             
             // Calendar view based on display mode
             switch displayMode {

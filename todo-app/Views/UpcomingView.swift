@@ -18,6 +18,7 @@ struct UpcomingView: View {
             VStack(spacing: 0) {
                 // Ensure the VStack takes full height
                 Spacer().frame(height: 0)
+                
                 // Header - fixed height
                 Text("Upcoming")
                     .font(.system(size: 32, weight: .bold))
