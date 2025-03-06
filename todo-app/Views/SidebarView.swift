@@ -319,9 +319,7 @@ struct SidebarView: View {
     }
 }
 
-enum ViewType {
-    case inbox, today, upcoming, filters, completed, project, addTask
-}
+
 
 struct CalendarDayIcon: View {
     var selected: Bool = false
