@@ -9,7 +9,6 @@ import SwiftUI
 import CoreData
 import EventKit
 import AppKit
-// Import our custom components
 
 // Main Calendar View implementation
 struct CalendarKitView: View {
@@ -90,7 +89,7 @@ struct CalendarKitView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .edgesIgnoringSafeArea(.all)
             case .week:
-                WeekCalendarView(
+                CompactWeekCalendarView(
                     visibleMonth: $visibleMonth,
                     selectedDate: $selectedDate,
                     tasks: tasks

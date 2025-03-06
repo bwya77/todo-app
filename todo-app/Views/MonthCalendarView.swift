@@ -8,6 +8,8 @@
 import SwiftUI
 import CoreData
 
+// No need to import CalendarColors as it's part of the app's Models
+
 struct MonthCalendarView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
@@ -26,13 +28,17 @@ struct MonthCalendarView: View {
         VStack(spacing: 0) {
             // Weekday header
             HStack(spacing: 0) {
-                ForEach(weekdaySymbols, id: \.self) { weekday in
+                ForEach(Array(zip(weekdaySymbols.indices, weekdaySymbols)), id: \.0) { index, weekday in
+                    // Determine if this is a weekend header (0 is Sunday, 6 is Saturday)
+                    let isWeekendHeader = index == 0 || index == 6
+                    
                     Text(weekday)
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
+                        .background(isWeekendHeader ? CalendarColors.weekendBackground : CalendarColors.weekdayBackground)
                 }
             }
             .padding(.horizontal, 0)
@@ -200,11 +206,9 @@ struct CalendarDayCellView: View {
             return Color.blue.opacity(0.15)
         } else if isToday {
             return Color.blue.opacity(0.08)
-        } else if day.isCurrentMonth {
-            return Color.white
         } else {
-            // Slightly different background for days outside current month
-            return Color.gray.opacity(0.03)
+            // Use our helper to determine weekday/weekend colors
+            return CalendarColors.backgroundColorForDate(day.date, isCurrentMonth: day.isCurrentMonth)
         }
     }
 }

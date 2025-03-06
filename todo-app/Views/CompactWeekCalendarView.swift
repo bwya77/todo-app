@@ -1,18 +1,10 @@
-//
-//  WeekCalendarView.swift
-//  todo-app
-//
-//  Created by Bradley Wyatt on 3/5/25.
-//
-
 import SwiftUI
 import CoreData
 
-struct WeekCalendarView: View {
+struct CompactWeekCalendarView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
     let tasks: [Item]
-    @State private var scrollOffset: CGFloat = 400
     
     private let calendar = Calendar.current
     
@@ -30,11 +22,6 @@ struct WeekCalendarView: View {
         return formatter.string(from: date)
     }
     
-    // Get regular (non-all-day) tasks for a specific date
-    private func regularTasksForDate(_ date: Date) -> [Item] {
-        return tasksForDate(date).filter { !$0.isAllDay }
-    }
-    
     // Calculate offset for a task in the time grid
     private func taskOffset(for task: Item) -> CGFloat {
         guard let taskDate = task.dueDate else { return 0 }
@@ -46,15 +33,7 @@ struct WeekCalendarView: View {
         return CGFloat(hour * 60 + minute)
     }
     
-    // Get all all-day tasks for the week to calculate dynamic height
-    private var allWeekAllDayTasks: [Item] {
-        let allDayTasks = weekDays.flatMap { day in
-            return tasksForDate(day.date).filter { $0.isAllDay }
-        }
-        return allDayTasks
-    }
-    
-    // Calculate dynamic height for all-day section - reduced heights
+    // Calculate dynamic height for all-day section
     private var allDayHeight: CGFloat {
         let maxTaskCount = weekDays.reduce(0) { result, day in
             let dayTasks = tasksForDate(day.date).filter { $0.isAllDay }.count
@@ -63,22 +42,21 @@ struct WeekCalendarView: View {
         
         // If there are no tasks, use a minimal height
         if maxTaskCount == 0 {
-            return 22 // Reduced minimal height for empty all-day section
+            return 20 // Very minimal height for empty all-day section
         }
         
-        // Each task is about 20px high + minimal padding
-        return min(max(22, CGFloat(maxTaskCount * 20 + 2)), 80)
+        // Each task row has minimal height
+        return min(max(20, CGFloat(maxTaskCount * 20 + 2)), 60)
     }
     
     var body: some View {
-        VStack(spacing: 0) { // Zero spacing to ensure no gaps
-            // Header area with reduced shadow
+        VStack(spacing: 0) {
+            // Week header with very compact design
             weekHeaderView()
                 .zIndex(1)
                 .background(Color.white)
-                .shadow(color: Color.black.opacity(0.03), radius: 1, x: 0, y: 1) // Smaller, subtler shadow
             
-            // Scrollable time grid - directly connected to header with no gap
+            // Scrollable time grid
             weekTimeGridView()
         }
     }
@@ -86,22 +64,18 @@ struct WeekCalendarView: View {
     // Break up the complex view into smaller components
     private func weekHeaderView() -> some View {
         VStack(spacing: 0) {
-            // Month title - reduced padding and height
-            HStack {
-                Text(monthFormatter.string(from: visibleMonth))
-                    .font(.headline)
-                    .padding(.leading, 8)
-                Spacer()
-            }
-            .frame(height: 24) // Reduced height
-            .padding(.bottom, 0) // Removed bottom padding
+            // Ultra compact month title
+            Text(monthFormatter.string(from: visibleMonth))
+                .font(.subheadline)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 8)
             
-            // Day headers - reduced vertical padding for more compact display
+            // Day headers - minimal height
             HStack(spacing: 0) {
-                // Empty space above time scale
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: 50)
+                // Time scale label space
+                Text("")
+                    .frame(width: 40)
                 
                 // Day headers
                 HStack(spacing: 0) {
@@ -113,11 +87,11 @@ struct WeekCalendarView: View {
                                 .foregroundColor(.secondary)
                             
                             Text("\(calendar.component(.day, from: day.date))")
-                                .font(.subheadline)
+                                .font(.caption)
                                 .fontWeight(calendar.isDateInToday(day.date) ? .bold : .regular)
                                 .foregroundColor(calendar.isDateInToday(day.date) ? .blue : .primary)
                         }
-                        .padding(.vertical, 2) // Reduced vertical padding
+                        .padding(.vertical, 2)
                         .frame(maxWidth: .infinity)
                         .background(CalendarColors.backgroundColorForDate(day.date))
                         .onTapGesture {
@@ -126,24 +100,17 @@ struct WeekCalendarView: View {
                     }
                 }
             }
-            // Add separator line to visually separate day headers from all-day section
-            Divider().background(Color.gray.opacity(0.2))
             
-            // All Day section - no vertical spacing between day headers and all-day
+            // Super compact All Day section with no spacing
             HStack(spacing: 0) {
                 // All day label
                 Text("All day")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .frame(height: allDayHeight)
-                    .frame(width: 50, alignment: .trailing)
-                    .padding(.trailing, 4)
-                    .padding(.top, 0) // Ensure no top padding
+                    .frame(width: 40, alignment: .trailing)
+                    .padding(.trailing, 2)
                     .background(Color.white)
-                    .overlay(
-                        Rectangle()
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                    )
                 
                 // All day events per day
                 HStack(spacing: 0) {
@@ -159,7 +126,7 @@ struct WeekCalendarView: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     if !dayTasks.isEmpty {
                                         ForEach(dayTasks, id: \.id) { task in
-                                            AllDayTaskRow(task: task)
+                                            CompactAllDayTaskRow(task: task)
                                         }
                                     }
                                 }
@@ -188,8 +155,8 @@ struct WeekCalendarView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .frame(height: 60)
-                                    .frame(width: 50, alignment: .trailing)
-                                    .padding(.trailing, 4)
+                                    .frame(width: 40, alignment: .trailing)
+                                    .padding(.trailing, 2)
                                     .id("hour-\(hour)")
                                     .background(Color.white)
                                     .overlay(
@@ -243,7 +210,7 @@ struct WeekCalendarView: View {
             VStack(spacing: 0) {
                 ForEach(regularTasksForDate(day.date), id: \.id) { task in
                     TaskEventView(task: task)
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, 2)
                         .offset(y: taskOffset(for: task))
                 }
             }
@@ -252,7 +219,7 @@ struct WeekCalendarView: View {
             if calendar.isDateInToday(day.date) {
                 TimeIndicatorView()
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 2)
                     .environmentObject(TimeIndicatorPositioner.shared)
             }
         }
@@ -265,6 +232,12 @@ struct WeekCalendarView: View {
         )
     }
     
+    // Get regular (non-all-day) tasks for a specific date
+    private func regularTasksForDate(_ date: Date) -> [Item] {
+        return tasksForDate(date).filter { !$0.isAllDay }
+    }
+    
+    // Get tasks for a specific date
     private func tasksForDate(_ date: Date) -> [Item] {
         return tasks.filter { task in
             guard let taskDate = task.dueDate else { return false }
@@ -293,11 +266,37 @@ struct WeekCalendarView: View {
     
     private func formatHour(_ hour: Int) -> String {
         switch hour {
-        case 0: return "12 AM"
-        case 12: return "Noon"
-        case 1..<12: return "\(hour) AM"
-        case 13..<24: return "\(hour-12) PM"
+        case 0: return "12a"
+        case 12: return "12p"
+        case 1..<12: return "\(hour)a"
+        case 13..<24: return "\(hour-12)p"
         default: return "\(hour)"
         }
+    }
+}
+
+// Compact All Day Task Row for Week view
+struct CompactAllDayTaskRow: View {
+    let task: Item
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            Circle()
+                .fill(task.completed ? Color.gray : Color.red)
+                .frame(width: 5, height: 5)
+            
+            Text(task.title ?? "")
+                .font(.system(size: 9))
+                .foregroundColor(.black)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .padding(.vertical, 1)
+        .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.red.opacity(0.1))
+        )
     }
 }

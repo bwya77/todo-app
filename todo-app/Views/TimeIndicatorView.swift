@@ -20,13 +20,13 @@ struct TimeIndicatorView: View {
                     // Red capsule indicator
                     Text(timeString)
                         .font(.caption)
-                        .fontWeight(.bold)
+                        .fontWeight(.medium)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 6) // Reduced horizontal padding
+                        .padding(.vertical, 3) // Reduced vertical padding
                         .background(
                             Capsule()
-                                .fill(Color.red)
+                                .fill(Color.red.opacity(0.9)) // Slightly transparent
                         )
                     
                     // Red line extending to the right

@@ -79,30 +79,30 @@ struct AllDayTaskView: View {
     }
 }
 
-// Compact All Day Task Row for Week view
+// Compact All Day Task Row for Week view - more compact design
 struct AllDayTaskRow: View {
     let task: Item
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) { // Reduced spacing
             Circle()
                 .fill(task.completed ? Color.gray : Color.red)
-                .frame(width: 8, height: 8)
+                .frame(width: 6, height: 6) // Smaller indicator
             
             Text(task.title ?? "")
-                .font(.system(size: 11))
+                .font(.system(size: 10)) // Smaller font
                 .foregroundColor(.black)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
-        .padding(.vertical, 3)
-        .padding(.horizontal, 6)
+        .padding(.vertical, 1) // Reduced vertical padding
+        .padding(.horizontal, 4) // Reduced horizontal padding
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.red.opacity(0.15))
+            RoundedRectangle(cornerRadius: 3) // Smaller corner radius
+                .fill(Color.red.opacity(0.1)) // Lighter background
         )
-        .padding(.horizontal, 2)
-        .padding(.vertical, 1)
+        .padding(.horizontal, 1) // Smaller outer horizontal padding
+        .padding(.vertical, 0) // No outer vertical padding
     }
 }
