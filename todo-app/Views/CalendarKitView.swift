@@ -19,6 +19,9 @@ struct CalendarKitView: View {
     
     // State for visible month and date range
     @State private var displayMode: CalendarDisplayMode = .month
+    
+    // Define notification name as a static constant for consistency
+    static let switchToDayViewNotification = NSNotification.Name("SwitchToDayView")
     @State private var tasks: [Item] = []
     
     // Constants
@@ -113,6 +116,19 @@ struct CalendarKitView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             loadTasks()
+            
+            // Set up the notification observer for double-clicks
+            NotificationCenter.default.addObserver(
+                forName: CalendarKitView.switchToDayViewNotification,
+                object: nil,
+                queue: .main
+            ) { notification in
+                // Switch to day view for the currently selected date
+                if let date = selectedDate {
+                    visibleMonth = date
+                    displayMode = .day
+                }
+            }
         }
         .onChange(of: visibleMonth) { oldValue, newValue in
             loadTasks()
@@ -236,7 +252,9 @@ struct MonthCalendarView: View {
                                 },
                                 tasks: tasksForDate(day.date)
                             )
-                            // Dynamically calculate height to fill available space
+                            .onTapGesture {
+                                selectedDate = day.date
+                            }
                             .frame(height: geometry.size.height / 6.001) // Force division to fill entire height
                             .overlay(
                                 Rectangle()
@@ -488,7 +506,6 @@ struct CalendarDayCellView: View {
                 .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
         )
         .padding(1)
-        .onTapGesture(perform: onSelect)
     }
     
     private var textColor: Color {

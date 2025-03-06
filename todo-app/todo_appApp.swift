@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import AppKit
 
 @main
 struct todo_appApp: App {
     let persistenceController = PersistenceController.shared
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
         WindowGroup {
