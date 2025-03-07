@@ -33,7 +33,7 @@ struct FixedTimeIndicator: View {
     
     private var timeString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateFormat = "h:mm"
         return formatter.string(from: currentTime)
     }
     

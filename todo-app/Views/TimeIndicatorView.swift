@@ -42,7 +42,7 @@ struct TimeIndicatorView: View {
     
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateFormat = "h:mm"
         return formatter.string(from: date)
     }
 }
