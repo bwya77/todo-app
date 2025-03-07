@@ -20,8 +20,6 @@ let package = Package(
             resources: [
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-                .process("Info.plist"),
-                .process("todo_app.entitlements"),
                 .process("todo_app.xcdatamodeld")
             ]
         ),
