@@ -129,7 +129,7 @@ struct AlignedWeekCalendarView: View {
                                     .background(Color.white)
                                     .overlay(
                                         Rectangle()
-                                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                                            .stroke(AppColors.calendarGridlineColor, lineWidth: 0.5)
                                     )
                             }
                         }
@@ -168,7 +168,7 @@ struct AlignedWeekCalendarView: View {
                     Rectangle()
                         .fill(Color.clear)
                         .frame(height: 60)
-                    Divider().background(Color.gray.opacity(0.2))
+                    Divider().background(AppColors.calendarGridlineColor)
                 }
             }
             
@@ -193,7 +193,7 @@ struct AlignedWeekCalendarView: View {
         .overlay(
             Rectangle()
                 .frame(width: 1)
-                .foregroundColor(Color.gray.opacity(0.3)),
+                .foregroundColor(AppColors.calendarGridlineColor),
             alignment: .trailing
         )
     }

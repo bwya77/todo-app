@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+extension Color {
+    static let gridLine245 = Color(red: 245/255, green: 245/255, blue: 245/255)
+}
+
 struct AppColors {
     // Make sure these colors are used consistently
     static let selectedIconColor: Color = Color(red: 41/255, green: 122/255, blue: 188/255) // RGB(41,122,188)
@@ -16,6 +20,7 @@ struct AppColors {
     static let headerBackground: Color = Color.white
     static let todayHighlight: Color = Color(red: 0.0, green: 0.47, blue: 0.9)
     static let addTaskButtonColor: Color = Color(red: 52/255, green: 152/255, blue: 219/255) // RGB(52,152,219)
+    static let calendarGridlineColor: Color = Color("GridLineColor") // RGB(245,245,245)
     
     // Project and tag colors
     static let colorMap: [String: Color] = [

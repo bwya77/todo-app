@@ -13,5 +13,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared = self
+        
+        // Set the calendar grid color to the exact RGB(245,245,245)
+        configureCalendarGridColor()
     }
 }

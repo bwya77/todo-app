@@ -127,7 +127,7 @@ struct WeekCalendarView: View {
                 }
             }
             // Add separator line to visually separate day headers from all-day section
-            Divider().background(Color.gray.opacity(0.2))
+            Divider().background(AppColors.calendarGridlineColor)
             
             // All Day section - no vertical spacing between day headers and all-day
             HStack(spacing: 0) {
@@ -142,7 +142,7 @@ struct WeekCalendarView: View {
                     .background(Color.white)
                     .overlay(
                         Rectangle()
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                            .stroke(AppColors.calendarGridlineColor, lineWidth: 0.5)
                     )
                 
                 // All day events per day
@@ -167,7 +167,7 @@ struct WeekCalendarView: View {
                             )
                             .overlay(
                                 Rectangle()
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                                    .stroke(AppColors.calendarGridlineColor, lineWidth: 0.5)
                             )
                     }
                 }
@@ -194,7 +194,7 @@ struct WeekCalendarView: View {
                                     .background(Color.white)
                                     .overlay(
                                         Rectangle()
-                                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                                            .stroke(AppColors.calendarGridlineColor, lineWidth: 0.5)
                                     )
                             }
                         }
@@ -235,7 +235,7 @@ struct WeekCalendarView: View {
                     Rectangle()
                         .fill(Color.clear) // Make this clear so the background shows through
                         .frame(height: 60)
-                    Divider().background(Color.gray.opacity(0.2))
+                    Divider().background(AppColors.calendarGridlineColor)
                 }
             }
             
@@ -260,7 +260,7 @@ struct WeekCalendarView: View {
         .overlay(
             Rectangle()
                 .frame(width: 1)
-                .foregroundColor(Color.gray.opacity(0.3)),
+                .foregroundColor(AppColors.calendarGridlineColor),
             alignment: .trailing
         )
     }

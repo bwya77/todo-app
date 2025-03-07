@@ -2,10 +2,7 @@ import SwiftUI
 import CoreData
 import AppKit
 
-// DIVIDER COLOR MODIFICATIONS - Using direct white: 0.96078 approach
-// Each divider is explicitly colored with exact RGB 245,245,245 using white: 0.96078
-
-struct FixedWeekCalendarView: View {
+struct CustomFixedWeekView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
     let tasks: [Item]
@@ -16,8 +13,7 @@ struct FixedWeekCalendarView: View {
     private let timeColumnWidth: CGFloat = 90
     private let allDayRowHeight: CGFloat = 24
     private let calendar = Calendar.current
-    // Update all grid dividers with exact RGB(245,245,245) color
-    private let gridLineColor = Color(hue: 0, saturation: 0, brightness: 0.96078) // exactly 245/255
+    private let exactGridLineColor = Color(red: 245.0/255.0, green: 245.0/255.0, blue: 245.0/255.0)
     
     private var weekDays: [CalendarDay] {
         let today = visibleMonth
@@ -48,21 +44,18 @@ struct FixedWeekCalendarView: View {
                     // Day headers - no separators as requested
                     ForEach(0..<7, id: \.self) { i in
                         let day = weekDays[i]
-                        Text(formatWeekdayShort(from: day.date) + " \(calendar.component(.day, from: day.date))")
+                        Text(formatWeekdayShort(from: day.date) + " " + String(calendar.component(.day, from: day.date)))
                             .font(.caption)
                             .foregroundColor(calendar.isDateInToday(day.date) ? .blue : .primary)
                             .frame(width: dayColumnWidth)
                     }
                 }
                 .frame(height: 25)
-                .overlay(
-                    DirectGridLineView()
-                    , alignment: .bottom
-                )
+                .overlay(Rectangle().fill(exactGridLineColor).frame(height: 1), alignment: .bottom)
                 
                 // All-day row (fixed)
                 HStack(spacing: 0) {
-                    // Time label exactly matching the time labels below
+                    // Time label
                     Text("All Day")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -70,13 +63,13 @@ struct FixedWeekCalendarView: View {
                         .frame(width: timeColumnWidth - 30, alignment: .center)
                         .padding(.trailing, 8)
                     
-                    DirectVerticalGridLine()
+                    Divider().background(exactGridLineColor)
                     
                     // All-day content with explicit vertical lines
                     HStack(spacing: 0) {
                         ForEach(0..<weekDays.count, id: \.self) { index in
                             if index > 0 {
-                                DirectVerticalGridLine()
+                                Divider().background(exactGridLineColor)
                             }
                             
                             // Day cell
@@ -98,7 +91,7 @@ struct FixedWeekCalendarView: View {
                                                 .padding(.leading, 4)
                                         }
                                         if dayTasks.count > 1 {
-                                            Text("+\(dayTasks.count-1) more")
+                                            Text("+" + String(dayTasks.count-1) + " more")
                                                 .font(.system(size: 8))
                                                 .foregroundColor(.secondary)
                                                 .padding(.leading, 4)
@@ -113,10 +106,7 @@ struct FixedWeekCalendarView: View {
                 }
                 .frame(height: allDayRowHeight)
                 .background(Color.white)
-                .overlay(
-                    DirectGridLineView()
-                    , alignment: .bottom
-                )
+                .overlay(Rectangle().fill(exactGridLineColor).frame(height: 1), alignment: .bottom)
                 
                 // Time grid (scrollable)
                 ScrollView(.vertical, showsIndicators: true) {
@@ -131,17 +121,17 @@ struct FixedWeekCalendarView: View {
                                         .frame(height: 60)
                                         .frame(width: timeColumnWidth - 16, alignment: .trailing)
                                         .padding(.trailing, 8)
-                                        .id("hour-\(hour)")
+                                        .id("hour-" + String(hour))
                                 }
                             }
                             
-                            DirectVerticalGridLine()
+                            Divider().background(exactGridLineColor)
                             
                             // Day columns with content and explicit dividers
                             HStack(spacing: 0) {
                                 ForEach(0..<weekDays.count, id: \.self) { index in
                                     if index > 0 {
-                                        DirectVerticalGridLine()
+                                        Divider().background(exactGridLineColor)
                                     }
                                     
                                     // Day column
@@ -158,7 +148,7 @@ struct FixedWeekCalendarView: View {
                                                     // Bottom divider
                                                     VStack {
                                                         Spacer()
-                                                        DirectGridLineView()
+                                                        Divider().background(exactGridLineColor)
                                                     }
                                                 }
                                                 .frame(height: 60)
@@ -210,9 +200,9 @@ struct FixedWeekCalendarView: View {
         switch hour {
         case 0: return "12 AM  "
         case 12: return "12 PM  "
-        case 1..<12: return "\(hour) AM  "
-        case 13..<24: return "\(hour-12) PM  "
-        default: return "\(hour)"
+        case 1..<12: return String(hour) + " AM  "
+        case 13..<24: return String(hour-12) + " PM  "
+        default: return String(hour)
         }
     }
     
