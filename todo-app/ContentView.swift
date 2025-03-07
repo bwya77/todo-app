@@ -51,6 +51,9 @@ struct ContentView: View {
     @State private var currentDate = Date()
     @State private var sidebarWidth: CGFloat = 250
     
+    // Override the divider color for week view
+    let weekGridColor = Color(red: 245/255, green: 245/255, blue: 245/255)
+    
     var body: some View {
         ZStack {
             // Base background layer

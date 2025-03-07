@@ -1,21 +1,20 @@
 import SwiftUI
 
-struct TimeIndicatorView: View {
+struct WeekTimeIndicatorView: View {
     @EnvironmentObject var positioner: TimeIndicatorPositioner
-    
-    private let calendar = Calendar.current
-    
     // Add a small vertical offset to account for indicator height
     private let verticalOffset: CGFloat = -4
     
+    // Specific adjustment for week view
+    private let weekViewAdjustment: CGFloat = -5
+    
+    private let calendar = Calendar.current
+    
+    // Timer for forcing view updates
+    private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    
     var body: some View {
         GeometryReader { geometry in
-            // Show current time on the indicator (unadjusted)
-            let timeString = formatTime(positioner.currentTime)
-            
-            // But position the indicator where it would be 3 minutes earlier (day view)
-            let offset = calculateOffset(for: positioner.currentTime.addingTimeInterval(-180), in: geometry.size.height)
-            
             // Position at the correct time
             ZStack(alignment: .topLeading) {
                 // Empty spacer to fill the container
@@ -41,15 +40,22 @@ struct TimeIndicatorView: View {
                         .frame(height: 2)
                 }
                 .frame(width: geometry.size.width, alignment: .leading)
-                .offset(y: offset)
+                .offset(y: calculateOffset(for: positioner.currentTime.addingTimeInterval(-90), in: geometry.size.height)) // 1.5 minutes earlier for week view
+            }
+            .onReceive(timer) { _ in
+                // Force view refresh
             }
         }
     }
     
-    private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
-        return formatter.string(from: date)
+    // Current time display (not adjusted for position)
+    private var timeString: String {
+        let now = Date()
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: now) % 12
+        let hour12 = hour == 0 ? 12 : hour
+        let minute = calendar.component(.minute, from: now)
+        return "\(hour12):\(String(format: "%02d", minute))"      
     }
     
     private func calculateOffset(for date: Date, in height: CGFloat) -> CGFloat {
@@ -65,6 +71,7 @@ struct TimeIndicatorView: View {
         let secondHeight = height / 86400.0 // 86400 seconds in a day
         
         // Calculate the offset based on the total number of seconds
-        return CGFloat(totalSeconds) * secondHeight + verticalOffset
+        // Add the week view specific adjustment (2 ticks later)
+        return CGFloat(totalSeconds) * secondHeight + verticalOffset + weekViewAdjustment
     }
 }

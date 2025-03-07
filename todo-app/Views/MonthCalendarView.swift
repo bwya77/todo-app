@@ -8,10 +8,17 @@
 import SwiftUI
 import CoreData
 
+// No need to import CalendarColors as it's part of the app's Models
+
 struct MonthCalendarView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
     let tasks: [Item]
+    
+    // Track if a day is selected - will be used for double-click handling
+    private var isDaySelected: Bool {
+        selectedDate != nil
+    }
     
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
@@ -21,13 +28,17 @@ struct MonthCalendarView: View {
         VStack(spacing: 0) {
             // Weekday header
             HStack(spacing: 0) {
-                ForEach(weekdaySymbols, id: \.self) { weekday in
+                ForEach(Array(zip(weekdaySymbols.indices, weekdaySymbols)), id: \.0) { index, weekday in
+                    // Determine if this is a weekend header (0 is Sunday, 6 is Saturday)
+                    let isWeekendHeader = index == 0 || index == 6
+                    
                     Text(weekday)
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
+                        .background(isWeekendHeader ? CalendarColors.weekendBackground : CalendarColors.weekdayBackground)
                 }
             }
             .padding(.horizontal, 0)
@@ -49,8 +60,14 @@ struct MonthCalendarView: View {
                                 },
                                 tasks: tasksForDate(day.date)
                             )
-                            .onTapGesture {
-                                selectedDate = day.date
+                            .handleDoubleClick(selectedDate: $selectedDate, date: day.date) {
+                                // Direct notification call on double-click
+                                print("Double-clicked day: \(day.date)")
+                                NotificationCenter.default.post(
+                                    name: CalendarKitView.switchToDayViewNotification,
+                                    object: nil,
+                                    userInfo: ["date": day.date]
+                                )
                             }
                             .frame(height: geometry.size.height / 6.001) // Force division to fill entire height
                             .overlay(
@@ -189,11 +206,9 @@ struct CalendarDayCellView: View {
             return Color.blue.opacity(0.15)
         } else if isToday {
             return Color.blue.opacity(0.08)
-        } else if day.isCurrentMonth {
-            return Color.white
         } else {
-            // Slightly different background for days outside current month
-            return Color.gray.opacity(0.03)
+            // Use our helper to determine weekday/weekend colors
+            return CalendarColors.backgroundColorForDate(day.date, isCurrentMonth: day.isCurrentMonth)
         }
     }
 }

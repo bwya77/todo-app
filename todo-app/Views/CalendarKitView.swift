@@ -9,9 +9,31 @@ import SwiftUI
 import CoreData
 import EventKit
 import AppKit
+// Importing our custom wheel scroll view
+// This is not strictly necessary due to Swift module structure, but makes dependencies clear
 
 // Main Calendar View implementation
 struct CalendarKitView: View {
+    // Special navigation functions for day view
+    private func navigateToDayNext() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
+        // Navigate forward by one day
+        visibleMonth = calendar.date(byAdding: .day, value: 1, to: visibleMonth) ?? visibleMonth
+        // Update selected date to the new day
+        selectedDate = visibleMonth
+    }
+    
+    private func navigateToDayPrevious() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
+        // Navigate backward by one day
+        visibleMonth = calendar.date(byAdding: .day, value: -1, to: visibleMonth) ?? visibleMonth
+        // Update selected date to the new day
+        selectedDate = visibleMonth
+    }
     @Environment(\.managedObjectContext) private var viewContext
     @Binding var selectedDate: Date?
     @Binding var visibleMonth: Date
@@ -36,18 +58,20 @@ struct CalendarKitView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 4) {
             // Ensures VStack takes all available space
             Spacer().frame(height: 0)
             // Calendar header with navigation
-            HStack {
+            HStack(spacing: 16) {
+                // Month title with fixed width to prevent layout shifts
                 Text(monthFormatter.string(from: visibleMonth))
                     .font(.title2)
                     .fontWeight(.bold)
+                    .frame(width: 150, alignment: .leading)
                 
                 Spacer()
                 
-                // Mode selection
+                // Mode selection - slightly more centered
                 Picker("View", selection: $displayMode) {
                     Text("Month").tag(CalendarDisplayMode.month)
                     Text("Week").tag(CalendarDisplayMode.week)
@@ -55,28 +79,19 @@ struct CalendarKitView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 250)
+                .offset(x: -50) // Move it left but not too far
                 
                 Spacer()
                 
-                // Navigation buttons
-                HStack(spacing: 16) {
-                    Button(action: navigateToPrevious) {
-                        Image(systemName: "chevron.left")
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Button("Today") {
-                        navigateToToday()
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button(action: navigateToNext) {
-                        Image(systemName: "chevron.right")
-                    }
-                    .buttonStyle(.plain)
-                }
+                // Custom navigation buttons
+                CalendarNavigation(
+                    onPrevious: navigateToPrevious,
+                    onToday: navigateToToday,
+                    onNext: navigateToNext
+                )
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             
             // Calendar view based on display mode
             switch displayMode {
@@ -93,15 +108,23 @@ struct CalendarKitView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     )
                 )
+                .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .edgesIgnoringSafeArea(.all)
             case .week:
-                WeekCalendarView(
+                FixedWeekCalendarView(
                     visibleMonth: $visibleMonth,
                     selectedDate: $selectedDate,
                     tasks: tasks
                 )
+                .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onWheelEvent(left: navigateToNext, right: navigateToPrevious)
+                .monitorEvents(onSwipeLeft: navigateToNext, onSwipeRight: navigateToPrevious)
+                .onSwipeGesture(
+                    left: navigateToNext,
+                    right: navigateToPrevious
+                )
             case .day:
                 DayCalendarView(
                     selectedDate: $selectedDate,
@@ -109,6 +132,8 @@ struct CalendarKitView: View {
                 )
                 .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onWheelEvent(left: navigateToDayNext, right: navigateToDayPrevious)
+                .monitorEvents(onSwipeLeft: navigateToDayNext, onSwipeRight: navigateToDayPrevious)
             }
             
             // No bottom spacer, to allow grid to extend to bottom
@@ -123,10 +148,20 @@ struct CalendarKitView: View {
                 object: nil,
                 queue: .main
             ) { notification in
+                print("Received notification to switch to day view")
                 // Switch to day view for the currently selected date
-                if let date = selectedDate {
-                    visibleMonth = date
-                    displayMode = .day
+                if let date = notification.userInfo?["date"] as? Date {
+                    // Ensure the date is visibly selected when switching to day view
+                    DispatchQueue.main.async {
+                        self.selectedDate = date
+                        self.visibleMonth = date
+                        self.displayMode = .day
+                    }
+                } else if let date = self.selectedDate {
+                    DispatchQueue.main.async {
+                        self.visibleMonth = date
+                        self.displayMode = .day
+                    }
                 }
             }
         }
@@ -139,6 +174,9 @@ struct CalendarKitView: View {
     }
     
     private func navigateToPrevious() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
         switch displayMode {
         case .month:
             visibleMonth = calendar.date(byAdding: .month, value: -1, to: visibleMonth) ?? visibleMonth
@@ -150,6 +188,9 @@ struct CalendarKitView: View {
     }
     
     private func navigateToNext() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
         switch displayMode {
         case .month:
             visibleMonth = calendar.date(byAdding: .month, value: 1, to: visibleMonth) ?? visibleMonth

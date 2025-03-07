@@ -18,13 +18,14 @@ struct UpcomingView: View {
             VStack(spacing: 0) {
                 // Ensure the VStack takes full height
                 Spacer().frame(height: 0)
-                // Header - fixed height
+                
+                // Header - fixed height, reduced padding
                 Text("Upcoming")
-                    .font(.system(size: 32, weight: .bold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 32)  // Increased top padding for more spacing
-                    .padding(.bottom, 16)
+                .font(.system(size: 24, weight: .bold)) // Smaller font size
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 16) // Reduced top padding
+                .padding(.bottom, 8) // Reduced bottom padding
                 
                 // Calendar - fills remaining space with CalendarKit implementation
                 CalendarKitView(selectedDate: $selectedDate, visibleMonth: $visibleMonth)
