@@ -13,6 +13,9 @@ struct DayCalendarView: View {
     let tasks: [Item]
     @EnvironmentObject var timePositioner: TimeIndicatorPositioner
     
+    // Store current visible date to keep it displayed in header
+    @State private var currentVisibleDate: Date = Date()
+    
     private let calendar = Calendar.current
     
     private var isToday: Bool {
@@ -22,15 +25,43 @@ struct DayCalendarView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Day header
-            if let selectedDate = selectedDate {
-                Text(dayHeaderString(for: selectedDate))
+            // Day header with persistent date information
+            HStack {
+                // Left chevron
+                Button(action: {
+                    navigateDay(direction: -1)
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 8)
+                
+                Spacer()
+                
+                // Day indicator
+                Text(dayHeaderString(for: currentVisibleDate))
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 8)
-                    .foregroundColor(isToday ? .blue : .primary)
+                    .foregroundColor(calendar.isDateInToday(currentVisibleDate) ? .blue : .primary)
+                
+                Spacer()
+                
+                // Right chevron
+                Button(action: {
+                    navigateDay(direction: 1)
+                }) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 8)
             }
+            .frame(height: 36)
+            .padding(.vertical, 4)
+            .background(Color.white.opacity(0.95))
             
             // All Day section
             VStack(alignment: .leading, spacing: 0) {
@@ -141,6 +172,26 @@ struct DayCalendarView: View {
                 }
             }
         }
+        .onAppear {
+            // Set initial visible date from selectedDate
+            if let selectedDate = selectedDate {
+                currentVisibleDate = selectedDate
+            }
+        }
+        .onChange(of: selectedDate) { oldValue, newValue in
+            // Update visible date when selected date changes externally
+            if let newDate = newValue {
+                currentVisibleDate = newDate
+            }
+        }
+    }
+    
+    // Add a method to navigate days
+    private func navigateDay(direction: Int) {
+        if let newDate = calendar.date(byAdding: .day, value: direction, to: currentVisibleDate) {
+            self.currentVisibleDate = newDate
+            self.selectedDate = newDate
+        }
     }
     
     // All day tasks for the selected date
@@ -180,7 +231,7 @@ struct DayCalendarView: View {
     // Format day header (e.g., "Sun 27")
     private func dayHeaderString(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEE d"
+        formatter.dateFormat = "EEE d MMM" // Added month to make date more clear
         return formatter.string(from: date)
     }
     

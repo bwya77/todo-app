@@ -9,9 +9,31 @@ import SwiftUI
 import CoreData
 import EventKit
 import AppKit
+// Importing our custom wheel scroll view
+// This is not strictly necessary due to Swift module structure, but makes dependencies clear
 
 // Main Calendar View implementation
 struct CalendarKitView: View {
+    // Special navigation functions for day view
+    private func navigateToDayNext() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
+        // Navigate forward by one day
+        visibleMonth = calendar.date(byAdding: .day, value: 1, to: visibleMonth) ?? visibleMonth
+        // Update selected date to the new day
+        selectedDate = visibleMonth
+    }
+    
+    private func navigateToDayPrevious() {
+        // Clear selection when navigating
+        selectedDate = nil
+        
+        // Navigate backward by one day
+        visibleMonth = calendar.date(byAdding: .day, value: -1, to: visibleMonth) ?? visibleMonth
+        // Update selected date to the new day
+        selectedDate = visibleMonth
+    }
     @Environment(\.managedObjectContext) private var viewContext
     @Binding var selectedDate: Date?
     @Binding var visibleMonth: Date
@@ -97,6 +119,12 @@ struct CalendarKitView: View {
                 )
                 .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onWheelEvent(left: navigateToNext, right: navigateToPrevious)
+                .monitorEvents(onSwipeLeft: navigateToNext, onSwipeRight: navigateToPrevious)
+                .onSwipeGesture(
+                    left: navigateToNext,
+                    right: navigateToPrevious
+                )
             case .day:
                 DayCalendarView(
                     selectedDate: $selectedDate,
@@ -104,6 +132,8 @@ struct CalendarKitView: View {
                 )
                 .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onWheelEvent(left: navigateToDayNext, right: navigateToDayPrevious)
+                .monitorEvents(onSwipeLeft: navigateToDayNext, onSwipeRight: navigateToDayPrevious)
             }
             
             // No bottom spacer, to allow grid to extend to bottom

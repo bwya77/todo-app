@@ -5,6 +5,94 @@ import AppKit
 // DIVIDER COLOR MODIFICATIONS - Using direct white: 0.96078 approach
 // Each divider is explicitly colored with exact RGB 245,245,245 using white: 0.96078
 
+class WeekScrollResponder: NSResponder {
+    var onPrevWeek: (() -> Void)?
+    var onNextWeek: (() -> Void)?
+    private var isProcessing = false
+    
+    override func scrollWheel(with event: NSEvent) {
+        if isProcessing {
+            return
+        }
+        
+        isProcessing = true
+        
+        // Handle horizontal scroll (left/right swipe on trackpad)
+        if abs(event.deltaX) > 0.5 {
+            if event.deltaX > 0 {
+                // Right swipe -> previous week
+                onPrevWeek?()
+            } else {
+                // Left swipe -> next week
+                onNextWeek?()
+            }
+        }
+        // Handle vertical scroll (typical mouse wheel)
+        else if abs(event.deltaY) > 0.5 {
+            if event.deltaY > 0 {
+                // Scroll up -> previous week
+                onPrevWeek?()
+            } else {
+                // Scroll down -> next week
+                onNextWeek?()
+            }
+        }
+        // Handle horizontal scroll with shift + mouse wheel
+        else if abs(event.deltaY) > 0.5 && event.modifierFlags.contains(.shift) {
+            if event.deltaY > 0 {
+                // Shift + scroll up -> previous week
+                onPrevWeek?()
+            } else {
+                // Shift + scroll down -> next week
+                onNextWeek?()
+            }
+        }
+        
+        // Reset after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.isProcessing = false
+        }
+        
+        // Call the next responder in the chain
+        super.scrollWheel(with: event)
+    }
+}
+
+struct ScrollWheelModifier: ViewModifier {
+    var onPrevious: () -> Void
+    var onNext: () -> Void
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                ScrollWheelView(onPrevious: onPrevious, onNext: onNext)
+            )
+    }
+    
+    // NSViewRepresentable for handling the scroll events
+    struct ScrollWheelView: NSViewRepresentable {
+        var onPrevious: () -> Void
+        var onNext: () -> Void
+        
+        func makeNSView(context: Context) -> NSView {
+            let view = NSView()
+            let responder = WeekScrollResponder()
+            responder.onPrevWeek = onPrevious
+            responder.onNextWeek = onNext
+            view.nextResponder = responder
+            return view
+        }
+        
+        func updateNSView(_ nsView: NSView, context: Context) {}
+    }
+}
+
+extension View {
+    func enableWeekScrolling(onPrevious: @escaping () -> Void, onNext: @escaping () -> Void) -> some View {
+        self.modifier(ScrollWheelModifier(onPrevious: onPrevious, onNext: onNext))
+    }
+}
+
 struct FixedWeekCalendarView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
