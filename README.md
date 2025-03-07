@@ -2,7 +2,7 @@
 
 A minimal, sleek, responsive, and modern to-do application built for macOS using Swift and SwiftUI.
 
-![UI Screenshot](/images/UI_main.png)
+![UI Screenshot](/images/UI_main2.png)
 
 ## Features
 
