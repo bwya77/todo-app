@@ -1,0 +1,24 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarMonthView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld more",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 132
+        }
+      }
+    ]
+  },
+  "version": 1
+}

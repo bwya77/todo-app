@@ -1,0 +1,16 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/AdjustedTimeIndicatorView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld:%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 33
+        }
+      }
+    ]
+  },
+  "version": 1
+}

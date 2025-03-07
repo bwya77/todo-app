@@ -1,0 +1,40 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarKitView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "View",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 75
+        }
+      },
+      {
+        "comment": "",
+        "key": "Month",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Week",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 77
+        }
+      },
+      {
+        "comment": "",
+        "key": "Day",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 78
+        }
+      }
+    ]
+  },
+  "version": 1
+}

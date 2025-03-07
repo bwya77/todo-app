@@ -1,0 +1,16 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarHeader.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Today",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 54
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,32 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeeklyCalendarView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Today",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld more",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 286
+        }
+      }
+    ]
+  },
+  "version": 1
+}

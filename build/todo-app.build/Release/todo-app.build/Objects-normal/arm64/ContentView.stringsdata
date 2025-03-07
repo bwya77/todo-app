@@ -1,0 +1,16 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Add Task View",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 101
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -288,7 +288,7 @@ struct FixedWeekCalendarView: View {
                                         
                                         // Time indicator
                                         if calendar.isDateInToday(day.date) {
-                                            TimeIndicatorView()
+                                            WeekTimeIndicatorView()
                                                 .frame(width: dayColumnWidth - 1) // Account for divider
                                                 .environmentObject(timeIndicatorPositioner)
                                         }

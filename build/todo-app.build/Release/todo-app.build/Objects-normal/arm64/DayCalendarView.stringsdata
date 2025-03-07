@@ -1,0 +1,16 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DayCalendarView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "All day",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 69
+        }
+      }
+    ]
+  },
+  "version": 1
+}

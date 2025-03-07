@@ -1,0 +1,16 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WheelScrollableView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Preview Content",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 126
+        }
+      }
+    ]
+  },
+  "version": 1
+}

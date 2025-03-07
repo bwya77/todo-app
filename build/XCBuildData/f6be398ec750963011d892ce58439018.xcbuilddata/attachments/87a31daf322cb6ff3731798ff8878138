@@ -1,0 +1,375 @@
+{
+  "" : {
+    "const-values" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master.swiftconstvalues",
+    "dependencies" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master.d",
+    "diagnostics" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master.dia",
+    "emit-module-dependencies" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master-emit-module.dia",
+    "swift-dependencies" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo-app-master.swiftdeps"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Item+CoreDataClass.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataClass.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataClass.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataClass.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Item+CoreDataProperties.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataProperties.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataProperties.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Item+CoreDataProperties.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Project+CoreDataClass.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataClass.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataClass.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataClass.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Project+CoreDataProperties.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataProperties.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataProperties.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Project+CoreDataProperties.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Tag+CoreDataClass.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataClass.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataClass.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataClass.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/Tag+CoreDataProperties.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataProperties.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataProperties.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Tag+CoreDataProperties.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/CoreDataGenerated/todo_app/todo_app+CoreDataModel.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_app+CoreDataModel.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_app+CoreDataModel.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_app+CoreDataModel.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/AppDelegate+DoubleClick.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+DoubleClick.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+DoubleClick.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+DoubleClick.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/ContentView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Models/CalendarColors.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarColors.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarColors.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarColors.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Models/ColorConstants.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ColorConstants.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ColorConstants.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ColorConstants.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Models/ViewType.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ViewType.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ViewType.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ViewType.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Persistence.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Persistence.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Persistence.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/Persistence.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/ViewModels/TaskViewModel.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskViewModel.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskViewModel.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskViewModel.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/AdjustedTimeIndicatorView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AdjustedTimeIndicatorView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AdjustedTimeIndicatorView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AdjustedTimeIndicatorView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/AlignedWeekCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AlignedWeekCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AlignedWeekCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AlignedWeekCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/AppDelegate+GridColor.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+GridColor.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+GridColor.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/AppDelegate+GridColor.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarDayClickDetector.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarDayClickDetector.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarDayClickDetector.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarDayClickDetector.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarHeader.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeader.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeader.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeader.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarHeaderView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeaderView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeaderView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarHeaderView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarKitView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarKitView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarKitView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarKitView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarMonthView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarMonthView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarMonthView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarMonthView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarNavigation.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarNavigation.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarNavigation.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarNavigation.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarTaskViews.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarTaskViews.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarTaskViews.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CalendarTaskViews.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CompactWeekCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CompactWeekCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CompactWeekCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CompactWeekCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CustomDivider.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomDivider.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomDivider.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomDivider.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CustomFixedWeekView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomFixedWeekView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomFixedWeekView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/CustomFixedWeekView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CustomIndicators/DayViewTimeIndicator.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewTimeIndicator.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewTimeIndicator.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewTimeIndicator.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CustomIndicators/WeekViewTimeIndicator.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewTimeIndicator.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewTimeIndicator.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewTimeIndicator.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DayCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DayNavigationHandler.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayNavigationHandler.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayNavigationHandler.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayNavigationHandler.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DayViewCustomizer.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewCustomizer.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewCustomizer.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DayViewCustomizer.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DirectColorWeekView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectColorWeekView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectColorWeekView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectColorWeekView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DirectGridLineView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectGridLineView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectGridLineView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DirectGridLineView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DoubleClickCalendarViewModifier.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickCalendarViewModifier.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickCalendarViewModifier.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickCalendarViewModifier.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DoubleClickHandler.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickHandler.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickHandler.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickHandler.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DoubleClickModifier.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickModifier.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickModifier.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickModifier.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/DoubleClickableCellView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickableCellView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickableCellView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/DoubleClickableCellView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/EventMonitorView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/EventMonitorView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/EventMonitorView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/EventMonitorView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/ExactColorGridOverlay.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExactColorGridOverlay.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExactColorGridOverlay.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExactColorGridOverlay.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/ExternalCalendarKitIntegration.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExternalCalendarKitIntegration.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExternalCalendarKitIntegration.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ExternalCalendarKitIntegration.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/FixedTimeIndicator.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedTimeIndicator.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedTimeIndicator.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedTimeIndicator.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/FixedWeekCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedWeekCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedWeekCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/FixedWeekCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/GridLineColor.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GridLineColor.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GridLineColor.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/GridLineColor.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/HorizontalWheelScrollableView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/HorizontalWheelScrollableView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/HorizontalWheelScrollableView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/HorizontalWheelScrollableView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/IgnoreDoubleClickModifier.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/IgnoreDoubleClickModifier.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/IgnoreDoubleClickModifier.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/IgnoreDoubleClickModifier.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/KeyboardShortcutExtension.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/KeyboardShortcutExtension.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/KeyboardShortcutExtension.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/KeyboardShortcutExtension.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/MonthCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/MonthCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/MonthCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/MonthCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/NavigationButtonClicksHandler.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/NavigationButtonClicksHandler.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/NavigationButtonClicksHandler.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/NavigationButtonClicksHandler.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/ScrollableCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollableCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollableCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollableCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/ScrollbarWidthReader.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollbarWidthReader.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollbarWidthReader.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ScrollbarWidthReader.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/ShadowDivider.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ShadowDivider.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ShadowDivider.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/ShadowDivider.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/SidebarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SidebarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SidebarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SidebarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/SimpleSwipeDetector.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SimpleSwipeDetector.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SimpleSwipeDetector.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SimpleSwipeDetector.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/SmoothScrollableCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SmoothScrollableCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SmoothScrollableCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SmoothScrollableCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/SwiftUIWheelHandler.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SwiftUIWheelHandler.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SwiftUIWheelHandler.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/SwiftUIWheelHandler.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TaskListView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskListView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskListView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskListView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TaskRowView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskRowView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskRowView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TaskRowView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TimeIndicatorPositioner.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorPositioner.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorPositioner.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorPositioner.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TimeIndicatorView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TimeIndicatorViews.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorViews.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorViews.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TimeIndicatorViews.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/TrackpadGestureView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TrackpadGestureView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TrackpadGestureView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/TrackpadGestureView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/UpcomingView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/UpcomingView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/UpcomingView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/UpcomingView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekDayColumn.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekDayColumn.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekDayColumn.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekDayColumn.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekGridlineColor.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekGridlineColor.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekGridlineColor.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekGridlineColor.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekViewHack.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewHack.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewHack.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekViewHack.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekWheelScrollView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekWheelScrollView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekWheelScrollView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekWheelScrollView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeekendGridLineView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekendGridLineView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekendGridLineView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeekendGridLineView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WeeklyCalendarView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeeklyCalendarView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeeklyCalendarView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WeeklyCalendarView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/WheelScrollableView.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WheelScrollableView.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WheelScrollableView.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/WheelScrollableView.o"
+  },
+  "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/todo_appApp.swift" : {
+    "index-unit-output-path" : "/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_appApp.o",
+    "llvm-bc" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_appApp.bc",
+    "object" : "/Users/bradley.wyatt/Git/GitHub/todo-app/build/todo-app.build/Release/todo-app.build/Objects-normal/arm64/todo_appApp.o"
+  }
+}

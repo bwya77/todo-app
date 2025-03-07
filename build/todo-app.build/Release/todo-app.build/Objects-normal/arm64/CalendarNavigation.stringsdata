@@ -1,0 +1,40 @@
+{
+  "source": "/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Views/CalendarNavigation.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "calendar-navigation-button",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 26
+        }
+      },
+      {
+        "comment": "",
+        "key": "calendar-navigation-button",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "calendar-navigation-button",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 47
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 30
+        }
+      }
+    ]
+  },
+  "version": 1
+}
