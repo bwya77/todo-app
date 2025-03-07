@@ -49,7 +49,7 @@ struct CalendarKitView: View {
                 
                 Spacer()
                 
-                // Mode selection
+                // Mode selection - slightly more centered
                 Picker("View", selection: $displayMode) {
                     Text("Month").tag(CalendarDisplayMode.month)
                     Text("Week").tag(CalendarDisplayMode.week)
@@ -57,7 +57,7 @@ struct CalendarKitView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 250)
-                .padding(.horizontal, 12)
+                .offset(x: -50) // Move it left but not too far
                 
                 Spacer()
                 

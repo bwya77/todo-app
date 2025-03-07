@@ -16,6 +16,9 @@ struct AppColors {
     static let selectedIconColor: Color = Color(red: 41/255, green: 122/255, blue: 188/255) // RGB(41,122,188)
     static let sidebarBackground: Color = Color(red: 248/255, green: 250/255, blue: 251/255) // RGB(248,250,251)
     static let sidebarHover: Color = Color(red: 223/255, green: 237/255, blue: 251/255) // RGB(223,237,251)
+    // Weekend background and weekend gridline colors
+    static let weekendBackground: Color = Color(red: 248/255, green: 248/255, blue: 248/255) // Very light grey
+    static let weekendGridlineColor: Color = Color(nsColor: NSColor(calibratedRed: 230.0/255.0, green: 230.0/255.0, blue: 230.0/255.0, alpha: 1.0)) // Darker for weekend
     static let contentBackground: Color = Color.white
     static let headerBackground: Color = Color.white
     static let todayHighlight: Color = Color(red: 0.0, green: 0.47, blue: 0.9)

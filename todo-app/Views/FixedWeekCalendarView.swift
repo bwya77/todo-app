@@ -76,15 +76,26 @@ struct FixedWeekCalendarView: View {
                     HStack(spacing: 0) {
                         ForEach(0..<weekDays.count, id: \.self) { index in
                             if index > 0 {
-                                DirectVerticalGridLine()
+                                if CalendarColors.isWeekend(weekDays[index].date) {
+                                    WeekendVerticalGridLine()
+                                } else {
+                                    DirectVerticalGridLine()
+                                }
                             }
                             
                             // Day cell
                             ZStack {
                                 let day = weekDays[index]
+                                
+                                // Background color for weekends
+                                Rectangle()
+                                    .fill(CalendarColors.isWeekend(day.date) ? 
+                                          CalendarColors.weekendBackground : 
+                                          Color.clear)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 let dayTasks = tasksForDate(day.date).filter { $0.isAllDay }
                                 
-                                // Background for today
+                                // Background for today - on top of weekend background
                                 Rectangle()
                                     .fill(calendar.isDateInToday(day.date) ? Color.blue.opacity(0.03) : Color.clear)
                                 
@@ -114,7 +125,7 @@ struct FixedWeekCalendarView: View {
                 .frame(height: allDayRowHeight)
                 .background(Color.white)
                 .overlay(
-                    DirectGridLineView()
+                    ShadowDivider()
                     , alignment: .bottom
                 )
                 
@@ -141,24 +152,38 @@ struct FixedWeekCalendarView: View {
                             HStack(spacing: 0) {
                                 ForEach(0..<weekDays.count, id: \.self) { index in
                                     if index > 0 {
-                                        DirectVerticalGridLine()
+                                        if CalendarColors.isWeekend(weekDays[index].date) {
+                                            WeekendVerticalGridLine()
+                                        } else {
+                                            DirectVerticalGridLine()
+                                        }
                                     }
                                     
                                     // Day column
                                     let day = weekDays[index]
                                     ZStack(alignment: .top) {
+                                        // Background color for weekends
+                                        Rectangle()
+                                            .fill(CalendarColors.isWeekend(day.date) ? 
+                                                  CalendarColors.weekendBackground : 
+                                                  Color.clear)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         // Background color and hour lines
                                         VStack(spacing: 0) {
                                             ForEach(0..<24, id: \.self) { hour in
                                                 ZStack {
-                                                    // Background for today
+                                                    // Background for today on top of weekend background
                                                     Rectangle()
                                                         .fill(calendar.isDateInToday(day.date) ? Color.blue.opacity(0.03) : Color.clear)
                                                     
                                                     // Bottom divider
                                                     VStack {
                                                         Spacer()
-                                                        DirectGridLineView()
+                                                        if CalendarColors.isWeekend(day.date) {
+                                                            WeekendGridLineView()
+                                                        } else {
+                                                            DirectGridLineView()
+                                                        }
                                                     }
                                                 }
                                                 .frame(height: 60)
