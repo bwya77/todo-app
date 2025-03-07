@@ -1,3 +1,4 @@
+
 # Todo App for macOS
 
 A minimal, sleek, responsive, and modern to-do application built for macOS using Swift and SwiftUI.
@@ -86,3 +87,17 @@ xcuserdata/
 ## Acknowledgements
 
 - [CalendarKit](https://github.com/richardtop/CalendarKit) - Used for enhanced calendar views
+
+## Swift Package Manager Support
+
+This project now supports Swift Package Manager for easier dependency management and building:
+
+```bash
+# Build the project using SPM
+swift build
+
+# Run tests
+swift test
+```
+
+The Package.swift file is configured to handle the SwiftUI app structure and properly include resources.

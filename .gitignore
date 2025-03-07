@@ -38,6 +38,7 @@ playground.xcworkspace
 #
 .build/
 .swiftpm/
+Sources/
 
 # CocoaPods
 #
