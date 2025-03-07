@@ -10,13 +10,17 @@ let package = Package(
         .executable(name: "todo-app", targets: ["TodoApp"])
     ],
     dependencies: [
-        .package(url: "https://github.com/richardtop/CalendarKit.git", from: "1.1.0")
+        // Temporarily comment out CalendarKit as it's iOS-only
+        // .package(url: "https://github.com/richardtop/CalendarKit.git", from: "1.1.0")
     ],
     targets: [
         .executableTarget(
             name: "TodoApp",
-            dependencies: [.product(name: "CalendarKit", package: "calendarkit")],
+            dependencies: [
+                // .product(name: "CalendarKit", package: "calendarkit")
+            ],
             path: "todo-app",
+            exclude: ["Views/MonthCalendarViewFix.swift.bak"],
             resources: [
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
