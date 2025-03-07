@@ -86,14 +86,16 @@ struct CalendarKitView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     )
                 )
+                .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .edgesIgnoringSafeArea(.all)
             case .week:
-                CompactWeekCalendarView(
+                FixedWeekCalendarView(
                     visibleMonth: $visibleMonth,
                     selectedDate: $selectedDate,
                     tasks: tasks
                 )
+                .environmentObject(TimeIndicatorPositioner.shared)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .day:
                 DayCalendarView(

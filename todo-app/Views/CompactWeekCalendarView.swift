@@ -1,10 +1,15 @@
 import SwiftUI
 import CoreData
+import AppKit
 
 struct CompactWeekCalendarView: View {
     @Binding var visibleMonth: Date
     @Binding var selectedDate: Date?
     let tasks: [Item]
+    
+    // Add state for scrollbar width and container width
+    @State private var scrollbarWidth: CGFloat = 16 // Default value
+    @State private var containerWidth: CGFloat = 0
     
     private let calendar = Calendar.current
     
@@ -50,28 +55,40 @@ struct CompactWeekCalendarView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Week header with very compact design
-            weekHeaderView()
-                .zIndex(1)
-                .background(Color.white)
+        GeometryReader { geometry in
+            let availableWidth = geometry.size.width
+            let scrollbarWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .overlay)
+            let contentWidth = availableWidth - scrollbarWidth
             
-            // Scrollable time grid
-            weekTimeGridView()
+            VStack(spacing: 0) {
+                // Week header with very compact design - NO MONTH TITLE
+                weekHeaderView(width: contentWidth)
+                    .zIndex(1)
+                    .background(Color.white)
+                    .frame(width: contentWidth)
+                
+                // Scrollable time grid - account for scrollbar width
+                weekTimeGridView(width: contentWidth)
+                    .frame(width: availableWidth) // Full width to include scrollbar
+            }
+            .onAppear {
+                // Save container width for calculations
+                self.containerWidth = availableWidth
+                self.scrollbarWidth = scrollbarWidth
+            }
         }
     }
     
+    // Instead of calculating column width, we'll use GeometryReader
+    // and flexible layouts to ensure columns align properly
+    
     // Break up the complex view into smaller components
-    private func weekHeaderView() -> some View {
-        VStack(spacing: 0) {
-            // Ultra compact month title
-            Text(monthFormatter.string(from: visibleMonth))
-                .font(.subheadline)
-                .padding(.vertical, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 8)
-            
-            // Day headers - minimal height
+    private func weekHeaderView(width: CGFloat) -> some View {
+        // Calculate column width for each day (7 days in a week)
+        let columnWidth = (width - 40) / 7 // 40 is the time label width
+        
+        return VStack(spacing: 0) {
+            // Day headers - minimal height (removed month title)
             HStack(spacing: 0) {
                 // Time scale label space
                 Text("")
@@ -92,7 +109,7 @@ struct CompactWeekCalendarView: View {
                                 .foregroundColor(calendar.isDateInToday(day.date) ? .blue : .primary)
                         }
                         .padding(.vertical, 2)
-                        .frame(maxWidth: .infinity)
+                        .frame(width: columnWidth)
                         .background(CalendarColors.backgroundColorForDate(day.date))
                         .onTapGesture {
                             selectedDate = day.date
@@ -100,10 +117,11 @@ struct CompactWeekCalendarView: View {
                     }
                 }
             }
+            .frame(width: width)
             
             // Super compact All Day section with no spacing
             HStack(spacing: 0) {
-                // All day label
+                // All day label - match time label width exactly
                 Text("All day")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -121,7 +139,7 @@ struct CompactWeekCalendarView: View {
                         Rectangle()
                             .fill(CalendarColors.backgroundColorForDate(day.date))
                             .frame(height: allDayHeight)
-                            .frame(maxWidth: .infinity)
+                            .frame(width: columnWidth)
                             .overlay(
                                 VStack(alignment: .leading, spacing: 1) {
                                     if !dayTasks.isEmpty {
@@ -139,16 +157,20 @@ struct CompactWeekCalendarView: View {
                     }
                 }
             }
+            .frame(width: width)
         }
     }
     
-    private func weekTimeGridView() -> some View {
-        ScrollView(.vertical, showsIndicators: true) {
+    private func weekTimeGridView(width: CGFloat) -> some View {
+        // Calculate column width for each day (7 days in a week)
+        let columnWidth = (width - 40) / 7 // 40 is the time label width
+        
+        return ScrollView(.vertical, showsIndicators: true) {
             ScrollViewReader { scrollViewProxy in 
                 VStack(spacing: 0) {
                     // Time grid
                     HStack(spacing: 0) {
-                        // Time labels
+                        // Time labels - exact same width as 'All day' label
                         VStack(alignment: .trailing, spacing: 0) {
                             ForEach(0..<24, id: \.self) { hour in
                                 Text(formatHour(hour))
@@ -166,15 +188,22 @@ struct CompactWeekCalendarView: View {
                             }
                         }
                         
-                        // Days with events
+                        // Days with events - exactly aligned with day headers
                         HStack(spacing: 0) {
                             ForEach(weekDays, id: \.id) { day in
-                                timeGridColumn(for: day)
+                                timeGridColumn(for: day, width: columnWidth)
+                                    .frame(width: columnWidth, alignment: .leading) // Fixed width for consistency
                             }
                         }
+                        .padding(.trailing, 0) // No padding to ensure alignment
                     }
                 }
                 .onAppear {
+                    // Update scrollbar width measurement
+                    DispatchQueue.main.async {
+                        scrollbarWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .overlay)
+                    }
+                    
                     // Scroll to 7am by default for a reasonable starting position
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation {
@@ -184,12 +213,22 @@ struct CompactWeekCalendarView: View {
                 }
             }
         }
+        .simultaneousGesture(
+            DragGesture().onChanged { _ in
+                // Update scrollbar width on gesture to handle appearance/disappearance 
+                DispatchQueue.main.async {
+                    scrollbarWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .overlay)
+                }
+            }
+        )
         .environmentObject(TimeIndicatorPositioner.shared)
     }
     
     // Helper function to create a single day column in the time grid
     @ViewBuilder
-    private func timeGridColumn(for day: CalendarDay) -> some View {
+    private func timeGridColumn(for day: CalendarDay, width: CGFloat? = nil) -> some View {
+        let columnWidth = width ?? ((containerWidth - 40) / 7)
+        
         ZStack(alignment: .top) {
             // Background color based on weekday/weekend
             Rectangle()
@@ -223,7 +262,7 @@ struct CompactWeekCalendarView: View {
                     .environmentObject(TimeIndicatorPositioner.shared)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: columnWidth)
         .overlay(
             Rectangle()
                 .frame(width: 1)

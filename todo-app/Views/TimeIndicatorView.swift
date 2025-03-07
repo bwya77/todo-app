@@ -11,7 +11,7 @@ struct TimeIndicatorView: View {
         
         // Position at the correct time
         GeometryReader { geometry in
-            ZStack(alignment: .top) {
+            ZStack(alignment: .topLeading) {
                 // Empty spacer to fill the container
                 Color.clear
                 
@@ -22,11 +22,11 @@ struct TimeIndicatorView: View {
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 6) // Reduced horizontal padding
-                        .padding(.vertical, 3) // Reduced vertical padding
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(Color.red.opacity(0.9)) // Slightly transparent
+                                .fill(Color.red.opacity(0.9))
                         )
                     
                     // Red line extending to the right
@@ -34,6 +34,7 @@ struct TimeIndicatorView: View {
                         .fill(Color.red)
                         .frame(height: 2)
                 }
+                .frame(width: geometry.size.width, alignment: .leading)
                 .offset(y: positioner.getOffset())
             }
         }

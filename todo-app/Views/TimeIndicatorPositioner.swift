@@ -14,6 +14,7 @@ class TimeIndicatorPositioner: ObservableObject {
         // Update time every minute
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.currentTime = Date()
+            self?.objectWillChange.send()
         }
         timer?.fire() // Update immediately
     }
@@ -29,6 +30,6 @@ class TimeIndicatorPositioner: ObservableObject {
         let minute = calendar.component(.minute, from: currentTime)
         
         // Convert to pixels (60px per hour, minute is fractional)
-        return CGFloat(hour) * hourHeight + CGFloat(minute) / 60.0 * hourHeight
+        return CGFloat(hour) * hourHeight + (CGFloat(minute) / 60.0) * hourHeight
     }
 }

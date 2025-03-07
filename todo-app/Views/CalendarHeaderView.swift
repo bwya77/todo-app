@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct CalendarHeaderView: View {
     @Binding var currentDate: Date
