@@ -1,0 +1,3 @@
+# Exclude README files from build
+README.md
+**/README.md

@@ -1,0 +1,3 @@
+# Mark README files as documentation (not included in build)
+README.md linguist-documentation
+**/README.md linguist-documentation

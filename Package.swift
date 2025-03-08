@@ -10,14 +10,13 @@ let package = Package(
         .executable(name: "todo-app", targets: ["TodoApp"])
     ],
     dependencies: [
-        // Temporarily comment out CalendarKit as it's iOS-only
-        // .package(url: "https://github.com/richardtop/CalendarKit.git", from: "1.1.0")
+        // CalendarKit removed - not compatible with macOS
     ],
     targets: [
         .executableTarget(
             name: "TodoApp",
             dependencies: [
-                // .product(name: "CalendarKit", package: "calendarkit")
+                // No external dependencies
             ],
             path: "todo-app",
             exclude: ["Views/MonthCalendarViewFix.swift.bak"],
