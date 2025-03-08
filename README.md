@@ -1,79 +1,128 @@
-# Todo App
+# Todo App for macOS
 
-A macOS task management application with calendar integration and scheduling features.
+A minimal, sleek, responsive, and modern to-do application built for macOS using Swift and SwiftUI.
 
-## Recent Build Error Fix (March 8, 2025)
+![UI Screenshot](/images/UI_main2.png)
 
-If you're encountering build errors with SwiftUI syntax or CalendarKit dependencies, run:
+## Features
 
-```bash
-chmod +x fix-build-errors.sh
-./fix-build-errors.sh
-```
+- **Multiple Calendar Views**: Day, Week, Month, and Upcoming views for managing your tasks
+- **Real-time Time Indicators**: Visual indicators showing the current time in Day and Week views
+- **Sidebar Navigation**: Customizable sidebar with resizable width
+- **Task Management**: Create, edit, and organize tasks with project support
+- **Core Data Integration**: Persistent storage for all your tasks and projects
+- **Modern UI**: Clean and minimalist design that follows macOS design guidelines
+- **Elegant Animations**: Smooth transitions between months in the Upcoming view
 
-This script will:
-1. Fix syntax errors in DayCalendarView.swift
-2. Update the deprecated WheelEventHandler.swift
-3. Remove any iOS-only dependencies that aren't compatible with macOS
-4. Clean and rebuild the project
+## Month/Year Animation
 
-For detailed information, see:
-- `todo-app/BUILD_FIXES_MARCH_8.md`
+The Upcoming view features elegant month and year transitions with custom animations:
+- Smaller, more minimal display of month and year below the header
+- Month in semibold font and year in thin font for improved visual hierarchy
+- Smooth bottom-to-top transition animation when changing months
+- The animation treats both month and year as a single unit for a cohesive look
 
-## Required Manual Steps
+Currently, the app uses a custom animation implementation. Future versions may integrate the AnimateText library for enhanced effects (see the `/todo-app/Presentation/Utilities/ANIMATION_README.md` for details).
 
-After running the fix script, you'll need to:
+## Technologies
 
-1. Open the project in Xcode
-2. Select the project file in Project Navigator
-3. Select the 'todo-app' target
-4. Go to 'Build Phases' tab
-5. Expand 'Copy Bundle Resources'
-6. Remove 'Info.plist' and any README.md files from this list
-7. Clean the project (Product > Clean Build Folder) and build again
+- Swift 5.7+
+- SwiftUI
+- Core Data
+- Custom animation framework
 
-### AnimateText Library Integration (Optional)
+## Requirements
 
-The Upcoming view uses a custom animation for month transitions. To enable the complete animation experience with the AnimateText library:
+- macOS 13.0+
+- Xcode 14.0+
 
-1. Open the project in Xcode
-2. Go to File > Add Package Dependencies...
-3. Enter URL: `https://github.com/jasudev/AnimateText.git`
-4. Select branch: `main`
-5. Click Add Package
+## Installation
 
-Alternatively, you can manually edit Package.swift to add:
-```swift
-dependencies: [
-    .package(url: "https://github.com/jasudev/AnimateText.git", .branch("main"))
-],
-targets: [
-    .executableTarget(
-        name: "TodoApp",
-        dependencies: [
-            .product(name: "AnimateText", package: "AnimateText")
-        ],
-        // ...
-    ),
-]
-```
+1. Clone the repository:
+   ```
+   git clone https://github.com/username/todo-app.git
+   ```
 
-For more details, see `/todo-app/Presentation/Utilities/ANIMATION_README.md`
+2. Open the project in Xcode:
+   ```
+   cd todo-app
+   open todo-app.xcodeproj
+   ```
+
+3. Build and run the application (⌘+R)
 
 ## Project Structure
 
 The project follows a clean architecture approach:
-- **Application**: App entry point and configuration
-- **Domain**: Business logic and models
-- **Presentation**: UI components and views 
-- **Infrastructure**: Technical services
-- **Resources**: Static assets
 
-## Calendar Features
+- **/Application**: App lifecycle and entry point
+- **/Domain**: Core business logic and models
+  - **/Models**: Core Data models for tasks, projects, and tags
+- **/Infrastructure**: Implementation details
+  - **/CoreData**: Database configuration and models
+  - **/Persistence**: Storage and retrieval logic
+- **/Presentation**: UI layer
+  - **/Components**: Reusable UI components
+  - **/Utilities**: Animation and other utility helpers
+  - **/ViewModels**: Business logic for task management
+  - **/Views**: SwiftUI views organized by feature:
+    - **/Calendar**: Calendar-based views including day, week, month
+    - **/Common**: Shared views like sidebar and content container
+    - **/Task**: Task management interfaces
 
-The app includes custom calendar views for:
-- Month view with task indicators
-- Week view with time-based scheduling
-- Day view with hourly task breakdown
+## Usage
 
-All calendar views support gesture-based navigation through swiping and trackpad gestures.
+- **Upcoming View**: Overview of upcoming tasks with calendar views
+- **Inbox**: Quick access to incoming tasks
+- **Today**: Focus on tasks due today
+- **Projects**: Organize tasks by project
+- **Custom Filters**: Filter tasks based on various criteria
+
+## Development
+
+### Time Indicator Customization
+
+The app features custom time indicators in both Day and Week views. The positioning is carefully calibrated for accurate time representation:
+
+- Day View: Uses a 3-minute time adjustment
+- Week View: Uses a time adjustment with pixel-level fine-tuning
+
+### .gitignore
+
+For proper source control management, use the provided `.gitignore` file to exclude build artifacts:
+
+```
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+```
+
+## Swift Package Manager Support
+
+This project supports Swift Package Manager for easier dependency management and building:
+
+```bash
+# Build the project using SPM
+swift build
+
+# Run tests
+swift test
+```
+
+The Package.swift file is configured to handle the SwiftUI app structure and properly include resources.
+
+## Recent Changes
+
+- Improved Upcoming view with smaller, more elegant month/year display
+- Enhanced visual hierarchy with semibold month and thin year text
+- Optimized month transition animations with smoother, faster performance
+- Restructured project using clean architecture principles
