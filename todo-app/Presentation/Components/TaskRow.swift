@@ -4,6 +4,7 @@
 //
 //  Created by Bradley Wyatt on 3/4/25.
 //  Refactored according to improvement plan on 3/7/25.
+//  Updated on 3/9/25 to support the new date formatter.
 //
 
 import SwiftUI
@@ -27,15 +28,37 @@ struct TaskRow: View {
                     .strikethrough(task.completed)
                     .foregroundColor(task.completed ? .gray : .primary)
                 
-                if let dueDate = task.dueDate {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar")
+                HStack(spacing: 8) {
+                    // Due date if available
+                    if let dueDate = task.dueDate {
+                        HStack(spacing: 6) {
+                            Image(systemName: "calendar")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Text(TodoAppTaskDateFormatter.formatDueDate(dueDate))
+                                .font(.caption)
+                                .foregroundColor(isDueDateOverdue(dueDate) && !task.completed ? .red : .secondary)
+                        }
+                    }
+                    
+                    // Priority if not None
+                    if task.priority > 0 {
+                        TaskPriorityUtils.priorityLabel(task.priority)
                             .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        Text(AppDateFormatter.formatDueDate(dueDate))
-                            .font(.caption)
-                            .foregroundColor(isDueDateOverdue(dueDate) && !task.completed ? .red : .secondary)
+                    }
+                    
+                    // Project label if assigned
+                    if let project = task.project, let projectName = project.name {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(AppColors.getColor(from: project.color))
+                                .frame(width: 6, height: 6)
+                            
+                            Text(projectName)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
             }

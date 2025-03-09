@@ -37,15 +37,18 @@ struct SidebarView: View {
     @Binding var selectedViewType: ViewType
     @Binding var selectedProject: Project?
     
+    // Reference to ContentView for showing popup
+    var onShowTaskPopup: () -> Void
+    
     @State private var showingAddProject = false
-    @State private var showingAddTask = false
     @State private var newProjectName = ""
     @State private var newProjectColor = "blue"
     
-    init(selectedViewType: Binding<ViewType>, selectedProject: Binding<Project?>, context: NSManagedObjectContext) {
+    init(selectedViewType: Binding<ViewType>, selectedProject: Binding<Project?>, context: NSManagedObjectContext, onShowTaskPopup: @escaping () -> Void) {
         self._selectedViewType = selectedViewType
         self._selectedProject = selectedProject
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
+        self.onShowTaskPopup = onShowTaskPopup
     }
     
     var body: some View {
@@ -79,7 +82,7 @@ struct SidebarView: View {
                         Spacer().frame(height: 16)
                         
                         Button(action: {
-                            showingAddTask = true
+                            onShowTaskPopup()
                         }) {
                             HStack {
                                 Label {
@@ -98,6 +101,7 @@ struct SidebarView: View {
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
+                        .keyboardShortcut("n", modifiers: [.command])
                         
                         Button(action: {
                             selectedViewType = .today
@@ -237,32 +241,6 @@ struct SidebarView: View {
                     .background(AppColors.sidebarBackground)
                 }
             }
-        }
-        .sheet(isPresented: $showingAddTask) {
-            VStack(spacing: 20) {
-                Text("Add Task")
-                    .font(.headline)
-                
-                TextField("Task Name", text: .constant(""))
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                HStack {
-                    Button("Cancel") {
-                        showingAddTask = false
-                    }
-                    
-                    Spacer()
-                    
-                    Button("Add") {
-                        // Add task logic will go here
-                        showingAddTask = false
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding(.top)
-            }
-            .padding()
-            .frame(width: 300)
         }
         .sheet(isPresented: $showingAddProject) {
             VStack(spacing: 20) {

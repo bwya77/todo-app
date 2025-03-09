@@ -8,6 +8,7 @@
 
 import SwiftUI
 import CoreData
+import AppKit
 
 struct TaskListView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -19,11 +20,11 @@ struct TaskListView: View {
     private var projects: FetchedResults<Project>
     
     @State private var showingAddTask = false
-    @State private var newTaskTitle = ""
-    @State private var newTaskDueDate = Date()
-    @State private var newTaskHasDueDate = false
-    @State private var newTaskPriority: Int16 = 0
+    @State private var showingAddTaskPopup = false
     @State private var newTaskProject: Project?
+    
+    // This is used for animations
+    @State private var animatePopup = false
     
     var viewType: ViewType
     var selectedProject: Project?
@@ -69,10 +70,6 @@ struct TaskListView: View {
                 title = project.name ?? "Project"
                 predicate = NSPredicate(format: "project == %@", project)
             }
-            
-        case .addTask:
-            title = "Add Task"
-            // No specific predicate for this view
         }
         
         // Set predicate and sort
@@ -114,17 +111,6 @@ struct TaskListView: View {
                     .font(.system(size: 24, weight: .bold))
                 
                 Spacer()
-                
-                // Add Task button only appears in Project view
-                if viewType == .project {
-                    Button(action: {
-                        showingAddTask = true
-                        newTaskProject = selectedProject
-                    }) {
-                        Label("Add Task", systemImage: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 28)
@@ -172,69 +158,31 @@ struct TaskListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
-        .sheet(isPresented: $showingAddTask) {
-            VStack(spacing: 20) {
-                Text("Add Task")
-                    .font(.headline)
-                
-                TextField("Task Title", text: $newTaskTitle)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Toggle("Due Date", isOn: $newTaskHasDueDate)
-                
-                if newTaskHasDueDate {
-                    DatePicker("Due Date", selection: $newTaskDueDate, displayedComponents: [.date])
-                }
-                
-                Picker("Priority", selection: $newTaskPriority) {
-                    Text("None").tag(Int16(0))
-                    Text("High").tag(Int16(1))
-                    Text("Medium").tag(Int16(2))
-                    Text("Low").tag(Int16(3))
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                
-                HStack {
-                    Button("Cancel") {
-                        showingAddTask = false
-                        resetNewTaskFields()
+        .overlay {
+            if showingAddTaskPopup {
+                PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
+                    if animatePopup {
+                        AddTaskPopup(taskViewModel: taskViewModel)
+                            .environment(\.managedObjectContext, viewContext)
                     }
-                    
-                    Spacer()
-                    
-                    Button("Add") {
-                        addTask()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(newTaskTitle.isEmpty)
                 }
-                .padding(.top)
+                .transition(.opacity)
+                .zIndex(100)
+                .edgesIgnoringSafeArea(.all)
             }
-            .padding()
-            .frame(width: 400)
         }
     }
     
-    private func addTask() {
-        guard !newTaskTitle.isEmpty else { return }
-        
-        taskViewModel.addTask(
-            title: newTaskTitle,
-            dueDate: newTaskHasDueDate ? newTaskDueDate : nil,
-            priority: newTaskPriority,
-            project: newTaskProject
-        )
-        
-        resetNewTaskFields()
-        showingAddTask = false
-    }
-    
-    private func resetNewTaskFields() {
-        newTaskTitle = ""
-        newTaskDueDate = Date()
-        newTaskHasDueDate = false
-        newTaskPriority = 0
-        newTaskProject = nil
+    private func closePopup() {
+        // Animate the popup closing
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            animatePopup = false
+            
+            // Give it time to animate out before removing from view hierarchy
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showingAddTaskPopup = false
+            }
+        }
     }
     
     private func toggleTaskCompletion(_ task: Item) {

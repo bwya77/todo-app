@@ -4,6 +4,7 @@
 //
 //  Created by Bradley Wyatt on 3/4/25.
 //  Refactored according to improvement plan on 3/7/25.
+//  Updated on 3/9/25 to include default data population.
 //
 
 import SwiftUI
@@ -21,6 +22,9 @@ struct TodoApp: App {
                 .frame(minWidth: 1000, minHeight: 700)
                 .onAppear {
                     setupAppearance()
+                    
+                    // Ensure we have default data
+                    DefaultDataProvider.shared.ensureDefaultData()
                 }
         }
         .windowToolbarStyle(.unifiedCompact)

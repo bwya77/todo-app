@@ -4,6 +4,7 @@
 //
 //  Created by Bradley Wyatt on 3/5/25.
 //  Refactored according to improvement plan on 3/7/25.
+//  Updated on 3/9/25 to remove addTask case
 //
 
 import Foundation
@@ -15,7 +16,6 @@ enum ViewType: Hashable {
     case upcoming
     case completed
     case filters
-    case addTask
     case project
     
     var name: String {
@@ -30,8 +30,6 @@ enum ViewType: Hashable {
             return "Completed"
         case .filters:
             return "Filters"
-        case .addTask:
-            return "Add Task"
         case .project:
             return "Project"
         }
@@ -49,8 +47,6 @@ enum ViewType: Hashable {
             return "checkmark.circle"
         case .filters:
             return "line.horizontal.3.decrease.circle"
-        case .addTask:
-            return "plus.circle"
         case .project:
             return "folder"
         }

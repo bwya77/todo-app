@@ -135,6 +135,10 @@ struct ContentView: View {
     @State private var sidebarWidth: CGFloat = 250
     @State private var isSidebarVisible: Bool = true
     
+    // States for the task popup
+    @State private var showingAddTaskPopup = false
+    @State private var animatePopup = false
+    
     // Override the divider color for week view
     let weekGridColor = Color(red: 245/255, green: 245/255, blue: 245/255)
     
@@ -157,7 +161,8 @@ struct ContentView: View {
                         SidebarView(
                             selectedViewType: $selectedViewType,
                             selectedProject: $selectedProject,
-                            context: viewContext
+                            context: viewContext,
+                            onShowTaskPopup: showTaskPopup
                         )
                         .frame(width: sidebarWidth, alignment: .leading)
                         .modifier(SidebarBackgroundModifier())
@@ -196,11 +201,7 @@ struct ContentView: View {
                         context: viewContext
                     )
                     
-                    case .addTask:
-                    // This case handles the Add Task view
-                    Text("Add Task View")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.white)
+                    // No more .addTask case since we're using a popup instead
                     }
                 }
                 .layoutPriority(1)
@@ -210,6 +211,40 @@ struct ContentView: View {
         .onAppear {
             // Set up the toolbar for sidebar toggle when view appears
             setupToolbar()
+        }
+        .overlay {
+            if showingAddTaskPopup {
+                PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
+                    if animatePopup {
+                        AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext))
+                            .environment(\.managedObjectContext, viewContext)
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(100)
+                .edgesIgnoringSafeArea(.all)
+            }
+        }
+    }
+    
+    // Show the task popup
+    func showTaskPopup() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            showingAddTaskPopup = true
+            // Immediate animation looks better with scale effect
+            animatePopup = true
+        }
+    }
+    
+    // Close popup with animation
+    private func closePopup() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            animatePopup = false
+            
+            // Give it time to animate out before removing from view hierarchy
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showingAddTaskPopup = false
+            }
         }
     }
     

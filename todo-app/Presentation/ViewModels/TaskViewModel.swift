@@ -4,13 +4,15 @@
 //
 //  Created by Bradley Wyatt on 3/4/25.
 //  Refactored according to improvement plan on 3/7/25.
+//  Updated on 3/9/25 to add date-specific task queries.
 //
 
 import SwiftUI
 import CoreData
 
 class TaskViewModel: ObservableObject {
-    private var viewContext: NSManagedObjectContext
+    // Making viewContext internal so that components can use it
+    var viewContext: NSManagedObjectContext
     
     init(context: NSManagedObjectContext) {
         self.viewContext = context
@@ -138,6 +140,39 @@ class TaskViewModel: ObservableObject {
             tagSet.remove(tag)
             task.tags = tagSet
             saveContext()
+        }
+    }
+    
+    // MARK: - Tasks for a specific date
+    
+    func getTasksForDate(_ date: Date) -> [Item] {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        
+        // Create a calendar that matches the user's locale
+        let calendar = Calendar.current
+        
+        // Get the start and end of the day
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        // Set up the predicate to get tasks for this date
+        let datePredicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@", startOfDay as NSDate, endOfDay as NSDate)
+        let allDayPredicate = NSPredicate(format: "isAllDay == YES AND dueDate >= %@ AND dueDate < %@", startOfDay as NSDate, endOfDay as NSDate)
+        
+        // Combine predicates with OR
+        fetchRequest.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [datePredicate, allDayPredicate])
+        
+        // Sort tasks by time
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
+            NSSortDescriptor(keyPath: \Item.priority, ascending: false)
+        ]
+        
+        do {
+            return try viewContext.fetch(fetchRequest)
+        } catch {
+            print("Error fetching tasks for date: \(error)")
+            return []
         }
     }
     
