@@ -8,7 +8,7 @@ A minimal, sleek, responsive, and modern to-do application built for macOS using
 
 - **Multiple Calendar Views**: Day, Week, Month, and Upcoming views for managing your tasks
 - **Real-time Time Indicators**: Visual indicators showing the current time in Day and Week views
-- **Sidebar Navigation**: Customizable sidebar with resizable width
+- **Sidebar Navigation**: Customizable sidebar with resizable width and collapsible design
 - **Task Management**: Create, edit, and organize tasks with project support
 - **Core Data Integration**: Persistent storage for all your tasks and projects
 - **Modern UI**: Clean and minimalist design that follows macOS design guidelines
@@ -23,6 +23,18 @@ The Upcoming view features elegant month and year transitions with custom animat
 - The animation treats both month and year as a single unit for a cohesive look
 
 Currently, the app uses a custom animation implementation. Future versions may integrate the AnimateText library for enhanced effects (see the `/todo-app/Presentation/Utilities/ANIMATION_README.md` for details).
+
+## Collapsible Sidebar
+
+The app features a collapsible sidebar that provides a more focused workspace when needed:
+
+- **Toggle Button**: Located in the toolbar next to traffic light controls
+- **Smooth Animation**: Uses SwiftUI spring animation for natural, responsive feel
+- **State Preservation**: Remembers sidebar width when collapsing/expanding
+- **Keyboard Support**: Compatible with standard macOS keyboard shortcuts
+- **Adaptive Layout**: Main content dynamically expands to fill available space
+
+See `/todo-app/Documentation/SidebarToggleFeature.md` for technical implementation details.
 
 ## Technologies
 
@@ -122,6 +134,7 @@ The Package.swift file is configured to handle the SwiftUI app structure and pro
 
 ## Recent Changes
 
+- Added collapsible sidebar with toolbar toggle button for expanded workspace
 - Improved Upcoming view with smaller, more elegant month/year display
 - Enhanced visual hierarchy with semibold month and thin year text
 - Optimized month transition animations with smoother, faster performance

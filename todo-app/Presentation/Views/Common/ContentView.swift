@@ -20,11 +20,11 @@ struct SidebarBackgroundModifier: ViewModifier {
     }
 }
 
-// Extension to prevent title bar appearance on scroll
+// Extension to handle scrolling behavior
 extension NSScrollView {
     open override func scrollWheel(with event: NSEvent) {
         super.scrollWheel(with: event)
-        NSApp.mainWindow?.toolbar?.isVisible = false
+        // No longer hiding toolbar on scroll since we need it for the sidebar toggle
     }
 }
 
@@ -52,12 +52,88 @@ struct ResizeHandle: View {
     }
 }
 
+// Singleton toolbar delegate to handle toolbar actions
+class ToolbarDelegate: NSObject, NSToolbarDelegate {
+    static let shared = ToolbarDelegate()
+    
+    // Toolbar item identifiers
+    private let toggleSidebarItemID = NSToolbarItem.Identifier("toggleSidebar")
+    
+    // Binding to update sidebar visibility
+    var sidebarVisibilityBinding: Binding<Bool>? = nil
+    
+    // MARK: - NSToolbarDelegate
+    
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        if itemIdentifier == toggleSidebarItemID {
+            let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+            
+            // Set image based on current sidebar state
+            let isVisible = sidebarVisibilityBinding?.wrappedValue ?? true
+            let imageName = isVisible ? "sidebar.left" : "sidebar.right"
+            let description = isVisible ? "Hide Sidebar" : "Show Sidebar"
+            
+            item.image = NSImage(systemSymbolName: imageName, accessibilityDescription: description)
+            
+            item.label = "Toggle Sidebar"
+            item.paletteLabel = "Toggle Sidebar"
+            item.toolTip = "Toggle Sidebar"
+            item.target = self
+            item.action = #selector(toggleSidebar)
+            
+            return item
+        }
+        
+        return nil
+    }
+    
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return [toggleSidebarItemID]
+    }
+    
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return [toggleSidebarItemID]
+    }
+    
+    // MARK: - Actions
+    
+    @objc func toggleSidebar() {
+        // Toggle sidebar visibility
+        guard let binding = sidebarVisibilityBinding else { return }
+        
+        // Toggle the state
+        binding.wrappedValue.toggle()
+        
+        // Update toolbar button image
+        if let window = NSApp.mainWindow,
+           let toolbar = window.toolbar,
+           let item = toolbar.items.first(where: { $0.itemIdentifier == toggleSidebarItemID }) {
+            
+            // Use the correct SF Symbol based on sidebar visibility state
+            // "sidebar.left" when sidebar is visible (for hiding action)
+            // "sidebar.right" when sidebar is hidden (for showing action)
+            let imageName = binding.wrappedValue ? "sidebar.left" : "sidebar.right"
+            let description = binding.wrappedValue ? "Hide Sidebar" : "Show Sidebar"
+            
+            item.image = NSImage(systemSymbolName: imageName, accessibilityDescription: description)
+        }
+        
+        // Post notification for analytics or other observers
+        NotificationCenter.default.post(
+            name: Notification.Name("SidebarVisibilityChanged"),
+            object: nil,
+            userInfo: ["isVisible": binding.wrappedValue]
+        )
+    }
+}
+
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var selectedViewType: ViewType = .upcoming
     @State private var selectedProject: Project? = nil
     @State private var currentDate = Date()
     @State private var sidebarWidth: CGFloat = 250
+    @State private var isSidebarVisible: Bool = true
     
     // Override the divider color for week view
     let weekGridColor = Color(red: 245/255, green: 245/255, blue: 245/255)
@@ -68,24 +144,28 @@ struct ContentView: View {
             Color(red: 248/255, green: 250/255, blue: 251/255).ignoresSafeArea()
             
             HStack(spacing: 0) {
-                // Main sidebar content
-                SidebarView(
-                    selectedViewType: $selectedViewType,
-                    selectedProject: $selectedProject,
-                    context: viewContext
-                )
-                .frame(width: sidebarWidth, alignment: .leading)
-                .modifier(SidebarBackgroundModifier())
-                
-                // Invisible resize handle
-                ResizeHandle { delta in
-                    let newWidth = sidebarWidth + delta
-                    // Constrain sidebar width between reasonable limits
-                    if newWidth >= 180 && newWidth <= 400 {
-                        sidebarWidth = newWidth
+                // Main sidebar content with animation
+                if isSidebarVisible {
+                    SidebarView(
+                        selectedViewType: $selectedViewType,
+                        selectedProject: $selectedProject,
+                        context: viewContext
+                    )
+                    .frame(width: sidebarWidth, alignment: .leading)
+                    .modifier(SidebarBackgroundModifier())
+                    .transition(.move(edge: .leading))
+                    
+                    // Invisible resize handle - only visible when sidebar is visible
+                    ResizeHandle { delta in
+                        let newWidth = sidebarWidth + delta
+                        // Constrain sidebar width between reasonable limits
+                        if newWidth >= 180 && newWidth <= 400 {
+                            sidebarWidth = newWidth
+                        }
                     }
+                    .frame(maxHeight: .infinity)
+                    .transition(.opacity)
                 }
-                .frame(maxHeight: .infinity)
                 
                 // Main content
                 switch selectedViewType {
@@ -111,7 +191,43 @@ struct ContentView: View {
                         .background(Color.white)
                 }
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSidebarVisible)
         }
+        .onAppear {
+            // Set up the toolbar for sidebar toggle when view appears
+            setupToolbar()
+        }
+    }
+    
+    // Setup toolbar with toggle sidebar button
+    private func setupToolbar() {
+        // Use helper to get main window
+        guard let window = NSApp.mainWindow else { return }
+        
+        // Create a toolbar if it doesn't exist
+        if window.toolbar == nil {
+            let toolbar = NSToolbar(identifier: "MainWindowToolbar")
+            toolbar.displayMode = .iconOnly
+            toolbar.allowsUserCustomization = false
+            toolbar.autosavesConfiguration = true
+            toolbar.showsBaselineSeparator = false
+            toolbar.delegate = ToolbarDelegate.shared
+            window.toolbar = toolbar
+        }
+        
+        // Ensure toolbar is visible and has proper style
+        window.toolbar?.isVisible = true
+        window.toolbarStyle = .unifiedCompact
+        
+        // Register for sidebar toggle callbacks
+        ToolbarDelegate.shared.sidebarVisibilityBinding = $isSidebarVisible
+    }
+}
+
+// Helper extension to easily access the main window
+extension NSApplication {
+    var mainWindow: NSWindow? {
+        return windows.first { $0.isKeyWindow } ?? windows.first
     }
 }
 
