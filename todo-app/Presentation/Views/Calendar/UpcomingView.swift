@@ -17,8 +17,8 @@ struct UpcomingView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Ensure the VStack takes full height
-                Spacer().frame(height: 0)
+                // Additional whitespace at the top
+                Spacer().frame(height: 24)
                 
                 // Header with animated month transition
                 VStack(alignment: .leading, spacing: 12) {
@@ -31,7 +31,7 @@ struct UpcomingView: View {
                     MonthHeaderView(visibleMonth: $visibleMonth)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.top, 28)
                 .padding(.bottom, 8)
                 
                 // Calendar - fills remaining space with CalendarKit implementation
