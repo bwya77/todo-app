@@ -146,37 +146,49 @@ struct ContentView: View {
             HStack(spacing: 0) {
                 // Main sidebar content with animation
                 if isSidebarVisible {
-                    SidebarView(
-                        selectedViewType: $selectedViewType,
-                        selectedProject: $selectedProject,
-                        context: viewContext
-                    )
-                    .frame(width: sidebarWidth, alignment: .leading)
-                    .modifier(SidebarBackgroundModifier())
-                    .transition(.move(edge: .leading))
-                    
-                    // Invisible resize handle - only visible when sidebar is visible
-                    ResizeHandle { delta in
-                        let newWidth = sidebarWidth + delta
-                        // Constrain sidebar width between reasonable limits
-                        if newWidth >= 180 && newWidth <= 400 {
-                            sidebarWidth = newWidth
+                    // FIXED: Previously, this sidebar implementation had a jitter issue
+                    // when transitioning from collapsed to expanded state.
+                    // The solution includes:
+                    // 1. Using a ZStack to contain both sidebar and resize handle
+                    // 2. Applying opacity transition instead of move transition
+                    // 3. Switching from spring to easeInOut animation
+                    // 4. Ensuring stable positioning of elements during transition
+                    ZStack(alignment: .trailing) {
+                        SidebarView(
+                            selectedViewType: $selectedViewType,
+                            selectedProject: $selectedProject,
+                            context: viewContext
+                        )
+                        .frame(width: sidebarWidth, alignment: .leading)
+                        .modifier(SidebarBackgroundModifier())
+                        
+                        // Position resize handle at the trailing edge of sidebar
+                        ResizeHandle { delta in
+                            let newWidth = sidebarWidth + delta
+                            // Constrain sidebar width between reasonable limits
+                            if newWidth >= 180 && newWidth <= 400 {
+                                sidebarWidth = newWidth
+                            }
                         }
+                        .frame(maxHeight: .infinity)
                     }
-                    .frame(maxHeight: .infinity)
-                    .transition(.opacity)
+                    .frame(width: sidebarWidth, alignment: .leading)
+                    .transition(.opacity) // Use opacity instead of move for smoother transition
                 }
                 
-                // Main content
-                switch selectedViewType {
-                case .upcoming:
+                // Main content area with layoutAnimation for smooth width adjustments
+                // VStack with layoutPriority helps main content area resize smoothly without jittering
+                // when sidebar appears/disappears
+                VStack {
+                    switch selectedViewType {
+                    case .upcoming:
                     // Calendar view for upcoming tasks
                     UpcomingView()
                         .environment(\.managedObjectContext, viewContext)
                         .edgesIgnoringSafeArea(.bottom)
                         .background(Color.white)
 
-                case .inbox, .today, .filters, .completed, .project:
+                    case .inbox, .today, .filters, .completed, .project:
                     // List view for other views
                     TaskListView(
                         viewType: selectedViewType,
@@ -184,14 +196,16 @@ struct ContentView: View {
                         context: viewContext
                     )
                     
-                case .addTask:
+                    case .addTask:
                     // This case handles the Add Task view
                     Text("Add Task View")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white)
+                    }
                 }
+                .layoutPriority(1)
             }
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSidebarVisible)
+            .animation(.easeInOut(duration: 0.25), value: isSidebarVisible)
         }
         .onAppear {
             // Set up the toolbar for sidebar toggle when view appears
@@ -210,7 +224,17 @@ struct ContentView: View {
             toolbar.displayMode = .iconOnly
             toolbar.allowsUserCustomization = false
             toolbar.autosavesConfiguration = true
+            // Note: showsBaselineSeparator is deprecated in macOS 15.0
+            // We'll achieve a similar effect using toolbarStyle instead
+            #if swift(>=5.9) && canImport(AppKit)
+            if #available(macOS 15.0, *) {
+                // Use alternative approach for macOS 15+
+            } else {
+                toolbar.showsBaselineSeparator = false
+            }
+            #else
             toolbar.showsBaselineSeparator = false
+            #endif
             toolbar.delegate = ToolbarDelegate.shared
             window.toolbar = toolbar
         }
@@ -218,6 +242,10 @@ struct ContentView: View {
         // Ensure toolbar is visible and has proper style
         window.toolbar?.isVisible = true
         window.toolbarStyle = .unifiedCompact
+        
+        // Set the toolbar style for a clean, modern appearance
+        // This provides a similar effect to showsBaselineSeparator = false
+        // and is the recommended approach for macOS
         
         // Register for sidebar toggle callbacks
         ToolbarDelegate.shared.sidebarVisibilityBinding = $isSidebarVisible

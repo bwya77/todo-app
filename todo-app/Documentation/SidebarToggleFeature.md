@@ -100,7 +100,9 @@ This follows Apple's HIG guidelines for sidebar controls on macOS.
 
 ## Performance Considerations
 
-- **Animation** - We use spring animation with carefully tuned parameters for smooth transitions.
+- **Animation** - We use easeInOut animation with carefully tuned duration for smooth, jitter-free transitions.
+- **View Structure** - The sidebar is wrapped in a ZStack to stabilize position during transitions. We use opacity transitions instead of move transitions to prevent layout jitter.
+- **Content Resizing** - The main content area uses a VStack with layoutPriority to ensure smooth width adjustments when the sidebar appears/disappears.
 - **View Reconstruction** - When the sidebar is toggled, the main content does not reload or redraw.
 - **Native Integration** - By using NSToolbar, we achieve native macOS integration with minimal overhead.
 

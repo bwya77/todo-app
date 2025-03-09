@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Eliminated sidebar jitter when expanding from a collapsed state
+- Replaced spring animation with smoother easeInOut for sidebar transitions
+- Improved view hierarchy to stabilize sidebar position during transitions
+- Enhanced content layout prioritization for smoother width adjustments
+
 ## [1.1.0] - 2025-03-09
 
 ### Added
