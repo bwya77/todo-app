@@ -105,23 +105,30 @@ struct TaskListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Additional whitespace at the top
+            Spacer().frame(height: 24)
+            
             // Header
             HStack {
                 Text(title)
-                    .font(.title)
-                    .fontWeight(.bold)
+                    .font(.system(size: 24, weight: .bold))
                 
                 Spacer()
                 
-                Button(action: {
-                    showingAddTask = true
-                    newTaskProject = selectedProject
-                }) {
-                    Label("Add Task", systemImage: "plus")
+                // Add Task button only appears in Project view
+                if viewType == .project {
+                    Button(action: {
+                        showingAddTask = true
+                        newTaskProject = selectedProject
+                    }) {
+                        Label("Add Task", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 28)
+            .padding(.bottom, 8)
             
             // Tasks list grouped by project
             List {
@@ -161,7 +168,10 @@ struct TaskListView: View {
                 }
             }
             .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
         .sheet(isPresented: $showingAddTask) {
             VStack(spacing: 20) {
                 Text("Add Task")
