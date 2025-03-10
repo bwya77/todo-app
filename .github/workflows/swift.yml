@@ -14,16 +14,12 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Build
-      run: |
-        # Build using SwiftPM
-        swift build -v || true
+      run: swift build -v
         
     - name: Run tests
-      run: |
-        # Run tests if any
-        swift test -v || true
-        
+      run: swift test -v
+      
     - name: Validation Success
+      if: success()
       run: |
         echo "Build validation completed successfully."
-        exit 0
