@@ -8,6 +8,7 @@ A minimal, sleek, responsive, and modern to-do application built for macOS using
 
 - **Multiple Calendar Views**: Day, Week, Month, and Upcoming views for managing your tasks
 - **Real-time Time Indicators**: Visual indicators showing the current time in Day and Week views
+- **Project Completion Indicator**: visual indivator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress.
 - **Sidebar Navigation**: Customizable sidebar with resizable width and collapsible design
 - **Task Management**: Create, edit, and organize tasks with project support
 - **Core Data Integration**: Persistent storage for all your tasks and projects
