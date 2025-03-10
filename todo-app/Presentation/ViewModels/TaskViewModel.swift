@@ -243,6 +243,40 @@ class TaskViewModel: ObservableObject {
         }
     }
     
+    func getProjectTotalTaskCount(project: Project) -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "project == %@", project)
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching project total task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getProjectCompletedTaskCount(project: Project) -> Int {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == YES AND project == %@", project)
+        
+        do {
+            return try viewContext.count(for: fetchRequest)
+        } catch {
+            print("Error fetching project completed task count: \(error)")
+            return 0
+        }
+    }
+    
+    func getProjectCompletionPercentage(project: Project) -> Double {
+        let totalCount = getProjectTotalTaskCount(project: project)
+        if totalCount == 0 {
+            return 0.0
+        }
+        
+        let completedCount = getProjectCompletedTaskCount(project: project)
+        return Double(completedCount) / Double(totalCount)
+    }
+    
     func getFilteredTaskCount() -> Int {
         // This is a placeholder for the Filters & Labels count
         // In a real implementation, this would count tasks with tags/filters
