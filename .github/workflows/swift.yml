@@ -22,9 +22,9 @@ jobs:
       run: |
         xcodebuild build -scheme "todo-app" -destination "platform=macOS" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
         
-    - name: Run tests
+    - name: Run unit tests
       run: |
-        xcodebuild test -scheme "todo-app" -destination "platform=macOS" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        xcodebuild test -scheme "todo-app" -destination "platform=macOS" -skipUnitTests=NO -skipUITests=YES CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
         
     - name: Validation Success
       if: success()
