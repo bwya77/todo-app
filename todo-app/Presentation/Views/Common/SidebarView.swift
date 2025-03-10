@@ -36,7 +36,8 @@ fileprivate struct ProjectCompletionIndicator: View {
             // Empty circle (background/outline)
             Circle()
                 .strokeBorder(
-                    isSelected ? AppColors.selectedIconColor : AppColors.getColor(from: project.color),
+                    // Always use the project color for the outline
+                    AppColors.getColor(from: project.color),
                     lineWidth: 1
                 )
                 .frame(width: size, height: size)
@@ -45,7 +46,8 @@ fileprivate struct ProjectCompletionIndicator: View {
             if completionPercentage > 0 {
                 ProgressPie(
                     progress: completionPercentage,
-                    color: isSelected ? AppColors.selectedIconColor : AppColors.getColor(from: project.color)
+                    // Always use the project color for the progress pie
+                    color: AppColors.getColor(from: project.color)
                 )
                 .frame(width: size - 2, height: size - 2)
             }
@@ -99,6 +101,7 @@ fileprivate struct ProgressPie: View {
 
 struct CustomSidebarButtonStyle: ButtonStyle {
     let isSelected: Bool
+    var projectColor: Color? = nil
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -106,9 +109,28 @@ struct CustomSidebarButtonStyle: ButtonStyle {
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .background(isSelected ? AppColors.todayHighlight.opacity(0.3) : 
-                   (configuration.isPressed ? AppColors.sidebarHover : Color.clear))
+        .background(backgroundForState(isSelected: isSelected, isPressed: configuration.isPressed))
         .cornerRadius(4)
+    }
+    
+    /// Determines the appropriate background color based on selection state and project color
+    /// - Parameters:
+    ///   - isSelected: Whether this item is currently selected
+    ///   - isPressed: Whether this item is currently being pressed
+    /// - Returns: The appropriate background color
+    private func backgroundForState(isSelected: Bool, isPressed: Bool) -> Color {
+        if isSelected {
+            if let projectColor = projectColor {
+                // For projects, use a lighter shade of the project color
+                return AppColors.lightenColor(projectColor, by: 0.7)
+            } else {
+                // For standard items, use the blue highlight
+                return AppColors.todayHighlight.opacity(0.3)
+            }
+        } else {
+            // For non-selected items, use the hover color when pressed
+            return isPressed ? AppColors.sidebarHover : Color.clear
+        }
     }
 }
 
@@ -275,7 +297,10 @@ struct SidebarView: View {
                                     }
                                 }
                             }
-                            .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .project && selectedProject?.id == project.id))
+                            .buttonStyle(CustomSidebarButtonStyle(
+                                isSelected: selectedViewType == .project && selectedProject?.id == project.id,
+                                projectColor: AppColors.getColor(from: project.color)
+                            ))
                         }
                         .onDelete(perform: deleteProjects)
                         

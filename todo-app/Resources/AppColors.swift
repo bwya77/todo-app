@@ -66,4 +66,21 @@ struct AppColors {
         default: return priorityNone
         }
     }
+    
+    /// Creates a lighter shade of the provided color
+    /// - Parameters:
+    ///   - color: The base color
+    ///   - amount: How much to lighten (0.0 to 1.0, where higher is lighter)
+    /// - Returns: A lighter version of the color
+    static func lightenColor(_ color: Color, by amount: Double = 0.7) -> Color {
+        let uiColor = NSColor(color)
+        guard let components = uiColor.cgColor.components else { return color }
+        
+        let r = min(components[0] + (1.0 - components[0]) * amount, 1.0)
+        let g = min(components[1] + (1.0 - components[1]) * amount, 1.0)
+        let b = min(components[2] + (1.0 - components[2]) * amount, 1.0)
+        let a = components[3] // Keep the same alpha
+        
+        return Color(NSColor(red: r, green: g, blue: b, alpha: a))
+    }
 }
