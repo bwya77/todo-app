@@ -10,6 +10,10 @@ import SwiftUI
 import CoreData
 import AppKit
 
+#if DEBUG
+import OSLog
+#endif
+
 // Custom ViewModifier to enforce background color
 struct SidebarBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
@@ -140,6 +144,11 @@ struct ContentView: View {
     @State private var animatePopup = false
     @State private var preselectedProject: Project? = nil
     
+    // For debugging and testing
+    #if DEBUG
+    @State private var showProgressTest = false
+    #endif
+    
     // Override the divider color for week view
     let weekGridColor = Color(red: 245/255, green: 245/255, blue: 245/255)
     
@@ -219,18 +228,47 @@ struct ContentView: View {
                     showTaskPopup(withProject: project)
                 }
             }
+            
+            #if DEBUG
+            // Register keyboard shortcut for testing
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains(.command) && event.keyCode == 2 { // Command+D
+                    self.showProgressTest.toggle()
+                    return nil // Return nil to allow normal event processing
+                }
+                return event
+            }
+            #endif
         }
         .overlay {
-            if showingAddTaskPopup {
-                PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
-                    if animatePopup {
-                        AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext), selectedProject: preselectedProject)
-                            .environment(\.managedObjectContext, viewContext)
+            ZStack {
+                if showingAddTaskPopup {
+                    PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
+                        if animatePopup {
+                            AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext), selectedProject: preselectedProject)
+                                .environment(\.managedObjectContext, viewContext)
+                        }
                     }
+                    .transition(.opacity)
+                    .zIndex(100)
+                    .edgesIgnoringSafeArea(.all)
                 }
-                .transition(.opacity)
-                .zIndex(100)
-                .edgesIgnoringSafeArea(.all)
+                
+                #if DEBUG
+                // Progress test view for development testing
+                if showProgressTest {
+                    PopupBlurView(isPresented: showProgressTest, onDismiss: { showProgressTest = false }) {
+                        AnimatedProgressIndicatorTest()
+                            .frame(width: 500, height: 400)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 10)
+                    }
+                    .transition(.opacity)
+                    .zIndex(100)
+                    .edgesIgnoringSafeArea(.all)
+                }
+                #endif
             }
         }
     }

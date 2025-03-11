@@ -8,25 +8,29 @@
 import SwiftUI
 import CoreData
 import Combine
+import Dispatch
 
 /// A progress indicator for project completion that resembles a filling circle/pie chart
 fileprivate struct ProjectCompletionIndicator: View {
     @ObservedObject var project: Project
     @Environment(\.managedObjectContext) private var viewContext
     
-    private var taskViewModel: TaskViewModel
     private var isSelected: Bool
     private var size: CGFloat
     
-    /// Progress value from 0.0 to 1.0
-    @State private var completionPercentage: Double = 0.0
-    @State private var cancellables = Set<AnyCancellable>()
+    /// State object to track project completion
+    @StateObject private var tracker: ProjectCompletionTracker
+    
+    /// For animation control
+    @StateObject private var animator = CircleProgressAnimator()
     
     init(project: Project, isSelected: Bool = false, size: CGFloat = 16, viewContext: NSManagedObjectContext) {
         self.project = project
         self.isSelected = isSelected
         self.size = size
-        self.taskViewModel = TaskViewModel(context: viewContext)
+        
+        // Initialize the tracker
+        self._tracker = StateObject(wrappedValue: ProjectCompletionTracker(project: project))
     }
     
     var body: some View {
@@ -40,57 +44,37 @@ fileprivate struct ProjectCompletionIndicator: View {
                 .frame(width: size, height: size)
             
             // Progress pie
-            if completionPercentage > 0 {
-                ProgressPie(
-                    progress: completionPercentage,
-                    color: isSelected ? AppColors.selectedIconColor : AppColors.getColor(from: project.color)
-                )
-                .frame(width: size - 2, height: size - 2)
+            Canvas { context, size in
+                // Define the center and radius of the circle
+                let center = CGPoint(x: size.width/2, y: size.height/2)
+                let radius = min(size.width, size.height) / 2
+                
+                // Create a path for the pie slice
+                var path = Path()
+                path.move(to: center)
+                path.addArc(center: center, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(-90) + .degrees(360 * animator.currentProgress), clockwise: false)
+                path.closeSubpath()
+                
+                // Fill the path
+                context.fill(path, with: .color(isSelected ? AppColors.selectedIconColor : AppColors.getColor(from: project.color)))
             }
+            .frame(width: size - 2, height: size - 2)
         }
+        .id("selector-progress-\(project.id?.uuidString ?? "")-\(tracker.completionPercentage)")
         .onAppear {
-            updateCompletionPercentage()
-            
-            // Set up notification observer for context changes
-            NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange, object: viewContext)
-                .sink { _ in 
-                    updateCompletionPercentage()
-                }
-                .store(in: &cancellables)
+            // Force refresh when view appears
+            tracker.refresh()
+            animator.reset()
+            animator.animateTo(tracker.completionPercentage)
         }
         .onDisappear {
-            cancellables.removeAll()
+            tracker.cleanup()
         }
-        .onChange(of: project) { newValue, oldValue in
-            updateCompletionPercentage()
-        }
-    }
-    
-    private func updateCompletionPercentage() {
-        // Calculate the percentage of completed tasks
-        completionPercentage = taskViewModel.getProjectCompletionPercentage(project: project)
-    }
-}
-
-/// A custom pie chart view for showing progress as a slice
-fileprivate struct ProgressPie: View {
-    var progress: Double  // 0.0 to 1.0
-    var color: Color
-    
-    var body: some View {
-        Canvas { context, size in
-            // Define the center and radius of the circle
-            let center = CGPoint(x: size.width/2, y: size.height/2)
-            let radius = min(size.width, size.height) / 2
-            
-            // Create a path for the pie slice
-            var path = Path()
-            path.move(to: center)
-            path.addArc(center: center, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(-90) + .degrees(360 * progress), clockwise: false)
-            path.closeSubpath()
-            
-            // Fill the path
-            context.fill(path, with: .color(color))
+        .onReceive(tracker.$completionPercentage) { newPercentage in
+            #if DEBUG
+            print("ProjectSelector indicator received new percentage: \(newPercentage)")
+            #endif
+            animator.animateTo(newPercentage)
         }
     }
 }

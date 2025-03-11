@@ -16,6 +16,7 @@ A minimal, sleek, responsive, and modern to-do application built for macOS using
 - **Project Completion Indicator**: visual indivator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress.
 ![UI Screenshot](/images/ProjectIndicator.png)
 
+- **Project Indicator Transition**: The project completion indicator smoothly transitions from empty to full based on task completion
 - **Sidebar Navigation**: Customizable sidebar with resizable width and collapsible design
 - **Task Management**: Create, edit, and organize tasks with project support
 - **Core Data Integration**: Persistent storage for all your tasks and projects
