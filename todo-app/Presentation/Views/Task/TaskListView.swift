@@ -138,7 +138,7 @@ struct TaskListView: View {
                                     ),
                                     content: {
                                         ForEach(groupTasks) { task in
-                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion, viewType: viewType)
                                         }
                                         .onDelete(perform: { offsets in
                                             deleteTasks(from: groupName, at: offsets)

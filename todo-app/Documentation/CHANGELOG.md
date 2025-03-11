@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Modern rounded square checkboxes for tasks, replacing circular indicators
+- Contextual checkbox coloring that matches project color or view type
+- White checkmark symbol in completed task checkboxes for improved visibility
+
+### Changed
+- Task completion now indicated with colored checkboxes instead of filled circles
+- Completed task text now shows in light gray without strikethrough
+- Improved checkbox visualization consistency across all task views (TaskRow, Calendar views)
+- Enhanced visual feedback for task completion status
+
 ### Fixed
 - Eliminated sidebar jitter when expanding from a collapsed state
 - Replaced spring animation with smoother easeInOut for sidebar transitions

@@ -14,15 +14,16 @@ struct TaskEventView: View {
     
     var body: some View {
         HStack {
+            // Left border showing task status
             Rectangle()
-                .fill(task.completed ? Color.gray : Color.blue)
+                .fill(task.completed ? Color.gray : getTaskColor())
                 .frame(width: 4)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title ?? "")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundColor(task.completed ? .secondary : .primary)
+                    .foregroundColor(task.completed ? Color.gray.opacity(0.6) : .primary)
                     .lineLimit(1)
                 
                 if let dueDate = task.dueDate {
@@ -49,22 +50,56 @@ struct TaskEventView: View {
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: date)
     }
+    
+    // Helper to get the task color
+    private func getTaskColor() -> Color {
+        if let project = task.project, let colorName = project.color {
+            return AppColors.getColor(from: colorName)
+        } else {
+            // Use the sidebar selection blue color for consistency
+            return task.completed ? Color.gray : AppColors.selectedIconColor
+        }
+    }
 }
 
 // All Day Task View for the Day view All Day section
 struct AllDayTaskView: View {
     let task: Item
     
+    // Helper to get the task color
+    private func getTaskColor() -> Color {
+        if let project = task.project, let colorName = project.color {
+            return AppColors.getColor(from: colorName)
+        } else {
+            // Use the sidebar selection blue color for consistency
+            return task.completed ? Color.gray : AppColors.selectedIconColor
+        }
+    }
+    
     var body: some View {
         HStack {
-            Circle()
-                .fill(task.completed ? Color.gray.opacity(0.7) : Color.pink.opacity(0.8))
-                .frame(width: 10, height: 10)
+            ZStack {
+                // Get color based on project or default to pink
+                let checkboxColor = getTaskColor()
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(task.completed ? checkboxColor.opacity(0.7) : Color.clear)
+                    .frame(width: 10, height: 10)
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(task.completed ? checkboxColor : checkboxColor.opacity(0.8), lineWidth: 1.2)
+                    .frame(width: 10, height: 10)
+                
+                if task.completed {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 6, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
             
             Text(task.title ?? "")
                 .font(.subheadline)
-                .foregroundColor(task.completed ? .secondary : .primary)
-                .strikethrough(task.completed)
+                .foregroundColor(task.completed ? Color.gray.opacity(0.6) : .primary)
                 .lineLimit(1)
             
             Spacer()
@@ -83,15 +118,36 @@ struct AllDayTaskView: View {
 struct AllDayTaskRow: View {
     let task: Item
     
+    // Helper to get the task color
+    private func getTaskColor() -> Color {
+        if let project = task.project, let colorName = project.color {
+            return AppColors.getColor(from: colorName)
+        } else {
+            // Use the sidebar selection blue color for consistency
+            return task.completed ? Color.gray : AppColors.selectedIconColor
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 3) { // Reduced spacing
-            Circle()
-                .fill(task.completed ? Color.gray : Color.red)
-                .frame(width: 6, height: 6) // Smaller indicator
+            ZStack {
+                // Get color based on project or default to red
+                let checkboxColor = getTaskColor()
+                
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(task.completed ? checkboxColor : Color.clear)
+                    .frame(width: 6, height: 6) // Smaller indicator
+                
+                RoundedRectangle(cornerRadius: 1.5)
+                    .stroke(task.completed ? checkboxColor : checkboxColor, lineWidth: 1)
+                    .frame(width: 6, height: 6)
+                
+                // For this small size, just use a filled square when completed since a checkmark would be too small to see clearly
+            }
             
             Text(task.title ?? "")
                 .font(.system(size: 10)) // Smaller font
-                .foregroundColor(.black)
+                .foregroundColor(task.completed ? Color.gray.opacity(0.6) : .black)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
@@ -100,7 +156,7 @@ struct AllDayTaskRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 3) // Smaller corner radius
-                .fill(Color.red.opacity(0.1)) // Lighter background
+                .fill(AppColors.selectedIconColor.opacity(0.1)) // Lighter background with app blue
         )
         .padding(.horizontal, 1) // Smaller outer horizontal padding
         .padding(.vertical, 0) // No outer vertical padding
