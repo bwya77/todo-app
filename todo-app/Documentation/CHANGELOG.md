@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Replaced spring animation with smoother easeInOut for sidebar transitions
 - Improved view hierarchy to stabilize sidebar position during transitions
 - Enhanced content layout prioritization for smoother width adjustments
+- Fixed emoji picker interaction with project title editing:
+  - Resolved issue where inserting an emoji would immediately end editing
+  - Fixed bug where clicking away from emoji picker without selecting an emoji would leave title in permanent editing state
+  - Improved event handling for proper focus management during emoji insertion
 
 ## [1.1.0] - 2025-03-09
 

@@ -110,6 +110,11 @@ class GlobalClickMonitor {
     static let shared = GlobalClickMonitor()
     private var globalMonitor: Any?
     private var localMonitor: Any?
+    private var keyMonitor: Any?
+    
+    // Simple flag to track emoji picker state
+    var isEmojiPickerActive = false
+    var emojiSafetyTimer: Timer? = nil
     var onClickOutside: (() -> Void)?
     
     init() {}
@@ -118,26 +123,67 @@ class GlobalClickMonitor {
         stopMonitoring() // Stop any existing monitoring
         onClickOutside = action
         
+        // Monitor for emoji picker activation (globe key, fn key, or Control+Command+Space)
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] event in
+            // Check for Control+Command+Space which opens emoji picker
+            if event.type == .keyDown && event.keyCode == 49 && // Space key
+               event.modifierFlags.contains([.control, .command]) {
+                // Set the flag - will be cleared on click
+                self?.isEmojiPickerActive = true
+            }
+            // Check for globe/fn key (behaves as NSEvent.ModifierFlags.function)
+            else if event.type == .flagsChanged && 
+                    event.modifierFlags.contains(.function) {
+                // Set the flag - will be cleared on click
+                self?.isEmojiPickerActive = true
+            }
+            return event
+        }
+        
         // Monitor global clicks (outside the app)
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
-            self?.onClickOutside?() // Trigger the action for clicks outside the app
+            guard let self = self else { return }
+            
+            // Ignore clicks while emoji picker is active (give it time to complete)
+            if self.isEmojiPickerActive {
+                return
+            }
+            
+            // Normal click outside - trigger callback
+            self.onClickOutside?()
         }
         
         // Monitor local clicks (inside the app)
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self, weak view] event in
-            if let view = view,
-               let targetView = event.window?.contentView?.hitTest(event.locationInWindow) {
-               
-                // Check if this is a click on the text field we're monitoring
-                let isTargetViewTextField = targetView == view || targetView.isDescendant(of: view) ||
-                                             (targetView.isKind(of: NSTextView.self) && view.window?.firstResponder is EditableTextFieldWithCursorPlacement)
-                
-                // If not clicking on our text field, trigger the callback
-                if !isTargetViewTextField {
-                    self?.onClickOutside?()
-                }
+            guard let self = self, let view = view else { return event }
+            
+            // Get the view that was clicked on
+            guard let targetView = event.window?.contentView?.hitTest(event.locationInWindow) else {
+                return event
             }
-            return event // Pass the event through
+            
+            // Check if the clicked window is the emoji picker
+            if let window = event.window, window.className.contains("CharacterPicker") {
+                // If this is a click in the emoji picker, don't do anything special
+                return event
+            }
+            
+            // If emoji picker was active, just clear the flag without triggering click outside
+            if self.isEmojiPickerActive {
+                self.isEmojiPickerActive = false
+                return event
+            }
+            
+            // Check if this is a click on the text field we're monitoring
+            let isTargetViewTextField = targetView == view || targetView.isDescendant(of: view) ||
+                (targetView.isKind(of: NSTextView.self) && view.window?.firstResponder is EditableTextFieldWithCursorPlacement)
+            
+            // If not clicking on our text field, trigger the callback
+            if !isTargetViewTextField {
+                self.onClickOutside?()
+            }
+            
+            return event
         }
     }
     
@@ -152,8 +198,20 @@ class GlobalClickMonitor {
             self.localMonitor = nil
         }
         
+        if let keyMonitor = keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+            self.keyMonitor = nil
+        }
+        
+        isEmojiPickerActive = false
+        emojiSafetyTimer?.invalidate()
+        emojiSafetyTimer = nil
         onClickOutside = nil
     }
+    
+
+    
+
     
     deinit {
         stopMonitoring()
@@ -175,6 +233,17 @@ class EditableTextFieldWithCursorPlacement: NSTextField {
             // If already first responder, position cursor manually
             positionCursorAtClickPoint()
         }
+    }
+    
+    // Handle key events to support emoji input
+    override func keyDown(with event: NSEvent) {
+        // Check if this might be the emoji picker shortcut
+        if event.keyCode == 49 && event.modifierFlags.contains([.control, .command]) {
+            // This is Command+Control+Space for emoji picker
+            GlobalClickMonitor.shared.isEmojiPickerActive = true
+        }
+        
+        super.keyDown(with: event)
     }
     
     // Override to directly edit instead of selecting
@@ -225,6 +294,8 @@ struct NoSelectionTextField: NSViewRepresentable {
     
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: NoSelectionTextField
+        var isEmojiPickerActive = false
+        private var lastTextChangeTime: Date? = nil
         
         init(_ parent: NoSelectionTextField) {
             self.parent = parent
@@ -233,12 +304,30 @@ struct NoSelectionTextField: NSViewRepresentable {
         func controlTextDidChange(_ obj: Notification) {
             if let textField = obj.object as? NSTextField {
                 parent.text = textField.stringValue
+                lastTextChangeTime = Date()
+                
+                // If we detect a text change while emoji picker is active, this may be an emoji insertion
+                // We do nothing special here, just update the text and let natural text field behavior occur
             }
         }
         
         // Explicitly handle text editing end event
         func controlTextDidEndEditing(_ obj: Notification) {
+            // Check for emoji picker state to handle emoji insertion
+            if GlobalClickMonitor.shared.isEmojiPickerActive {
+                // Don't commit changes if emoji picker was active
+                return
+            }
+            
+            // Regular end editing - commit the changes
             parent.onCommit()
+        }
+        
+        // Handle keyboard selection change notification (triggered by emoji picker)
+        @objc func handleTextInputChange(_ notification: Notification) {
+            // Set the emoji picker as active
+            GlobalClickMonitor.shared.isEmojiPickerActive = true
+            lastTextChangeTime = Date()
         }
     }
     
@@ -256,6 +345,14 @@ struct NoSelectionTextField: NSViewRepresentable {
         textField.drawsBackground = false
         textField.focusRingType = .none
         textField.delegate = context.coordinator
+        
+        // Register for notifications about NSTextInput changes which happen with emoji picker
+        NotificationCenter.default.addObserver(
+            context.coordinator,
+            selector: #selector(Coordinator.handleTextInputChange(_:)),
+            name: NSTextInputContext.keyboardSelectionDidChangeNotification,
+            object: nil
+        )
         
         // Set up key event handling for escape key
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -302,6 +399,9 @@ struct NoSelectionTextField: NSViewRepresentable {
         if let window = nsView.window, window.firstResponder == nsView {
             window.makeFirstResponder(nil)
         }
+        
+        // Remove notification observer
+        NotificationCenter.default.removeObserver(coordinator)
     }
 }
 
@@ -310,6 +410,9 @@ struct ProjectDetailView: View {
     private let clickMonitor = GlobalClickMonitor.shared
     private let textFieldMonitor = TextFieldMonitor.shared
     private let mouseMonitor = NSEventMonitor.shared
+    
+    // Timer to handle potential focus changes due to emoji picker
+    @State private var focusRetentionTimer: Timer? = nil
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var project: Project
     @StateObject private var taskViewModel: TaskViewModel
@@ -483,6 +586,18 @@ struct ProjectDetailView: View {
     }
     
     private func saveProjectTitle() {
+        guard isEditingTitle else { return }
+        
+        // Don't save or stop editing if emoji picker might be active
+        if clickMonitor.isEmojiPickerActive {
+            // We don't want to save while emoji picker is active
+            return
+        }
+        
+        finalizeSaveProjectTitle()
+    }
+    
+    private func finalizeSaveProjectTitle() {
         guard isEditingTitle else { return }
         
         // Mark as not editing
