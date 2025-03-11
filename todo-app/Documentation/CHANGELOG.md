@@ -31,6 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Project completion indicator now correctly calculates completion percentage
+- Fixed project status circles not being project-specific in the Projects page like they were in the sidebar
+- Ensured project status indicators update properly when moving between different projects
 - Animation now works correctly for all transitions (0% to 100%, 100% to 0%, etc.)
 - Resolved issue where adding new tasks didn't properly update completion indicators
 - Fixed animation not playing when transitioning from partial to empty state

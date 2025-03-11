@@ -475,6 +475,8 @@ struct ProjectDetailView: View {
                                 size: 20,
                                 viewContext: viewContext
                             )
+                            // Add a unique ID for this instance to force recreation when project changes
+                            .id("project-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
                             
                             Text(project.name ?? "Untitled Project")
                                 .font(.system(size: 24, weight: .bold))

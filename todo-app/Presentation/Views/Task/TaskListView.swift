@@ -9,6 +9,7 @@
 import SwiftUI
 import CoreData
 import AppKit
+import Combine
 
 struct TaskListView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -142,9 +143,23 @@ struct TaskListView: View {
                                                     .foregroundColor(.gray)
                                                     .frame(width: 16)
                                                     
-                                                Circle()
-                                                    .fill(getGroupColor(for: groupName))
-                                                    .frame(width: 10, height: 10)
+                                                if groupName == "Default" {
+                                                    Circle()
+                                                        .fill(getGroupColor(for: groupName))
+                                                        .frame(width: 10, height: 10)
+                                                } else if let project = getProjectForGroupName(groupName) {
+                                                    ProjectCompletionIndicator(
+                                                        project: project,
+                                                        size: 10,
+                                                        viewContext: viewContext
+                                                    )
+                                                    // Add a unique ID for this instance to force recreation when project changes
+                                                    .id("task-list-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
+                                                } else {
+                                                    Circle()
+                                                        .fill(getGroupColor(for: groupName))
+                                                        .frame(width: 10, height: 10)
+                                                }
                                                 
                                                 Text(groupName)
                                                     .fontWeight(.medium)
@@ -225,11 +240,18 @@ struct TaskListView: View {
     private func getGroupColor(for groupName: String) -> Color {
         if groupName == "Default" {
             return .red
-        } else if let project = projects.first(where: { $0.name == groupName }) {
+        } else if let project = getProjectForGroupName(groupName) {
             return AppColors.getColor(from: project.color)
         } else {
             return .gray
         }
+    }
+    
+    /// Helper method to get project object by its name
+    /// - Parameter groupName: The name of the project group
+    /// - Returns: The Project instance if found, nil otherwise
+    private func getProjectForGroupName(_ groupName: String) -> Project? {
+        return projects.first(where: { $0.name == groupName })
     }
     
     private func deleteTasks(from group: String, at offsets: IndexSet) {

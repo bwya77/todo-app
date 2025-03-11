@@ -29,7 +29,7 @@ public struct ProjectCompletionIndicator: View {
         self.isSelected = isSelected
         self.size = size
         
-        // Initialize the tracker
+        // Initialize the tracker with a unique instance for each project
         self._tracker = StateObject(wrappedValue: ProjectCompletionTracker(project: project))
     }
     
@@ -61,12 +61,25 @@ public struct ProjectCompletionIndicator: View {
             }
             .frame(width: size - 2, height: size - 2)
         }
-        .id("progress-\(project.id?.uuidString ?? "")-\(tracker.completionPercentage)")
+        // Use a unique ID based on the project ID to force recreation when project changes
+        .id("progress-\(project.id?.uuidString ?? UUID().uuidString)")
         .onAppear {
             // Force refresh when view appears
             tracker.refresh()
             animator.reset()
             animator.animateTo(tracker.completionPercentage)
+        }
+        .onChange(of: project) { oldProject, newProject in
+            // Force refresh when the project changes
+            if oldProject.id != newProject.id {
+                tracker.updateProject(newProject.id)
+                animator.reset()
+                animator.animateTo(tracker.completionPercentage)
+            } else {
+                // The project is the same but might have been updated
+                tracker.refresh()
+                animator.animateTo(tracker.completionPercentage)
+            }
         }
         .onDisappear {
             tracker.cleanup()

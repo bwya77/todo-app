@@ -54,6 +54,16 @@ class ProjectCompletionTracker: ObservableObject {
         cancellables.removeAll()
     }
     
+    /// Update the project ID being tracked
+    /// - Parameter projectId: The new project ID to track
+    func updateProject(_ projectId: UUID?) {
+        // Only update if the ID is different
+        if self.projectId != projectId {
+            self.projectId = projectId
+            updateCompletionPercentage()
+        }
+    }
+    
     /// Update the completion percentage directly from the database
     private func updateCompletionPercentage() {
         guard let projectId = projectId else { return }

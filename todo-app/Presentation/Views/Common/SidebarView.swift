@@ -244,6 +244,8 @@ struct SidebarView: View {
                                             isSelected: selectedViewType == .project && selectedProject?.id == project.id,
                                             viewContext: viewContext
                                         )
+                                        // Add a unique ID for this instance to force recreation when project changes
+                                        .id("sidebar-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
                                     }
                                 }
                             }
