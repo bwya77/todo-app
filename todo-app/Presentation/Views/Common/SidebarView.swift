@@ -93,6 +93,14 @@ struct SidebarView: View {
         animation: .default)
     private var projects: FetchedResults<Project>
     
+    // Cache for task counts to improve performance
+    @State private var projectTaskCounts: [UUID: Int] = [:]
+    @State private var inboxTaskCount: Int = 0
+    @State private var todayTaskCount: Int = 0
+    
+    // For debouncing count updates
+    private let debounceInterval: DispatchTimeInterval = .milliseconds(300)
+    @State private var lastUpdateTime: Date = Date()
     @Binding var selectedViewType: ViewType
     @Binding var selectedProject: Project?
     
@@ -108,6 +116,23 @@ struct SidebarView: View {
         self._selectedProject = selectedProject
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         self.onShowTaskPopup = onShowTaskPopup
+    }
+    
+    // Updates the cache of task counts for better performance
+    private func updateTaskCounts() {
+        // Update inbox count
+        inboxTaskCount = taskViewModel.getInboxTaskCount()
+        
+        // Update today count
+        todayTaskCount = taskViewModel.getTodayTaskCount()
+        
+        // Update project counts
+        for project in projects {
+            if let projectId = project.id {
+                let count = taskViewModel.getProjectTaskCount(project: project)
+                projectTaskCounts[projectId] = count
+            }
+        }
     }
     
     var body: some View {
@@ -131,9 +156,11 @@ struct SidebarView: View {
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
                                 Spacer()
-                                Text("\(taskViewModel.getInboxTaskCount())")
-                                    .foregroundColor(.secondary)
-                                    .font(.system(size: 14))
+                                if inboxTaskCount > 0 {
+                                    Text("\(inboxTaskCount)")
+                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 14))
+                                }
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .inbox))
@@ -174,9 +201,11 @@ struct SidebarView: View {
                                 }
                                 .font(.system(size: 14))
                                 Spacer()
-                                Text("\(taskViewModel.getTodayTaskCount())")
-                                    .foregroundColor(.secondary)
-                                    .font(.system(size: 14))
+                                if todayTaskCount > 0 {
+                                    Text("\(todayTaskCount)")
+                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 14))
+                                }
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .today))
@@ -247,6 +276,13 @@ struct SidebarView: View {
                                         // Add a unique ID for this instance to force recreation when project changes
                                         .id("sidebar-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
                                     }
+                                    Spacer()
+                                    let taskCount = projectTaskCounts[project.id ?? UUID()] ?? 0
+                                    if taskCount > 0 {
+                                        Text("\(taskCount)")
+                                            .foregroundColor(.secondary)
+                                            .font(.system(size: 14))
+                                    }
                                 }
                             }
                             .buttonStyle(CustomSidebarButtonStyle(
@@ -306,6 +342,19 @@ struct SidebarView: View {
                     .frame(height: 36)
                     .background(AppColors.sidebarBackground)
                 }
+            }
+        }
+        .onAppear(perform: updateTaskCounts)
+        // Observe changes to projects and items to update counts
+        .onChange(of: projects.count) { _, _ in 
+            updateTaskCounts()
+        }
+        // Use NotificationCenter to detect Core Data changes with debouncing
+        .onReceive(NotificationCenter.default.publisher(for: .NSManagedObjectContextObjectsDidChange, object: viewContext)) { _ in
+            let now = Date()
+            if now.timeIntervalSince(lastUpdateTime) > 0.3 { // 300ms
+                updateTaskCounts()
+                lastUpdateTime = now
             }
         }
         .sheet(isPresented: $showingAddProject) {

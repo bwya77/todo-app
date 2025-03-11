@@ -14,11 +14,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Modern rounded square checkboxes for tasks, replacing circular indicators
 - Contextual checkbox coloring that matches project color or view type
 - White checkmark symbol in completed task checkboxes for improved visibility
+- Project task counts in sidebar showing number of incomplete tasks in each project
+- Smart count display that hides zero counts for cleaner UI (Today, Inbox, and Projects)
 
 ### Changed
 - Project status indicators now animate smoothly between states
 - Improved visual feedback when tasks are completed or added to projects
 - Enhanced CoreData change detection for real-time UI updates
+- Optimized sidebar task counts with caching and debounced updates for better performance
+- Improved SidebarView for more consistent display of task counts across all items
 - Task completion now indicated with colored checkboxes instead of filled circles
 - Completed task text now shows in light gray without strikethrough
 - Improved checkbox visualization consistency across all task views (TaskRow, Calendar views)

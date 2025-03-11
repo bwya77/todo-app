@@ -231,7 +231,8 @@ class TaskViewModel: ObservableObject {
         }
     }
     
-    func getProjectTaskCount(project: Project) -> Int {
+    // Get the count of incomplete tasks for a project (these are the tasks we want to show in the sidebar count)
+func getProjectTaskCount(project: Project) -> Int {
         let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "completed == NO AND project == %@", project)
         
