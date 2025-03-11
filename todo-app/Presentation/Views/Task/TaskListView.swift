@@ -122,44 +122,70 @@ struct TaskListView: View {
                     .padding(.bottom, 8)
                     
                     // Tasks list grouped by project
-                    List {
-                        ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
-                            if let groupTasks = groupTasks()[groupName] {
-                                DisclosureGroup(
-                                    isExpanded: Binding(
-                                        get: { expandedGroups.contains(groupName) },
-                                        set: { isExpanded in
-                                            if isExpanded {
-                                                expandedGroups.insert(groupName)
-                                            } else {
-                                                expandedGroups.remove(groupName)
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
+                                if let groupTasks = groupTasks()[groupName] {
+                                    VStack(spacing: 0) {
+                                        // Custom disclosure header
+                                        Button(action: {
+                                            withAnimation {
+                                                if expandedGroups.contains(groupName) {
+                                                    expandedGroups.remove(groupName)
+                                                } else {
+                                                    expandedGroups.insert(groupName)
+                                                }
+                                            }
+                                        }) {
+                                            HStack {
+                                                Image(systemName: expandedGroups.contains(groupName) ? "chevron.down" : "chevron.right")
+                                                    .foregroundColor(.gray)
+                                                    .frame(width: 16)
+                                                    
+                                                Circle()
+                                                    .fill(getGroupColor(for: groupName))
+                                                    .frame(width: 10, height: 10)
+                                                
+                                                Text(groupName)
+                                                    .fontWeight(.medium)
+                                                
+                                                Text("\(groupTasks.count) items")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                
+                                                Spacer()
+                                            }
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 16)
+                                            .background(Color.white)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        // Tasks content
+                                        if expandedGroups.contains(groupName) {
+                                            ForEach(groupTasks) { task in
+                                                TaskRow(task: task, onToggleComplete: toggleTaskCompletion, viewType: viewType)
+                                                    .contextMenu {
+                                                        Button(action: {
+                                                            if let index = groupTasks.firstIndex(of: task) {
+                                                                deleteTasks(from: groupName, at: IndexSet(integer: index))
+                                                            }
+                                                        }) {
+                                                            Label("Delete", systemImage: "trash")
+                                                        }
+                                                    }
                                             }
                                         }
-                                    ),
-                                    content: {
-                                        ForEach(groupTasks) { task in
-                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion, viewType: viewType)
-                                        }
-                                        .onDelete(perform: { offsets in
-                                            deleteTasks(from: groupName, at: offsets)
-                                        })
-                                    },
-                                    label: {
-                                        HStack {
-                                            Label(groupName, systemImage: "circle.fill")
-                                                .foregroundColor(getGroupColor(for: groupName))
-                                            
-                                            Text("\(groupTasks.count) items")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
                                     }
-                                )
+                                    
+                                    // Add a small spacing between groups but not dividers
+                                    Spacer().frame(height: 12)
+                                }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
-                    .listStyle(PlainListStyle())
-                    .scrollContentBackground(.hidden)
+                    .background(Color.white)
                 }
             }
         }

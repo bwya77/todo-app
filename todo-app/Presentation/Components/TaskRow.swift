@@ -91,8 +91,8 @@ struct TaskRow: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
         .background(isHovering ? Color.gray.opacity(0.1) : Color.clear)
         .cornerRadius(6)
         .onHover { hovering in

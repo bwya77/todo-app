@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Status**: Unreleased
 
-## 2025-03-15
+## 2025-03-11
 
 ### Added
 - Animated project completion indicator with smooth clockwise filling animation
@@ -23,6 +23,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Completed task text now shows in light gray without strikethrough
 - Improved checkbox visualization consistency across all task views (TaskRow, Calendar views)
 - Enhanced visual feedback for task completion status
+- Removed dividers between tasks in Projects page for a cleaner, more modern look
+- Replaced SwiftUI List with custom ScrollView and LazyVStack implementation for better control over task appearance
+- Enhanced task spacing and padding for improved readability without dividers
+- Implemented custom disclosure groups in TaskListView to maintain collapsible functionality without dividers
+- Enhanced context menu functionality for task deletion
 
 ### Fixed
 - Project completion indicator now correctly calculates completion percentage

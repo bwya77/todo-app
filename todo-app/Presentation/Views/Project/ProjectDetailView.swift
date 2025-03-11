@@ -552,14 +552,27 @@ struct ProjectDetailView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                List {
-                    ForEach(tasks) { task in
-                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(tasks) { task in
+                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                .contextMenu {
+                                    Button(action: {
+                                        if let index = tasks.firstIndex(of: task) {
+                                            deleteTasks(at: IndexSet(integer: index))
+                                        }
+                                    }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            
+                            // We're explicitly NOT adding any dividers
+                        }
                     }
-                    .onDelete(perform: deleteTasks)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                 }
-                .listStyle(PlainListStyle())
-                .scrollContentBackground(.hidden)
+                .background(Color.white)
             }
             
             // Bottom add task button removed
