@@ -101,60 +101,67 @@ struct TaskListView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Additional whitespace at the top
-            Spacer().frame(height: 24)
-            
-            // Header
-            HStack {
-                Text(title)
-                    .font(.system(size: 24, weight: .bold))
-                
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 28)
-            .padding(.bottom, 8)
-            
-            // Tasks list grouped by project
-            List {
-                ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
-                    if let groupTasks = groupTasks()[groupName] {
-                        DisclosureGroup(
-                            isExpanded: Binding(
-                                get: { expandedGroups.contains(groupName) },
-                                set: { isExpanded in
-                                    if isExpanded {
-                                        expandedGroups.insert(groupName)
-                                    } else {
-                                        expandedGroups.remove(groupName)
-                                    }
-                                }
-                            ),
-                            content: {
-                                ForEach(groupTasks) { task in
-                                    TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                                }
-                                .onDelete(perform: { offsets in
-                                    deleteTasks(from: groupName, at: offsets)
-                                })
-                            },
-                            label: {
-                                HStack {
-                                    Label(groupName, systemImage: "circle.fill")
-                                        .foregroundColor(getGroupColor(for: groupName))
-                                    
-                                    Text("\(groupTasks.count) items")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        )
+        ZStack {
+            // When in project mode, show the project detail view
+            if viewType == .project && selectedProject != nil {
+                ProjectDetailView(project: selectedProject!, context: viewContext)
+            } else {
+                VStack(spacing: 0) {
+                    // Additional whitespace at the top
+                    Spacer().frame(height: 24)
+                    
+                    // Header
+                    HStack {
+                        Text(title)
+                            .font(.system(size: 24, weight: .bold))
+                        
+                        Spacer()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 28)
+                    .padding(.bottom, 8)
+                    
+                    // Tasks list grouped by project
+                    List {
+                        ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
+                            if let groupTasks = groupTasks()[groupName] {
+                                DisclosureGroup(
+                                    isExpanded: Binding(
+                                        get: { expandedGroups.contains(groupName) },
+                                        set: { isExpanded in
+                                            if isExpanded {
+                                                expandedGroups.insert(groupName)
+                                            } else {
+                                                expandedGroups.remove(groupName)
+                                            }
+                                        }
+                                    ),
+                                    content: {
+                                        ForEach(groupTasks) { task in
+                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                        }
+                                        .onDelete(perform: { offsets in
+                                            deleteTasks(from: groupName, at: offsets)
+                                        })
+                                    },
+                                    label: {
+                                        HStack {
+                                            Label(groupName, systemImage: "circle.fill")
+                                                .foregroundColor(getGroupColor(for: groupName))
+                                            
+                                            Text("\(groupTasks.count) items")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    .listStyle(PlainListStyle())
+                    .scrollContentBackground(.hidden)
                 }
             }
-            .listStyle(PlainListStyle())
-            .scrollContentBackground(.hidden)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)

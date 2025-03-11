@@ -138,6 +138,7 @@ struct ContentView: View {
     // States for the task popup
     @State private var showingAddTaskPopup = false
     @State private var animatePopup = false
+    @State private var preselectedProject: Project? = nil
     
     // Override the divider color for week view
     let weekGridColor = Color(red: 245/255, green: 245/255, blue: 245/255)
@@ -162,7 +163,7 @@ struct ContentView: View {
                             selectedViewType: $selectedViewType,
                             selectedProject: $selectedProject,
                             context: viewContext,
-                            onShowTaskPopup: showTaskPopup
+                            onShowTaskPopup: { showTaskPopup() }
                         )
                         .frame(width: sidebarWidth, alignment: .leading)
                         .modifier(SidebarBackgroundModifier())
@@ -211,12 +212,19 @@ struct ContentView: View {
         .onAppear {
             // Set up the toolbar for sidebar toggle when view appears
             setupToolbar()
+            
+            // Listen for notifications to show the add task popup with a pre-selected project
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowAddTaskPopup"), object: nil, queue: .main) { notification in
+                if let project = notification.userInfo?["project"] as? Project {
+                    showTaskPopup(withProject: project)
+                }
+            }
         }
         .overlay {
             if showingAddTaskPopup {
                 PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
                     if animatePopup {
-                        AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext))
+                        AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext), selectedProject: preselectedProject)
                             .environment(\.managedObjectContext, viewContext)
                     }
                 }
@@ -228,7 +236,10 @@ struct ContentView: View {
     }
     
     // Show the task popup
-    func showTaskPopup() {
+    func showTaskPopup(withProject project: Project? = nil) {
+        // Set the preselected project if provided
+        self.preselectedProject = project
+        
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             showingAddTaskPopup = true
             // Immediate animation looks better with scale effect

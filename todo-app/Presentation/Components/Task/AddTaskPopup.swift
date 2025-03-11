@@ -43,6 +43,12 @@ struct AddTaskPopup: View {
     // Transition namespace for smooth animations
     @Namespace private var formTransition
     
+    // Initialize with an optional selected project
+    init(taskViewModel: TaskViewModel, selectedProject: Project? = nil) {
+        self._taskViewModel = ObservedObject(wrappedValue: taskViewModel)
+        self._selectedProject = State(initialValue: selectedProject)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Header
