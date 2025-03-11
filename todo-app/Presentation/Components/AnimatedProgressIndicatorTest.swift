@@ -173,21 +173,6 @@ struct AnimatedProgressIndicatorTest: View {
                             
                             Divider()
                             
-                            // Debug information
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Debugging Info:")
-                                    .fontWeight(.bold)
-                                
-                                VStack(alignment: .leading) {
-                                    Text("• Tasks: \(taskCount)")
-                                    Text("• Completed: \(completedCount)")
-                                    Text("• Expected %: \(completedCount > 0 ? Double(completedCount) / Double(taskCount) * 100 : 0, specifier: "%.1f")%")
-                                }
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
                             
                             // Reset button
                             Button("Reset Test Project") {
@@ -420,9 +405,6 @@ struct ProjectCompletionView: View {
             tracker.cleanup()
         }
         .onReceive(tracker.$completionPercentage) { newPercentage in
-            #if DEBUG
-            print("Test view indicator received new percentage: \(newPercentage)")
-            #endif
             animator.animateTo(newPercentage)
         }
     }

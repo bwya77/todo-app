@@ -468,7 +468,14 @@ struct ProjectDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
                     } else {
-                        HStack {
+                        HStack(spacing: 10) {
+                            // Project completion indicator
+                            ProjectCompletionIndicator(
+                                project: project,
+                                size: 20,
+                                viewContext: viewContext
+                            )
+                            
                             Text(project.name ?? "Untitled Project")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundStyle(Color.primary) // Make sure text color is normal

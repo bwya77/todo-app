@@ -273,12 +273,7 @@ class TaskViewModel: ObservableObject {
             return 0.0
         }
         
-        // Convert to Double before division to ensure proper decimal calculation
         let completedCount = getProjectCompletedTaskCount(project: project)
-        
-        // Debug logging for troubleshooting
-        print("Project completion: \(completedCount)/\(totalCount) = \(Double(completedCount) / Double(totalCount))")
-        
         return Double(completedCount) / Double(totalCount)
     }
     

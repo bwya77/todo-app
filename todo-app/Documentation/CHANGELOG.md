@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Animated project completion indicator with smooth clockwise filling animation
+- Project indicator added to Project Page and also animates as tasks are completed
 - Modern rounded square checkboxes for tasks, replacing circular indicators
 - Contextual checkbox coloring that matches project color or view type
 - White checkmark symbol in completed task checkboxes for improved visibility

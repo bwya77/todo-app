@@ -80,10 +80,6 @@ class ProjectCompletionTracker: ObservableObject {
                 let completedCount = getTaskCount(for: project, onlyCompleted: true)
                 let newPercentage = Double(completedCount) / Double(totalCount)
                 
-                #if DEBUG
-                print("ProjectCompletionTracker: \(project.name ?? "Unknown") - \(completedCount)/\(totalCount) = \(newPercentage)")
-                #endif
-                
                 DispatchQueue.main.async {
                     self.completionPercentage = newPercentage
                 }
