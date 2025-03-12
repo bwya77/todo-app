@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Status**: Unreleased
 
+## 2025-03-12
+
+### Added
+- Advanced task completion animation in Project views:
+  - Completed tasks remain visible for 2 seconds before moving to logged items section
+  - Smooth sliding animation when tasks transition to logged section
+  - "Show/Hide logged items" toggle appears when completed tasks are available (collapsed by default)
+  - Collapsible completed tasks section for better task list organization
+  - New CoreData attributes to support logged tasks (logged flag, completionDate)
+- Enhanced task animation with opacity transitions for smoother appearance
+- Comprehensive documentation in /Documentation/CompletedTasksAnimation.md
+
+### Changed
+- Completed tasks are now managed in two distinct sections in Project views
+- Completed and logged tasks appear slightly faded for better visual distinction
+- Task sorting preserves relative order when transitioning between active/logged states
+- Improved task completion UX with delayed animation instead of immediate reordering
+- Removed dividers between task sections for a cleaner, more modern appearance
+- Added asymmetric animations for smooth, natural transitions when tasks move between sections
+
+### Fixed
+- Memory leaks from uncancelled timers when navigating away from Projects view
+- Edge case where completed tasks might not be properly logged after app restart
+- Unexpected jumping behavior when completing tasks in large project lists
+
 ## 2025-03-11
 
 ### Added

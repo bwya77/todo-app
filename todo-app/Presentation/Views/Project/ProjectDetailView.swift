@@ -422,7 +422,15 @@ struct ProjectDetailView: View {
     @State private var editedTitle: String = ""
     
     // State for task list
-    @FetchRequest private var tasks: FetchedResults<Item>
+    // Separate fetch requests for active and completed tasks
+    @FetchRequest private var activeTasks: FetchedResults<Item>
+    @FetchRequest private var loggedTasks: FetchedResults<Item>
+    
+    // State for the completed tasks section
+    @State private var showLoggedItems: Bool = false
+    @State private var taskToLog: Item? = nil
+    @State private var taskCompletionTimer: Timer? = nil
+    @State private var taskUpdateCounter: Int = 0
     
     // Project color for UI elements
     private var projectColor: Color {
@@ -433,17 +441,26 @@ struct ProjectDetailView: View {
         self.project = project
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         
-        // Create a fetch request for tasks in this project
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
-        request.predicate = NSPredicate(format: "project == %@", project)
-        request.sortDescriptors = [
+        // Create a fetch request for active tasks in this project
+        let activeRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        activeRequest.predicate = NSPredicate(format: "project == %@ AND (completed == NO OR (completed == YES AND logged == NO))", project)
+        activeRequest.sortDescriptors = [
             NSSortDescriptor(keyPath: \Item.completed, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
         ]
         
-        self._tasks = FetchRequest(fetchRequest: request)
+        // Create a fetch request for logged tasks in this project
+        let loggedRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        loggedRequest.predicate = NSPredicate(format: "project == %@ AND completed == YES AND logged == YES", project)
+        loggedRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.dueDate, ascending: false),
+            NSSortDescriptor(keyPath: \Item.title, ascending: true)
+        ]
+        
+        self._activeTasks = FetchRequest(fetchRequest: activeRequest)
+        self._loggedTasks = FetchRequest(fetchRequest: loggedRequest)
         self._editedTitle = State(initialValue: project.name ?? "Untitled Project")
     }
     
@@ -522,7 +539,7 @@ struct ProjectDetailView: View {
                 .padding(.horizontal, 16)
             
             // Tasks list
-            if tasks.isEmpty {
+            if activeTasks.isEmpty && loggedTasks.isEmpty {
                 VStack(spacing: 16) {
                     Spacer()
                     
@@ -556,23 +573,59 @@ struct ProjectDetailView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(tasks) { task in
-                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                                .contextMenu {
-                                    Button(action: {
-                                        if let index = tasks.firstIndex(of: task) {
-                                            deleteTasks(at: IndexSet(integer: index))
+                        // Active tasks (incomplete + newly completed but not logged)
+                        ForEach(activeTasks) { task in
+                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                        .contextMenu {
+                        Button(action: {
+                        if let index = activeTasks.firstIndex(of: task) {
+                        deleteTasks(at: IndexSet(integer: index), isActive: true)
+                        }
+                        }) {
+                        Label("Delete", systemImage: "trash")
+                        }
+                        }
+                        // Add transition for when tasks are completed or moved from logged section
+                        .transition(.asymmetric(
+                                            insertion: .opacity.combined(with: .move(edge: .top)),
+                                            removal: .opacity.combined(with: .move(edge: .bottom))
+                                        ))
+                        }
+                        
+                        // Show the logged items toggle if there are any completed tasks
+                        if !loggedTasks.isEmpty {
+                            LoggedItemsToggle(isExpanded: $showLoggedItems, itemCount: loggedTasks.count)
+                                .padding(.horizontal, 4)
+                                .padding(.top, 8)
+                                
+                            if showLoggedItems {
+                                
+                                // Logged tasks section
+                                ForEach(loggedTasks) { task in
+                                    TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                        .contextMenu {
+                                            Button(action: {
+                                                if let index = loggedTasks.firstIndex(of: task) {
+                                                    deleteTasks(at: IndexSet(integer: index), isActive: false)
+                                                }
+                                            }) {
+                                                Label("Delete", systemImage: "trash")
+                                            }
                                         }
-                                    }) {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                                        .opacity(0.7) // Make logged items appear slightly faded
+                                        // Add transition for when tasks are uncompleted and move back up
+                                        .transition(.asymmetric(
+                                            insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                            removal: .opacity.combined(with: .move(edge: .top))
+                                        ))
                                 }
-                            
-                            // We're explicitly NOT adding any dividers
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
+                    .animation(.easeInOut(duration: 0.3), value: showLoggedItems)
+                    .animation(.easeInOut(duration: 0.3), value: taskUpdateCounter)
                 }
                 .background(Color.white)
             }
@@ -584,6 +637,35 @@ struct ProjectDetailView: View {
         .onAppear {
             // Ensure we have the latest data
             editedTitle = project.name ?? "Untitled Project"
+            
+            // Check if we have any active completed tasks that should be already logged
+            // This is to ensure data consistency if tasks were completed more than 2 seconds ago
+            // but somehow were not marked as logged (e.g. app closed before timer fired)
+            DispatchQueue.main.async {
+                // Force logged items to be collapsed by default
+                showLoggedItems = false
+                
+                for task in activeTasks where task.completed && !task.logged {
+                    // Check if the task was completed more than 2 seconds ago
+                    if let completionDate = task.completionDate, Date().timeIntervalSince(completionDate) > 2.0 {
+                        withAnimation {
+                            taskViewModel.markTaskAsLogged(task)
+                            taskUpdateCounter += 1
+                        }
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            // Cancel any pending timers when view disappears
+            taskCompletionTimer?.invalidate()
+            taskCompletionTimer = nil
+            
+            // If there's a task waiting to be logged, log it immediately
+            if let taskToLog = taskToLog, taskToLog.completed {
+                taskViewModel.markTaskAsLogged(taskToLog)
+                self.taskToLog = nil
+            }
         }
         // Add a global submit handler to handle tapping outside the field
         .onSubmit(of: .text) {
@@ -638,14 +720,67 @@ struct ProjectDetailView: View {
     }
     
     private func toggleTaskCompletion(_ task: Item) {
+        // If task was not completed and is now being completed, we need to show animation and delay
+        let wasCompleted = task.completed
+        
+        // For better animation effect, if a logged task is being uncompleted, animate it before changing state
+        if wasCompleted && task.logged {
+            // Use withAnimation to animate the task moving up
+            withAnimation(.easeInOut(duration: 0.3)) {
+            // Toggle the completion state first, so it immediately starts the animation
+            taskViewModel.toggleTaskCompletion(task)
+                taskUpdateCounter += 1
+                }
+            return
+        }
+        
+        // For non-logged tasks, use the normal flow with timer
+        // Toggle the completion state
         taskViewModel.toggleTaskCompletion(task)
+        taskUpdateCounter += 1
+        
+        // If task is now completed (newly completed), schedule it to be logged after delay
+        if !wasCompleted && task.completed {
+            // Cancel any existing timer
+            taskCompletionTimer?.invalidate()
+            
+            // Store the task to be logged
+            taskToLog = task
+            
+            // Create a timer to log the task after 2 seconds
+            taskCompletionTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+                guard let taskToLog = self.taskToLog else { return }
+                
+                // Check if this is the first logged task - if so, ensure section stays collapsed
+                let wasEmpty = self.loggedTasks.isEmpty
+                
+                // Use withAnimation to make the task smoothly transition to the logged section
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.taskViewModel.markTaskAsLogged(taskToLog)
+                    self.taskToLog = nil
+                    self.taskUpdateCounter += 1
+                    
+                    // If this is the first logged task, ensure the logged section stays collapsed
+                    if wasEmpty {
+                        self.showLoggedItems = false
+                    }
+                }
+            }
+        }
     }
     
-    private func deleteTasks(at offsets: IndexSet) {
+    private func deleteTasks(at offsets: IndexSet, isActive: Bool) {
         withAnimation {
-            offsets.map { tasks[$0] }.forEach { task in
-                taskViewModel.deleteTask(task)
+            if isActive {
+                offsets.map { activeTasks[$0] }.forEach { task in
+                    taskViewModel.deleteTask(task)
+                }
+            } else {
+                offsets.map { loggedTasks[$0] }.forEach { task in
+                    taskViewModel.deleteTask(task)
+                }
             }
+            taskUpdateCounter += 1
         }
     }
     

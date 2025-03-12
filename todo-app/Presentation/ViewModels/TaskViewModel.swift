@@ -32,7 +32,7 @@ class TaskViewModel: ObservableObject {
         saveContext()
     }
     
-    func updateTask(_ task: Item, title: String? = nil, dueDate: Date? = nil, priority: Int16? = nil, completed: Bool? = nil, project: Project? = nil, notes: String? = nil) {
+    func updateTask(_ task: Item, title: String? = nil, dueDate: Date? = nil, priority: Int16? = nil, completed: Bool? = nil, completionDate: Date? = nil, project: Project? = nil, notes: String? = nil, logged: Bool? = nil) {
         if let title = title {
             task.title = title
         }
@@ -43,7 +43,21 @@ class TaskViewModel: ObservableObject {
             task.priority = priority
         }
         if let completed = completed {
+            let wasCompleted = task.completed
             task.completed = completed
+            
+            // Set completion date if newly completed
+            if !wasCompleted && completed {
+                task.completionDate = Date()
+            }
+            // Clear completion date if uncompleted
+            else if wasCompleted && !completed {
+                task.completionDate = nil
+            }
+        }
+        
+        if let completionDate = completionDate {
+            task.completionDate = completionDate
         }
         if let project = project {
             task.project = project
@@ -51,13 +65,49 @@ class TaskViewModel: ObservableObject {
         if let notes = notes {
             task.notes = notes
         }
+        if let logged = logged {
+            task.logged = logged
+        }
         
         saveContext()
     }
     
     func toggleTaskCompletion(_ task: Item) {
+        let wasCompleted = task.completed
         task.completed.toggle()
+        
+        // If task is newly completed, set the completion date but don't set logged flag yet
+        if !wasCompleted && task.completed {
+            task.completionDate = Date()
+        }
+        // If task was completed and is now uncompleted, reset logged flag and completion date
+        else if wasCompleted {
+            task.logged = false
+            task.completionDate = nil
+        }
+        
         saveContext()
+    }
+    
+    func markTaskAsLogged(_ task: Item) {
+        task.logged = true
+        saveContext()
+    }
+    
+    func setLoggedStateForAllCompletedTasks(project: Project, logged: Bool) {
+        // Get all completed tasks for this project
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == YES AND project == %@", project)
+        
+        do {
+            let tasks = try viewContext.fetch(fetchRequest)
+            for task in tasks {
+                task.logged = logged
+            }
+            saveContext()
+        } catch {
+            print("Error setting logged state for completed tasks: \(error)")
+        }
     }
     
     func deleteTask(_ task: Item) {

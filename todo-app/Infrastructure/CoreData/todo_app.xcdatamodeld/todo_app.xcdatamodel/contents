@@ -2,6 +2,8 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
     <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
         <attribute name="completed" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="completionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="logged" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="createdDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="dueDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="isAllDay" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
