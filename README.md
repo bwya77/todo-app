@@ -14,7 +14,7 @@ The Selection color for projects is based on the project color. Here you can see
 ### Multiple Calendar Views*
 View all your tasks by Day, Week, Month, and Upcoming views for managing your tasks
 
-![day view](/images/dayView.png)
+![day view](/images/Dayview.png)
 
 ![week view](/images/weekview.png)
 
@@ -23,7 +23,7 @@ View all your tasks by Day, Week, Month, and Upcoming views for managing your ta
 ### Real-time Time Indicators
 Visual indicators showing the current time in Day and Week views
 
-![day view](/images/DayView.png)
+![day view](/images/Dayview.png)
 
 ### Project Completion Indicator
 Visual indicator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress. The completion indicator smoothly transitions from empty to full based on task completion
