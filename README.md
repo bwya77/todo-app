@@ -33,12 +33,12 @@ Visual indicator that fills like a pie chart as tasks are completed, providing a
 ## Sidebar Navigation
 Customizable sidebar with resizable width and collapsible design
 
-- ![sidebar](/images/sidebar.gif)
+![sidebar](/images/sidebar.gif)
 
 ### Project Logged Tasks
 When a task is completed, it will transition to the bottom of the project view. You are able to view logged items and unlog them if needed.
 
-![logged tasks](/images/LoggedTasks.gif)
+![logged tasks](/images/loggedtasks.gif)
 
 ### Month/Year Animation
 
