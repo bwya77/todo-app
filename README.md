@@ -6,24 +6,33 @@ A minimal, sleek, responsive, and modern to-do application built for macOS using
 
 ## Features
 
-- **Project Selection Color**: The Selection color for projects is based on the project color
-![UI Screenshot](/images/ProjectView.png)
+### Project Selection Color
+The Selection color for projects is based on the project color. Here you can see Health was chosen as red so the project status icon is red and the Add Task button is red. When you check an item as complete, the checkbox also follows the project color.
+![Project viewt](/images/ProjectView.png)
 
-- **Multiple Calendar Views**: Day, Week, Month, and Upcoming views for managing your tasks
-- **Real-time Time Indicators**: Visual indicators showing the current time in Day and Week views
-![UI Screenshot](/images/TimeIndicator.png)
+### Multiple Calendar Views*
+View all your tasks by Day, Week, Month, and Upcoming views for managing your tasks
+![day view](/images/DayView.png)
+![week view](/images/WeekView.png)
+![month view](/images/MonthView.png)
 
-- **Project Completion Indicator**: visual indivator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress.
-![UI Screenshot](/images/ProjectIndicator.png)
+### Real-time Time Indicators
+Visual indicators showing the current time in Day and Week views
+![day view](/images/DayView.png)
 
-- **Project Indicator Transition**: The project completion indicator smoothly transitions from empty to full based on task completion
-- **Sidebar Navigation**: Customizable sidebar with resizable width and collapsible design
-- **Task Management**: Create, edit, and organize tasks with project support
-- **Core Data Integration**: Persistent storage for all your tasks and projects
-- **Modern UI**: Clean and minimalist design that follows macOS design guidelines
-- **Elegant Animations**: Smooth transitions between months in the Upcoming view
+### Project Completion Indicator
+Visual indicator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress. The completion indicator smoothly transitions from empty to full based on task completion
+![project status](/images/projectstatus.gif)
 
-## Month/Year Animation
+## *Sidebar Navigation
+Customizable sidebar with resizable width and collapsible design
+- ![sidebar](/images/sidebar.gif)
+
+### Project Logged Tasks
+When a task is completed, it will transition to the bottom of the project view. You are able to view logged items and unlog them if needed.
+![logged tasks](/images/LoggedTasks.gif)
+
+### Month/Year Animation
 
 The Upcoming view features elegant month and year transitions with custom animations:
 - Smaller, more minimal display of month and year below the header
@@ -31,19 +40,8 @@ The Upcoming view features elegant month and year transitions with custom animat
 - Smooth bottom-to-top transition animation when changing months
 - The animation treats both month and year as a single unit for a cohesive look
 
-Currently, the app uses a custom animation implementation. Future versions may integrate the AnimateText library for enhanced effects (see the `/todo-app/Presentation/Utilities/ANIMATION_README.md` for details).
+![logged tasks](/images/monthTransition.gif)
 
-## Collapsible Sidebar
-
-The app features a collapsible sidebar that provides a more focused workspace when needed:
-
-- **Toggle Button**: Located in the toolbar next to traffic light controls
-- **Smooth Animation**: Uses SwiftUI spring animation for natural, responsive feel
-- **State Preservation**: Remembers sidebar width when collapsing/expanding
-- **Keyboard Support**: Compatible with standard macOS keyboard shortcuts
-- **Adaptive Layout**: Main content dynamically expands to fill available space
-
-See `/todo-app/Documentation/SidebarToggleFeature.md` for technical implementation details.
 
 ## Technologies
 
@@ -91,22 +89,8 @@ The project follows a clean architecture approach:
     - **/Common**: Shared views like sidebar and content container
     - **/Task**: Task management interfaces
 
-## Usage
-
-- **Upcoming View**: Overview of upcoming tasks with calendar views
-- **Inbox**: Quick access to incoming tasks
-- **Today**: Focus on tasks due today
-- **Projects**: Organize tasks by project
-- **Custom Filters**: Filter tasks based on various criteria
 
 ## Development
-
-### Time Indicator Customization
-
-The app features custom time indicators in both Day and Week views. The positioning is carefully calibrated for accurate time representation:
-
-- Day View: Uses a 3-minute time adjustment
-- Week View: Uses a time adjustment with pixel-level fine-tuning
 
 ### .gitignore
 
