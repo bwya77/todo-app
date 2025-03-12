@@ -13,11 +13,11 @@ The Selection color for projects is based on the project color. Here you can see
 
 ### Multiple Calendar Views
 View all your tasks by Day, Week, Month, and Upcoming views for managing your tasks
-
+#### Day view
 ![day view](/images/Dayview.png)
-
+#### Week View
 ![week view](/images/weekview.png)
-
+#### Month View
 ![month view](/images/monthView.png)
 
 ### Real-time Time Indicators
