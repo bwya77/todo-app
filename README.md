@@ -8,28 +8,36 @@ A minimal, sleek, responsive, and modern to-do application built for macOS using
 
 ### Project Selection Color
 The Selection color for projects is based on the project color. Here you can see Health was chosen as red so the project status icon is red and the Add Task button is red. When you check an item as complete, the checkbox also follows the project color.
+
 ![Project viewt](/images/ProjectView.png)
 
 ### Multiple Calendar Views*
 View all your tasks by Day, Week, Month, and Upcoming views for managing your tasks
+
 ![day view](/images/DayView.png)
+
 ![week view](/images/WeekView.png)
+
 ![month view](/images/MonthView.png)
 
 ### Real-time Time Indicators
 Visual indicators showing the current time in Day and Week views
+
 ![day view](/images/DayView.png)
 
 ### Project Completion Indicator
 Visual indicator that fills like a pie chart as tasks are completed, providing an at-a-glance view of progress. The completion indicator smoothly transitions from empty to full based on task completion
+
 ![project status](/images/projectstatus.gif)
 
-## *Sidebar Navigation
+## Sidebar Navigation
 Customizable sidebar with resizable width and collapsible design
+
 - ![sidebar](/images/sidebar.gif)
 
 ### Project Logged Tasks
 When a task is completed, it will transition to the bottom of the project view. You are able to view logged items and unlog them if needed.
+
 ![logged tasks](/images/LoggedTasks.gif)
 
 ### Month/Year Animation
