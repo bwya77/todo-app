@@ -79,6 +79,7 @@ class TaskViewModel: ObservableObject {
         // If task is newly completed, set the completion date but don't set logged flag yet
         if !wasCompleted && task.completed {
             task.completionDate = Date()
+            task.logged = false // Ensure it's not logged initially
         }
         // If task was completed and is now uncompleted, reset logged flag and completion date
         else if wasCompleted {

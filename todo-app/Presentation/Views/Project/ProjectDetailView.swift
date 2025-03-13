@@ -1,3 +1,38 @@
+// Struct to allow animations only for logged items section
+struct AnimatedLoggedSection<Content: View>: View {
+    let content: () -> Content
+    
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+    
+    var body: some View {
+        content()
+            // Only animate when items move between sections
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .top))
+            ))
+    }
+}
+
+// Struct to disable animations for a section of content
+struct AnimationDisabledSection<Content: View>: View {
+    let content: () -> Content
+    
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+    
+    var body: some View {
+        content()
+            .transaction { transaction in
+                // Disable all animations within this section
+                transaction.animation = nil
+            }
+    }
+}
+
 //
 //  ProjectDetailView.swift
 //  todo-app
@@ -441,6 +476,9 @@ struct ProjectDetailView: View {
     @State private var taskCompletionTimer: Timer? = nil
     @State private var taskUpdateCounter: Int = 0
     
+    // State for tracking tasks that are visually completed but not yet moved to the logged section
+    @State private var pendingLoggedTaskIds: [UUID] = []
+    
     // Project color for UI elements
     private var projectColor: Color {
         AppColors.getColor(from: project.color)
@@ -450,11 +488,10 @@ struct ProjectDetailView: View {
         self.project = project
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         
-        // Create a fetch request for active tasks in this project
+        // Fetch all active and recently completed but not logged tasks
         let activeRequest: NSFetchRequest<Item> = Item.fetchRequest()
         activeRequest.predicate = NSPredicate(format: "project == %@ AND (completed == NO OR (completed == YES AND logged == NO))", project)
         activeRequest.sortDescriptors = [
-            NSSortDescriptor(keyPath: \Item.completed, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
@@ -604,23 +641,29 @@ struct ProjectDetailView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        // Active tasks (incomplete + newly completed but not logged)
-                        ForEach(activeTasks) { task in
-                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                        .contextMenu {
-                        Button(action: {
-                        if let index = activeTasks.firstIndex(of: task) {
-                        deleteTasks(at: IndexSet(integer: index), isActive: true)
-                        }
-                        }) {
-                        Label("Delete", systemImage: "trash")
-                        }
-                        }
-                        // Add transition for when tasks are completed or moved from logged section
-                        .transition(.asymmetric(
-                                            insertion: .opacity.combined(with: .move(edge: .top)),
-                                            removal: .opacity.combined(with: .move(edge: .bottom))
-                                        ))
+                        // Disable animations completely for this section to prevent any movement
+                        // when task completion state changes
+                        AnimationDisabledSection {
+                            // Active tasks (incomplete + newly completed but not logged yet)
+                            ForEach(activeTasks) { task in
+                                // Track if this task is in pending state
+                                let isPending = task.id != nil && pendingLoggedTaskIds.contains(task.id!)
+                                
+                                TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                    .id("task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
+                                    .opacity(isPending ? 0.8 : 1.0)
+                                    .background(isPending ? Color.secondary.opacity(0.1) : Color.clear)
+                                    .cornerRadius(6)
+                                    .contextMenu {
+                                        Button(action: {
+                                            deleteTask(task)
+                                        }) {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                                    // No movement transitions on completion - task stays in place
+                                    .transition(.identity)
+                            }
                         }
                         
                         // Show the logged items toggle if there are any completed tasks
@@ -630,33 +673,30 @@ struct ProjectDetailView: View {
                                 .padding(.top, 8)
                                 
                             if showLoggedItems {
-                                
-                                // Logged tasks section
-                                ForEach(loggedTasks) { task in
-                                    TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                                        .contextMenu {
-                                            Button(action: {
-                                                if let index = loggedTasks.firstIndex(of: task) {
-                                                    deleteTasks(at: IndexSet(integer: index), isActive: false)
+                                AnimatedLoggedSection {
+                                    // Logged tasks section
+                                    ForEach(loggedTasks) { task in
+                                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                            .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
+                                            .opacity(0.7) // Make logged items appear slightly faded
+                                            .contextMenu {
+                                                Button(action: {
+                                                    deleteTask(task)
+                                                }) {
+                                                    Label("Delete", systemImage: "trash")
                                                 }
-                                            }) {
-                                                Label("Delete", systemImage: "trash")
                                             }
-                                        }
-                                        .opacity(0.7) // Make logged items appear slightly faded
-                                        // Add transition for when tasks are uncompleted and move back up
-                                        .transition(.asymmetric(
-                                            insertion: .opacity.combined(with: .move(edge: .bottom)),
-                                            removal: .opacity.combined(with: .move(edge: .top))
-                                        ))
+                                    }
                                 }
                             }
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .animation(.easeInOut(duration: 0.3), value: showLoggedItems)
-                    .animation(.easeInOut(duration: 0.3), value: taskUpdateCounter)
+                    // Handle animations carefully - only animate what we explicitly want to animate
+                    .animation(nil, value: taskUpdateCounter) // Explicitly disable task update animations
+                    .animation(nil, value: pendingLoggedTaskIds) // Disable pending task animations
+                    .animation(.easeInOut(duration: 0.3), value: showLoggedItems) // Only animate logged section toggle
                 }
                 .background(Color.white)
             }
@@ -669,34 +709,91 @@ struct ProjectDetailView: View {
             // Ensure we have the latest data
             editedTitle = project.name ?? "Untitled Project"
             
-            // Check if we have any active completed tasks that should be already logged
-            // This is to ensure data consistency if tasks were completed more than 2 seconds ago
-            // but somehow were not marked as logged (e.g. app closed before timer fired)
+            // Reset pending tasks state
+            pendingLoggedTaskIds.removeAll()
+            
+            // Verify logged items are collapsed by default
+            showLoggedItems = false
+            
+            // Check for any tasks that were completed but not logged (could happen if app was closed during timer)
             DispatchQueue.main.async {
-                // Force logged items to be collapsed by default
-                showLoggedItems = false
-                
                 for task in activeTasks where task.completed && !task.logged {
-                    // Check if the task was completed more than 2 seconds ago
-                    if let completionDate = task.completionDate, Date().timeIntervalSince(completionDate) > 2.0 {
-                        withAnimation {
-                            taskViewModel.markTaskAsLogged(task)
-                            taskUpdateCounter += 1
+                    if let completionDate = task.completionDate {
+                        let timeSinceCompletion = Date().timeIntervalSince(completionDate)
+                        
+                        // If completed more than 2 seconds ago, log immediately without animation
+                        if timeSinceCompletion > 2.0 {
+                            withAnimation(nil) {
+                                taskViewModel.markTaskAsLogged(task)
+                                taskUpdateCounter += 1
+                            }
+                        } 
+                        // Otherwise, add to pending list and schedule to be logged at the right time
+                        else if let taskId = task.id {
+                            pendingLoggedTaskIds.append(taskId)
+                            
+                            // Schedule remaining time
+                            let remainingTime = max(0.1, 2.0 - timeSinceCompletion)
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + remainingTime) {
+                                // Get fresh reference to task
+                                let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+                                fetchRequest.predicate = NSPredicate(format: "id == %@", taskId as CVarArg)
+                                
+                                do {
+                                    if let updatedTask = try self.viewContext.fetch(fetchRequest).first,
+                                       updatedTask.completed && !updatedTask.logged {
+                                        
+                                        // Create a transaction with a spring animation for sliding to the logged section
+                                        var transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
+                                        
+                                        // Execute the state changes with the transaction
+                                        withTransaction(transaction) {
+                                            self.taskViewModel.markTaskAsLogged(updatedTask)
+                                            self.taskUpdateCounter += 1
+                                        }
+                                        
+                                        // Remove from pending list outside the transaction
+                                        if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                                            self.pendingLoggedTaskIds.remove(at: index)
+                                        }
+                                    } else {
+                                        // Task is gone or no longer needs to be logged
+                                        if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                                            self.pendingLoggedTaskIds.remove(at: index)
+                                        }
+                                    }
+                                } catch {
+                                    print("Error handling pending task on appear: \(error)")
+                                    // Clean up pending list
+                                    if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                                        self.pendingLoggedTaskIds.remove(at: index)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
         .onDisappear {
-            // Cancel any pending timers when view disappears
-            taskCompletionTimer?.invalidate()
-            taskCompletionTimer = nil
-            
-            // If there's a task waiting to be logged, log it immediately
-            if let taskToLog = taskToLog, taskToLog.completed {
-                taskViewModel.markTaskAsLogged(taskToLog)
-                self.taskToLog = nil
+            // Log any pending tasks when view disappears
+            for taskId in pendingLoggedTaskIds {
+                let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %@", taskId as CVarArg)
+                
+                do {
+                    if let task = try viewContext.fetch(fetchRequest).first,
+                       task.completed && !task.logged {
+                        taskViewModel.markTaskAsLogged(task)
+                    }
+                } catch {
+                    print("Error logging pending task on disappear: \(error)")
+                }
             }
+            
+            // Clear pending list
+            pendingLoggedTaskIds.removeAll()
         }
         // Add a global submit handler to handle tapping outside the field
         .onSubmit(of: .text) {
@@ -751,52 +848,102 @@ struct ProjectDetailView: View {
     }
     
     private func toggleTaskCompletion(_ task: Item) {
-        // If task was not completed and is now being completed, we need to show animation and delay
         let wasCompleted = task.completed
         
-        // For better animation effect, if a logged task is being uncompleted, animate it before changing state
+        // CASE 1: Task was logged and is being uncompleted - move it back to active immediately
         if wasCompleted && task.logged {
-            // Use withAnimation to animate the task moving up
             withAnimation(.easeInOut(duration: 0.3)) {
-            // Toggle the completion state first, so it immediately starts the animation
-            taskViewModel.toggleTaskCompletion(task)
+                taskViewModel.toggleTaskCompletion(task)
                 taskUpdateCounter += 1
-                }
+            }
             return
         }
         
-        // For non-logged tasks, use the normal flow with timer
-        // Toggle the completion state
-        taskViewModel.toggleTaskCompletion(task)
-        taskUpdateCounter += 1
-        
-        // If task is now completed (newly completed), schedule it to be logged after delay
-        if !wasCompleted && task.completed {
-            // Cancel any existing timer
-            taskCompletionTimer?.invalidate()
-            
-            // Store the task to be logged
-            taskToLog = task
-            
-            // Create a timer to log the task after 2 seconds
-            taskCompletionTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
-                guard let taskToLog = self.taskToLog else { return }
+        // CASE 2: Task is being completed
+        if !wasCompleted {
+            // Temporarily disable animations to prevent any movement
+            withAnimation(nil) {
+                // Toggle completion state without animation
+                taskViewModel.toggleTaskCompletion(task)
+                taskUpdateCounter += 1
+            }
+            // Add task to pending list so it stays in place
+            if let taskId = task.id {
+                pendingLoggedTaskIds.append(taskId)
                 
-                // Check if this is the first logged task - if so, ensure section stays collapsed
-                let wasEmpty = self.loggedTasks.isEmpty
-                
-                // Use withAnimation to make the task smoothly transition to the logged section
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    self.taskViewModel.markTaskAsLogged(taskToLog)
-                    self.taskToLog = nil
-                    self.taskUpdateCounter += 1
+                // Schedule a timer to move this task to logged section after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    // Verify task still exists and is still completed
+                    let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+                    fetchRequest.predicate = NSPredicate(format: "id == %@", taskId as CVarArg)
                     
-                    // If this is the first logged task, ensure the logged section stays collapsed
-                    if wasEmpty {
-                        self.showLoggedItems = false
+                    do {
+                        if let updatedTask = try self.viewContext.fetch(fetchRequest).first,
+                           updatedTask.completed && !updatedTask.logged {
+                            
+                            // Check if this is the first logged task
+                            let wasEmpty = self.loggedTasks.isEmpty
+                            
+                            // Create a transaction with spring animation for sliding to logged section
+                            var transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
+                            
+                            // Only the final movement to logged section should be animated
+                            withTransaction(transaction) {
+                            self.taskViewModel.markTaskAsLogged(updatedTask)
+                            self.taskUpdateCounter += 1
+                            }
+                            
+                            // Remove from pending list
+                            if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                                self.pendingLoggedTaskIds.remove(at: index)
+                            }
+                            
+                            // If this was the first logged task, ensure section stays collapsed
+                            if wasEmpty {
+                                self.showLoggedItems = false
+                            }
+                        } else {
+                            // Task either no longer exists or is no longer completed
+                            // Remove from pending list
+                            if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                                self.pendingLoggedTaskIds.remove(at: index)
+                            }
+                        }
+                    } catch {
+                        print("Error handling task logging: \(error)")
+                        // Clean up pending list
+                        if let index = self.pendingLoggedTaskIds.firstIndex(of: taskId) {
+                            self.pendingLoggedTaskIds.remove(at: index)
+                        }
                     }
                 }
             }
+        }
+        // CASE 3: Task was completed but not logged, and is being uncompleted
+        else if !task.logged {
+            // Simply toggle it back
+            taskViewModel.toggleTaskCompletion(task)
+            
+            // Remove from pending list if it was there
+            if let taskId = task.id, let index = pendingLoggedTaskIds.firstIndex(of: taskId) {
+                pendingLoggedTaskIds.remove(at: index)
+            }
+        }
+        
+        // Update the counter to trigger view updates
+        taskUpdateCounter += 1
+    }
+    
+    private func deleteTask(_ task: Item) {
+        withAnimation {
+            taskViewModel.deleteTask(task)
+            
+            // Remove from pending list if it was there
+            if let taskId = task.id, let index = pendingLoggedTaskIds.firstIndex(of: taskId) {
+                pendingLoggedTaskIds.remove(at: index)
+            }
+            
+            taskUpdateCounter += 1
         }
     }
     
@@ -805,12 +952,18 @@ struct ProjectDetailView: View {
             if isActive {
                 offsets.map { activeTasks[$0] }.forEach { task in
                     taskViewModel.deleteTask(task)
+                    
+                    // Remove from pending list if needed
+                    if let taskId = task.id, let index = pendingLoggedTaskIds.firstIndex(of: taskId) {
+                        pendingLoggedTaskIds.remove(at: index)
+                    }
                 }
             } else {
                 offsets.map { loggedTasks[$0] }.forEach { task in
                     taskViewModel.deleteTask(task)
                 }
             }
+            
             taskUpdateCounter += 1
         }
     }

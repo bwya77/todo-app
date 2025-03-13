@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Status**: Unreleased
 
+## [0.2.0] - 2025-03-13
+
+### Added
+- Enhanced task completion animation with more professional UX:
+  - Tasks now stay in exact position for 2 seconds after completion
+  - Subtle visual indicator (opacity change + background color) for pending tasks
+  - Smooth spring animation when tasks move to the logged section after delay
+  - Custom animation components to explicitly control animation behavior
+- New documentation for task animation refinements
+
+### Changed
+- Improved animation control using transaction-based approach instead of implicit animations
+- Enhanced visual feedback during task completion without disrupting spatial awareness
+- Updated the task completion flow to be more predictable and professional
+- Task row rendering now uses animation blocking for completion state changes
+
+### Fixed
+- Fixed issue where completed tasks would immediately slide to bottom of section before moving to logged items
+- Eliminated unwanted animations when checking tasks
+- Resolved animation conflicts when logged items section is expanded
+- Fixed edge cases with task deletion during completion delay period
+- Improved handling of app restarts with pending completed tasks
+
+### Technical Details
+- Used `AnimationDisabledSection` custom component to explicitly block unwanted animations
+- Applied `withTransaction` for controlled animations with specific timing and physics
+- Implemented UUID-based tracking of pending tasks for better memory management
+- Enhanced state cleanup during view lifecycle events
+
 ## [0.1.10] - 2025-03-13
 
 ### Added

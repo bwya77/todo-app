@@ -83,7 +83,9 @@ struct TaskRow: View {
             // Actions only visible on hover
             if isHovering {
                 Button(action: {
-                    onToggleComplete(task)
+                    withAnimation(nil) {
+                        onToggleComplete(task)
+                    }
                 }) {
                     Image(systemName: task.completed ? "arrow.uturn.backward" : "checkmark")
                         .foregroundColor(task.completed ? .blue : .green)
@@ -101,7 +103,9 @@ struct TaskRow: View {
         .contentShape(Rectangle())
         .onTapGesture {
             // Allow clicking anywhere on the row to toggle completion
-            onToggleComplete(task)
+            withAnimation(nil) {
+                onToggleComplete(task)
+            }
         }
     }
     
