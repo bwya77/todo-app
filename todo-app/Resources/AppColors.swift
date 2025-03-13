@@ -14,6 +14,7 @@ struct AppColors {
     
     // UI colors from legacy implementation
     static let selectedIconColor = Color(red: 41/255, green: 122/255, blue: 188/255) // RGB(41,122,188)
+    static let selectedTextColor = Color(red: 30/255, green: 100/255, blue: 180/255) // RGB(30,100,180) - Slightly darker blue
     static let sidebarBackground = Color(red: 248/255, green: 250/255, blue: 251/255) // RGB(248,250,251)
     static let sidebarHover = Color(red: 223/255, green: 237/255, blue: 251/255) // RGB(223,237,251)
     static let contentBackground = Color.white

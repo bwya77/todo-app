@@ -55,6 +55,8 @@ The implementation follows a consistent pattern across all sidebar navigation it
 
 - **Consistent Visual Language**: All icons now follow the same pattern of using the filled version when selected and the outline version when not selected.
 
+- **Color Coordination**: Selected items use a consistent dark blue (RGB 30,100,180) for both the icon and text, including task counters, creating a cohesive visual indicator.
+
 - **Apple Design Guidelines**: The implementation uses standard SF Symbols with appropriate naming conventions (`icon` vs `icon.fill`).
 
 - **Semantic Meaning**: Each icon transition strengthens the visual communication about which section is active.

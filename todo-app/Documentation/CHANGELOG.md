@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Comprehensive documentation in /Documentation/CompletedTasksAnimation.md
 
 ### Changed
+- Updated sidebar selected item text and task counter colors to a darker blue for better visual contrast
 - Adjusted the Today icon size for better visibility and consistency with other sidebar icons
 - Completed tasks are now managed in two distinct sections in Project views
 - Completed and logged tasks appear slightly faded for better visual distinction

@@ -154,11 +154,11 @@ struct SidebarView: View {
                                 Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.full.fill" : "tray")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
-                                    .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
+                                    .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedTextColor : .black)
                                 Spacer()
                                 if inboxTaskCount > 0 {
                                     Text("\(inboxTaskCount)")
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(selectedViewType == .inbox ? AppColors.selectedTextColor : .secondary)
                                         .font(.system(size: 14))
                                 }
                             }
@@ -202,13 +202,13 @@ struct SidebarView: View {
                                     Image(systemName: selectedViewType == .today ? "\(dayNumber).square.fill" : "\(dayNumber).square")
                                         .font(.system(size: 16)) // Increased from 14 to 16 for better visibility
                                         .imageScale(.medium)     // Added imageScale to match other icons
-                                        .foregroundStyle(selectedViewType == .today ? AppColors.selectedIconColor : .black)
+                                        .foregroundStyle(selectedViewType == .today ? AppColors.selectedTextColor : .black)
                                 }
                                 .font(.system(size: 14))
                                 Spacer()
                                 if todayTaskCount > 0 {
                                     Text("\(todayTaskCount)")
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(selectedViewType == .today ? AppColors.selectedTextColor : .secondary)
                                         .font(.system(size: 14))
                                 }
                             }
@@ -223,7 +223,7 @@ struct SidebarView: View {
                                 Label("Upcoming", systemImage: selectedViewType == .upcoming ? "calendar.badge.clock" : "calendar")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
-                                    .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
+                                    .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedTextColor : .black)
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .upcoming))
@@ -236,7 +236,7 @@ struct SidebarView: View {
                                 Label("Filters & Labels", systemImage: selectedViewType == .filters ? "tag.fill" : "tag")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
-                                    .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
+                                    .foregroundStyle(selectedViewType == .filters ? AppColors.selectedTextColor : .black)
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .filters))
@@ -249,7 +249,7 @@ struct SidebarView: View {
                                 Label("Completed", systemImage: selectedViewType == .completed ? "checkmark.circle.fill" : "checkmark.circle")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
-                                    .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
+                                    .foregroundStyle(selectedViewType == .completed ? AppColors.selectedTextColor : .black)
                             }
                         }
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .completed))
