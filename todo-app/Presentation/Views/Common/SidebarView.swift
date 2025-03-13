@@ -151,7 +151,7 @@ struct SidebarView: View {
                             selectedProject = nil
                         }) {
                             HStack {
-                                Label("Inbox", systemImage: "tray")
+                                Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.full" : "tray")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)

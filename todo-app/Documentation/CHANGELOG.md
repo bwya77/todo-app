@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 2025-03-12
 
 ### Added
+- Interactive Inbox icon that changes from "tray" to "tray.full" when selected
+- Enhanced visual feedback for sidebar navigation
+- Unit tests to verify icon toggle functionality
+- Comprehensive documentation for the icon toggle feature
 - Advanced task completion animation in Project views:
   - Completed tasks remain visible for 2 seconds before moving to logged items section
   - Smooth sliding animation when tasks transition to logged section

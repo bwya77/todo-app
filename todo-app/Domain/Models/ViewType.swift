@@ -38,7 +38,7 @@ enum ViewType: Hashable {
     var iconName: String {
         switch self {
         case .inbox:
-            return "tray"
+            return "tray.full"
         case .today:
             return "calendar"
         case .upcoming:
