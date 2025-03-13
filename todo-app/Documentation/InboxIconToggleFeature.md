@@ -2,7 +2,7 @@
 
 ## Overview
 
-This feature enhances the user interface by dynamically changing the Inbox icon when a user clicks on it. The icon transitions from "tray" to "tray.full" when the Inbox is selected, providing clear visual feedback to users.
+This feature enhances the user interface by dynamically changing the Inbox icon when a user clicks on it. The icon transitions from "tray" to "tray.fill" when the Inbox is selected, providing clear visual feedback to users.
 
 ## Implementation Details
 
@@ -10,10 +10,10 @@ The feature was implemented with the following changes:
 
 1. **SidebarView.swift**: Updated the Label component in the Inbox button to conditionally display different system icons based on selection state:
    ```swift
-   Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.full" : "tray")
+   Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.fill" : "tray")
    ```
 
-2. **ViewType.swift**: Updated the `iconName` property for the `.inbox` case to return "tray.full" to ensure consistency across the app when the Inbox is referenced or displayed in other views.
+2. **ViewType.swift**: Updated the `iconName` property for the `.inbox` case to return "tray.fill" to ensure consistency across the app when the Inbox is referenced or displayed in other views.
 
 ## Design Considerations
 

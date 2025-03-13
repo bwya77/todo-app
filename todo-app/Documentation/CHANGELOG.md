@@ -9,10 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 2025-03-12
 
 ### Added
-- Interactive Inbox icon that changes from "tray" to "tray.full" when selected
-- Enhanced visual feedback for sidebar navigation
+- Interactive Inbox icon that changes from "tray" to "tray.full.fill" when selected
+- Dynamic Today icon that displays the current day number (e.g., "12.square") and changes to filled version ("12.square.fill") when selected
+- Enhanced Upcoming icon that changes from "calendar" to "calendar.badge.clock" when selected
+- Enhanced Filters & Labels icon that changes from "tag" to "tag.fill" when selected
+- Updated Completed icon that changes from "checkmark.circle" to "checkmark.circle.fill" when selected
+- Consistent visual feedback for all sidebar navigation items
 - Unit tests to verify icon toggle functionality
-- Comprehensive documentation for the icon toggle feature
+- Comprehensive documentation for the sidebar icon enhancements
 - Advanced task completion animation in Project views:
   - Completed tasks remain visible for 2 seconds before moving to logged items section
   - Smooth sliding animation when tasks transition to logged section
@@ -23,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Comprehensive documentation in /Documentation/CompletedTasksAnimation.md
 
 ### Changed
+- Adjusted the Today icon size for better visibility and consistency with other sidebar icons
 - Completed tasks are now managed in two distinct sections in Project views
 - Completed and logged tasks appear slightly faded for better visual distinction
 - Task sorting preserves relative order when transitioning between active/logged states

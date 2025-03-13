@@ -38,15 +38,16 @@ enum ViewType: Hashable {
     var iconName: String {
         switch self {
         case .inbox:
-            return "tray.full"
+            return "tray.full.fill"
         case .today:
-            return "calendar"
+            let dayNumber = Calendar.current.component(.day, from: Date())
+            return "\(dayNumber).square.fill"
         case .upcoming:
             return "calendar.badge.clock"
         case .completed:
-            return "checkmark.circle"
+            return "checkmark.circle.fill"
         case .filters:
-            return "line.horizontal.3.decrease.circle"
+            return "tag.fill"
         case .project:
             return "folder"
         }

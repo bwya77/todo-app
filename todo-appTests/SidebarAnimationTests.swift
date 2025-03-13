@@ -75,10 +75,13 @@ final class SidebarAnimationTests: XCTestCase {
         }
     }
     
-    // Test that the inbox icon changes based on selection state
-    func testInboxIconToggle() throws {
-        // Check that ViewType.inbox uses the correct icon name
-        XCTAssertEqual(ViewType.inbox.iconName, "tray.full", "Inbox ViewType should return 'tray.full'")
+    // Test that the sidebar icons change based on selection state
+    func testSidebarIconToggle() throws {
+        // Check that ViewType returns the correct icon names
+        XCTAssertEqual(ViewType.inbox.iconName, "tray.full.fill", "Inbox ViewType should return 'tray.full.fill'")
+        XCTAssertEqual(ViewType.upcoming.iconName, "calendar.badge.clock", "Upcoming ViewType should return 'calendar.badge.clock'")
+        XCTAssertEqual(ViewType.filters.iconName, "tag.fill", "Filters ViewType should return 'tag.fill'")
+        XCTAssertEqual(ViewType.completed.iconName, "checkmark.circle.fill", "Completed ViewType should return 'checkmark.circle.fill'")
         
         // Create test bindings for the SidebarView
         var viewType = ViewType.today // Start with a different view type
@@ -95,13 +98,13 @@ final class SidebarAnimationTests: XCTestCase {
         // Verify the logic in SidebarView would show the correct icons
         // (Can't directly test rendering without UI testing)
         
-        // When not selected, should use "tray"
+        // When not selected, should use outline versions
         XCTAssertNotEqual(viewType, .inbox)
         // Icon would be "tray" here in the actual view
         
-        // When inbox is selected, should use "tray.full"
+        // When inbox is selected, should use filled versions
         viewTypeBinding.wrappedValue = .inbox
         XCTAssertEqual(viewType, .inbox)
-        // Icon would be "tray.full" here in the actual view
+        // Icon would be "tray.full.fill" here in the actual view
     }
 }

@@ -151,7 +151,7 @@ struct SidebarView: View {
                             selectedProject = nil
                         }) {
                             HStack {
-                                Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.full" : "tray")
+                                Label("Inbox", systemImage: selectedViewType == .inbox ? "tray.full.fill" : "tray")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .inbox ? AppColors.selectedIconColor : .black)
@@ -197,7 +197,12 @@ struct SidebarView: View {
                                 Label {
                                     Text("Today")
                                 } icon: {
-                                    CalendarDayIcon(selected: selectedViewType == .today)
+                                    // Get the current day number and use it in the square icon
+                                    let dayNumber = Calendar.current.component(.day, from: Date())
+                                    Image(systemName: selectedViewType == .today ? "\(dayNumber).square.fill" : "\(dayNumber).square")
+                                        .font(.system(size: 16)) // Increased from 14 to 16 for better visibility
+                                        .imageScale(.medium)     // Added imageScale to match other icons
+                                        .foregroundStyle(selectedViewType == .today ? AppColors.selectedIconColor : .black)
                                 }
                                 .font(.system(size: 14))
                                 Spacer()
@@ -215,7 +220,7 @@ struct SidebarView: View {
                             selectedProject = nil
                         }) {
                             HStack {
-                                Label("Upcoming", systemImage: "calendar")
+                                Label("Upcoming", systemImage: selectedViewType == .upcoming ? "calendar.badge.clock" : "calendar")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .upcoming ? AppColors.selectedIconColor : .black)
@@ -228,7 +233,7 @@ struct SidebarView: View {
                             selectedProject = nil
                         }) {
                             HStack {
-                                Label("Filters & Labels", systemImage: "tag")
+                                Label("Filters & Labels", systemImage: selectedViewType == .filters ? "tag.fill" : "tag")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .filters ? AppColors.selectedIconColor : .black)
@@ -241,7 +246,7 @@ struct SidebarView: View {
                             selectedProject = nil
                         }) {
                             HStack {
-                                Label("Completed", systemImage: "checkmark.circle")
+                                Label("Completed", systemImage: selectedViewType == .completed ? "checkmark.circle.fill" : "checkmark.circle")
                                     .font(.system(size: 14))
                                     .imageScale(.medium)
                                     .foregroundStyle(selectedViewType == .completed ? AppColors.selectedIconColor : .black)
@@ -413,19 +418,4 @@ struct SidebarView: View {
     }
 }
 
-struct CalendarDayIcon: View {
-    var selected: Bool = false
-    
-    var body: some View {
-        ZStack {
-            Image(systemName: "calendar")
-                .font(.system(size: 14))
-                .foregroundColor(selected ? AppColors.selectedIconColor : .black)
-            
-            Text(String(Calendar.current.component(.day, from: Date())))
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(.white)
-                .offset(y: 1)
-        }
-    }
-}
+// CalendarDayIcon has been replaced with dynamic day.square icons
