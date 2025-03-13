@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Status**: Unreleased
 
+## 2025-03-13
+
+### Added
+- Project status indicator now remains visible during project title editing
+- Added comprehensive documentation for the project title editing with status indicator feature
+- Enhanced text field cursor positioning for more accurate text editing
+
+### Changed
+- Improved project title editing UX with consistent visual feedback
+- Enhanced text field layout for better appearance within status indicator context
+- Updated cursor positioning code to handle complex layout scenarios
+
+### Fixed
+- Resolved issue where project status indicator would disappear during title editing
+- Fixed cursor positioning in text fields with adjacent UI elements
+- Improved text field behavior when working with emoji picker
+
 ## 2025-03-12
 
 ### Added

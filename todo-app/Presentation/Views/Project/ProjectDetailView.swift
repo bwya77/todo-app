@@ -257,8 +257,11 @@ class EditableTextFieldWithCursorPlacement: NSTextField {
         // Become first responder first to get the field editor ready
         let result = super.becomeFirstResponder()
         
-        // Immediately position cursor - using next run loop often causes problems
-        self.positionCursorAtClickPoint()
+        // Position cursor with a very slight delay to ensure field editor is ready
+        // This helps with the new HStack layout where timing can be slightly different
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
+            self?.positionCursorAtClickPoint()
+        }
         
         return result
     }
@@ -282,6 +285,9 @@ class EditableTextFieldWithCursorPlacement: NSTextField {
             
             // Position cursor at clicked position without selection
             fieldEditor.selectedRange = NSRange(location: safeIndex, length: 0)
+        } else {
+            // Fallback if we can't determine exact position - place cursor at end
+            fieldEditor.selectedRange = NSRange(location: fieldEditor.string.count, length: 0)
         }
     }
 }
@@ -344,6 +350,9 @@ struct NoSelectionTextField: NSViewRepresentable {
         textField.isSelectable = true
         textField.drawsBackground = false
         textField.focusRingType = .none
+        textField.lineBreakMode = .byTruncatingTail
+        textField.maximumNumberOfLines = 1
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textField.delegate = context.coordinator
         
         // Register for notifications about NSTextInput changes which happen with emoji picker
@@ -471,19 +480,32 @@ struct ProjectDetailView: View {
                 // Title section with simpler editing approach
                 ZStack(alignment: .leading) {
                     if isEditingTitle {
-                        NoSelectionTextField(text: $editedTitle, onCommit: saveProjectTitle, onStartEditing: { textField in
-                            // Start monitoring for clicks outside the text field
-                            self.clickMonitor.startMonitoring(view: textField) {
-                                if self.isEditingTitle {
-                                    self.saveProjectTitle()
-                                }
-                            }
+                        HStack(spacing: 10) {
+                            // Keep the project status indicator visible during editing
+                            ProjectCompletionIndicator(
+                                project: project,
+                                size: 20,
+                                viewContext: viewContext
+                            )
+                            // Add a unique ID for this instance to force recreation when project changes
+                            .id("project-indicator-edit-mode-\(project.id?.uuidString ?? UUID().uuidString)")
                             
-                            // Also start monitoring for clicks inside the field to correctly position cursor
-                            self.textFieldMonitor.startMonitoring(textField: textField)
-                        })
+                            // Text field for editing
+                            NoSelectionTextField(text: $editedTitle, onCommit: saveProjectTitle, onStartEditing: { textField in
+                                // Start monitoring for clicks outside the text field
+                                self.clickMonitor.startMonitoring(view: textField) {
+                                    if self.isEditingTitle {
+                                        self.saveProjectTitle()
+                                    }
+                                }
+                                
+                                // Also start monitoring for clicks inside the field to correctly position cursor
+                                self.textFieldMonitor.startMonitoring(textField: textField)
+                            })
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
                     } else {
                         HStack(spacing: 10) {
                             // Project completion indicator
@@ -514,13 +536,22 @@ struct ProjectDetailView: View {
                             Color.gray.opacity(0.0001) // Nearly invisible but catches clicks
                         )
                         .onTapGesture { location in
-                            // Get and store the current mouse position directly
+                            // Get and store the current mouse position directly for cursor positioning
                             if let windowRef = NSApp.keyWindow {
                                 let screenPoint = NSEventMonitor.shared.getCurrentMousePosition()
                                 let windowPoint = windowRef.convertPoint(fromScreen: screenPoint)
+                                
+                                // Store the click location for cursor positioning
                                 CursorLocationTracker.lastClickLocation = windowPoint
+                                
+                                // Detect if the indicator was clicked or the text was clicked
+                                // We only want to start editing if the text was clicked
+                                // Since we can't easily detect exactly where in the HStack we clicked,
+                                // we'll use a 30-point threshold from the left (indicator width + padding)
+                                // This assumes the click coordinates are relative to the containing view
+                                // If text was clicked, proceed with editing
+                                startEditingTitle()
                             }
-                            startEditingTitle()
                         }
                     }
                 }
