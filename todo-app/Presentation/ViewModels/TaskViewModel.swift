@@ -136,12 +136,15 @@ class TaskViewModel: ObservableObject {
         saveContext()
     }
     
-    func updateProject(_ project: Project, name: String? = nil, color: String? = nil) {
+    func updateProject(_ project: Project, name: String? = nil, color: String? = nil, notes: String? = nil) {
         if let name = name {
             project.name = name
         }
         if let color = color {
             project.color = color
+        }
+        if let notes = notes {
+            project.notes = notes
         }
         
         saveContext()

@@ -23,6 +23,7 @@
         <attribute name="color" attributeType="String" defaultValueString="gray"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" attributeType="String" defaultValueString="Untitled Project"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
         <relationship name="items" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Item" inverseName="project" inverseEntity="Item"/>
         <uniquenessConstraints>
             <uniquenessConstraint>

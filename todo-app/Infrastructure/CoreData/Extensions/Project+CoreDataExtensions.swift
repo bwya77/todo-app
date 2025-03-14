@@ -32,12 +32,14 @@ extension Project {
     ///   - context: NSManagedObjectContext to create the project in
     ///   - name: The name of the project
     ///   - color: The color of the project (defaults to gray)
+    ///   - notes: Optional notes for the project
     /// - Returns: The newly created Project
-    static func create(in context: NSManagedObjectContext, name: String, color: String = "gray") -> Project {
+    static func create(in context: NSManagedObjectContext, name: String, color: String = "gray", notes: String? = nil) -> Project {
         let project = Project(context: context)
         project.id = UUID()
         project.name = name
         project.color = color
+        project.notes = notes
         return project
     }
     

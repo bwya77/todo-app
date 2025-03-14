@@ -484,6 +484,8 @@ struct ProjectDetailView: View {
         AppColors.getColor(from: project.color)
     }
     
+    // MARK: - Lifecycle Methods
+
     init(project: Project, context: NSManagedObjectContext) {
         self.project = project
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
@@ -599,12 +601,34 @@ struct ProjectDetailView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 28)
-            .padding(.bottom, 16)
+            .padding(.bottom, 8)
             .background(Color.white)
             
-            // Divider
-            Divider()
+        // Project Notes - Directly using the bound project.notes property with unique ID
+        ProjectNotesEditor(
+            text: Binding(
+                get: { self.project.notes ?? "" },
+                set: { newValue in
+                    self.project.notes = newValue
+                    do {
+                        try self.viewContext.save()
+                    } catch {
+                        print("Error saving project notes: \(error)")
+                    }
+                }
+            ),
+            placeholder: "Notes", 
+            font: .system(size: 14, weight: .regular)
+        )
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        // Force complete recreation of text editor when project changes
+        .id("project-notes-editor-\(self.project.id?.uuidString ?? UUID().uuidString)")
+            
+            // Divider after title
+            CustomDivider()
                 .padding(.horizontal, 16)
+                .padding(.bottom, 0)
             
             // Tasks list
             if activeTasks.isEmpty && loggedTasks.isEmpty {
@@ -705,6 +729,8 @@ struct ProjectDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
+        // Force the view to have a unique identity for each project
+        .id("project-detail-view-\(project.id?.uuidString ?? UUID().uuidString)")
         .onAppear {
             // Ensure we have the latest data
             editedTitle = project.name ?? "Untitled Project"
@@ -745,7 +771,7 @@ struct ProjectDetailView: View {
                                        updatedTask.completed && !updatedTask.logged {
                                         
                                         // Create a transaction with a spring animation for sliding to the logged section
-                                        var transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
+                                        let transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
                                         
                                         // Execute the state changes with the transaction
                                         withTransaction(transaction) {
@@ -885,7 +911,7 @@ struct ProjectDetailView: View {
                             let wasEmpty = self.loggedTasks.isEmpty
                             
                             // Create a transaction with spring animation for sliding to logged section
-                            var transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
+                            let transaction = Transaction(animation: .spring(response: 0.5, dampingFraction: 0.7))
                             
                             // Only the final movement to logged section should be animated
                             withTransaction(transaction) {

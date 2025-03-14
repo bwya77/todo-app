@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.0] - 2025-03-13
 
 ### Added
+- Project Notes feature for adding multi-line text notes to projects
+  - Single-line by default with expansion as content grows or with Shift+Enter
+  - Light gray "Notes" placeholder when empty
+  - Transparent background with no visible borders
+  - Project-specific notes that persist with projects
+  - Automatic saving to CoreData
 - Enhanced task completion animation with more professional UX:
   - Tasks now stay in exact position for 2 seconds after completion
   - Subtle visual indicator (opacity change + background color) for pending tasks
