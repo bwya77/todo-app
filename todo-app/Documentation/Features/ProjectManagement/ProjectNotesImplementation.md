@@ -222,7 +222,7 @@ Notes would sometimes disappear when navigating away. Fixed by:
 
 The implementation provides a clean, minimal notes editor that:
 - Starts as a single line
-- Expands downward as content grows
+- Expands downward as content grows without limits
 - Shows a placeholder when empty
 - Has no visible borders or scrollbars
 - Correctly saves notes per project

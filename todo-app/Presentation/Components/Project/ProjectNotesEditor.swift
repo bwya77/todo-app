@@ -38,7 +38,7 @@ struct ProjectNotesEditor: View {
                     .zIndex(1)
             }
             
-            // Text editor with auto-height adjustment and growth direction downward
+            // Text editor with auto-height adjustment and unlimited downward growth
             TextEditorWithShiftEnter(text: $text, font: font)
                 .focused($isFocused)
                 .frame(height: calculateHeight())
@@ -61,11 +61,8 @@ struct ProjectNotesEditor: View {
         // Use the greater of actual line breaks or estimated wrapped lines
         let totalLines = max(lineCount, wrappedLineEstimate + 1)
         
-        // Calculate height based on number of lines
-        let calculatedHeight = CGFloat(totalLines) * defaultLineHeight
-        
-        // Return at least defaultLineHeight, at most 5 lines (or adjust as needed)
-        return min(max(defaultLineHeight, calculatedHeight), defaultLineHeight * 5)
+        // Calculate height based on number of lines - no maximum height limit
+        return CGFloat(totalLines) * defaultLineHeight
     }
 }
 
