@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Project Notes feature for adding multi-line text notes to projects
-  - Single-line by default with expansion as content grows or with Shift+Enter
+  - Single-line by default with expansion as content grows or with Enter key
   - Light gray "Notes" placeholder when empty
   - Transparent background with no visible borders
   - Project-specific notes that persist with projects

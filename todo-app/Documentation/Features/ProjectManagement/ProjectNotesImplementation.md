@@ -9,7 +9,7 @@ This document details the implementation of the Project Notes feature, which all
 1. Add a multi-line text input field to the Project detail view
 2. Text field should have no visible border or background (transparent)
 3. When empty, display a light gray "Notes" placeholder
-4. By default, show as a single line but expand as content grows or when Shift+Enter is pressed
+4. By default, show as a single line but expand as content grows or when Enter is pressed
 5. Push other content down when expanding (not scroll up)
 6. Notes should be project-specific and persist with CoreData
 7. Text should match the sidebar project name font
@@ -141,20 +141,12 @@ struct TextEditorWithShiftEnter: NSViewRepresentable {
     }
     
     class Coordinator: NSObject, NSTextViewDelegate {
-        // Custom handling of Enter key to require Shift for new lines
+        // Custom handling of Enter key to add new lines
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-                let currentEvent = NSApp.currentEvent
-                
-                if let event = currentEvent, event.modifierFlags.contains(.shift) {
-                    // Shift+Enter: Insert a new line
-                    textView.insertText("\n", replacementRange: textView.selectedRange)
-                    return true
-                } else {
-                    // Regular Enter: End editing
-                    textView.window?.makeFirstResponder(nil)
-                    return true
-                }
+                // Insert a new line directly
+                textView.insertText("\n", replacementRange: textView.selectedRange)
+                return true
             }
             return false
         }
@@ -234,6 +226,6 @@ The implementation provides a clean, minimal notes editor that:
 - Shows a placeholder when empty
 - Has no visible borders or scrollbars
 - Correctly saves notes per project
-- Supports Shift+Enter for new lines
+- Supports Enter key for new lines
 
 The feature enhances project management by allowing users to add context, details, and reminders specific to each project without cluttering the interface.
