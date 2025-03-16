@@ -494,6 +494,7 @@ struct ProjectDetailView: View {
         let activeRequest: NSFetchRequest<Item> = Item.fetchRequest()
         activeRequest.predicate = NSPredicate(format: "project == %@ AND (completed == NO OR (completed == YES AND logged == NO))", project)
         activeRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
@@ -503,7 +504,8 @@ struct ProjectDetailView: View {
         let loggedRequest: NSFetchRequest<Item> = Item.fetchRequest()
         loggedRequest.predicate = NSPredicate(format: "project == %@ AND completed == YES AND logged == YES", project)
         loggedRequest.sortDescriptors = [
-            NSSortDescriptor(keyPath: \Item.dueDate, ascending: false),
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
+            NSSortDescriptor(keyPath: \Item.completionDate, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
         ]
         
@@ -673,7 +675,15 @@ struct ProjectDetailView: View {
                                 // Track if this task is in pending state
                                 let isPending = task.id != nil && pendingLoggedTaskIds.contains(task.id!)
                                 
-                                TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                DraggableTaskRow(
+                                    task: task, 
+                                    onToggleComplete: toggleTaskCompletion, 
+                                    viewType: .project,
+                                    onReorder: { sourceTask, targetTask in
+                                        // Call the same reordering function used in task list view
+                                        taskViewModel.reorderTask(sourceTask, before: targetTask)
+                                    }
+                                )
                                     .id("task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
                                     .opacity(isPending ? 0.8 : 1.0)
                                     .background(isPending ? Color.secondary.opacity(0.1) : Color.clear)
@@ -700,7 +710,15 @@ struct ProjectDetailView: View {
                                 AnimatedLoggedSection {
                                     // Logged tasks section
                                     ForEach(loggedTasks) { task in
-                                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                        DraggableTaskRow(
+                                            task: task, 
+                                            onToggleComplete: toggleTaskCompletion, 
+                                            viewType: .project,
+                                            onReorder: { sourceTask, targetTask in
+                                                // Call the same reordering function used in task list view
+                                                taskViewModel.reorderTask(sourceTask, before: targetTask)
+                                            }
+                                        )
                                             .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
                                             .opacity(0.7) // Make logged items appear slightly faded
                                             .contextMenu {
