@@ -84,7 +84,8 @@ struct DraggableTaskRow: View {
                 
                 return true
             }
-            .onChange(of: isTargeted) { newValue in
+            // Using the new onChange syntax compatible with macOS 14+
+            .onChange(of: isTargeted) { _, newValue in
                 // No haptic feedback for macOS
             }
     }
