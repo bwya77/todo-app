@@ -288,12 +288,24 @@ extension Item {
     ///   - targetItem: The item that this item should appear before
     ///   - save: Whether to save the context after reordering
     func moveBeforeItem(_ targetItem: Item, save: Bool = true) {
-        // Ensure items are in the same project
-        guard self.project == targetItem.project else {
-            print("Cannot reorder items in different projects")
+        // Get context
+        guard let context = self.managedObjectContext else {
+            print("No managed object context available")
             return
         }
         
+        // Logic depends on whether items are in the same project
+        if self.project == targetItem.project {
+            // Same project - reorder within project
+            moveBeforeItemInSameProject(targetItem, save: save)
+        } else {
+            // Different projects - handle special case for Inbox/Upcoming views
+            moveBeforeItemAcrossProjects(targetItem, save: save)
+        }
+    }
+    
+    /// Helper method to reorder within the same project
+    private func moveBeforeItemInSameProject(_ targetItem: Item, save: Bool) {
         // Get all siblings sorted by display order
         var siblings = getSiblingsInProject()
         
@@ -311,6 +323,26 @@ extension Item {
         
         // Update display orders for all items
         Self.reorderItems(siblings, save: save)
+    }
+    
+    /// Helper method to handle reordering across projects (like in Inbox or Upcoming views)
+    private func moveBeforeItemAcrossProjects(_ targetItem: Item, save: Bool) {
+        // This is a view-specific reordering (like in Inbox or Upcoming view)
+        // Change this item's display order to be before the target item
+        // and use a value that ensures correct sorting
+        let newOrder = targetItem.displayOrder - 10
+        self.displayOrder = newOrder
+        
+        // For Inbox/Upcoming views, we may need to change the project as well
+        self.project = targetItem.project
+        
+        if save, let context = self.managedObjectContext {
+            do {
+                try context.save()
+            } catch {
+                print("Error saving after cross-project reordering: \(error)")
+            }
+        }
     }
     
     /// Update display order for all items in a collection

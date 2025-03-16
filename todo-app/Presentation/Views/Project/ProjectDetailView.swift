@@ -739,6 +739,8 @@ struct ProjectDetailView: View {
                     .animation(nil, value: taskUpdateCounter) // Explicitly disable task update animations
                     .animation(nil, value: pendingLoggedTaskIds) // Disable pending task animations
                     .animation(.easeInOut(duration: 0.3), value: showLoggedItems) // Only animate logged section toggle
+                    // Add a coordinate space to track task positions
+                    .coordinateSpace(name: "TaskListCoordinateSpace")
                 }
                 .background(Color.white)
             }
@@ -749,6 +751,8 @@ struct ProjectDetailView: View {
         .background(Color.white)
         // Force the view to have a unique identity for each project
         .id("project-detail-view-\(project.id?.uuidString ?? UUID().uuidString)")
+        // Add the environment object for drag coordination
+        .environmentObject(DragDropContext())
         .onAppear {
             // Ensure we have the latest data
             editedTitle = project.name ?? "Untitled Project"

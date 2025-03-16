@@ -104,6 +104,8 @@ struct EnhancedTaskListView: View {
                                     },
                                     viewType: viewType
                                 )
+                                // Add a unique ID to ensure proper updates
+                                .id("section-\(viewModel.titleForSection(section))")
                                 
                                 // Add a small spacing between sections
                                 if section < viewModel.numberOfSections - 1 {
@@ -112,6 +114,10 @@ struct EnhancedTaskListView: View {
                             }
                         }
                         .padding(.horizontal, 16)
+                        // Add a coordinate space to track task positions
+                        .coordinateSpace(name: "TaskListCoordinateSpace")
+                        // Add the environment object for drag coordination
+                        .environmentObject(DragDropContext())
                     }
                     .background(Color.white)
                 }
