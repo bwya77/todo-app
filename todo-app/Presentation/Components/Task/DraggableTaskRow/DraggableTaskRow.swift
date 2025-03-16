@@ -19,6 +19,7 @@ struct DraggableTaskRow: View {
     @State private var isDragging = false
     @State private var isDragTarget = false
     @State private var viewHeight: CGFloat = 40
+    @State private var isDisplaced = false
     
     // Environment variables for coordination between rows
     @EnvironmentObject private var dragContext: DragDropContext
@@ -37,21 +38,12 @@ struct DraggableTaskRow: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // Ghost placeholder shown when this is the target task
-            if isDragTarget && dragContext.isDragging {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: viewHeight)
-                    .overlay(
-                        // Add a subtle dashed border 
-                        RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4]))
-                            .foregroundColor(.gray.opacity(0.4))
-                    )
-                    .padding(.vertical, 2)
-                    .transition(.opacity)
-                    .zIndex(1)
+        VStack(spacing: 0) {
+            // Insert indicator when dragging above this task
+            if isDragTarget, 
+               dragContext.isDragging,
+               dragContext.getInsertPosition(for: task.id?.uuidString ?? "") == .above {
+                insertionIndicator
             }
             
             // The actual task row
@@ -75,12 +67,32 @@ struct DraggableTaskRow: View {
                     }
                 )
                 .offset(y: calculateOffset())
+                .animation(.easeInOut(duration: 0.2), value: calculateOffset())
+            
+            // Insert indicator when dragging below this task
+            if isDragTarget,
+               dragContext.isDragging,
+               dragContext.getInsertPosition(for: task.id?.uuidString ?? "") == .below {
+                insertionIndicator
+            }
         }
-        .padding(.vertical, 2) // Add padding for visual separation
+        .onChange(of: dragContext.isDragging) { _, isDragging in
+            // Reset our dragging state when global drag state ends
+            if !isDragging {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.isDragging = false
+                }
+            }
+        }
         .onChange(of: dragContext.targetTaskId) { _, newValue in
             // Update isDragTarget when this becomes the target
             withAnimation(.easeInOut(duration: 0.15)) {
                 isDragTarget = (newValue == task.id?.uuidString)
+            }
+        }
+        .onChange(of: dragContext.displacedTasks) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isDisplaced = newValue.contains(task.id?.uuidString ?? "")
             }
         }
         .onDrag {
@@ -96,36 +108,29 @@ struct DraggableTaskRow: View {
             
             if let data = try? JSONEncoder().encode(itemData) {
                 itemProvider.registerDataRepresentation(
-                    forTypeIdentifier: "com.todoapp.taskid", 
+                    forTypeIdentifier: UTType.data.identifier, 
                     visibility: .all
                 ) { completion in
                     completion(data, nil)
                     return nil
                 }
-                
-                // Also register as plain text for better system compatibility
-                if let taskTitle = task.title {
-                    itemProvider.registerDataRepresentation(
-                        forTypeIdentifier: UTType.plainText.identifier,
-                        visibility: .all
-                    ) { completion in
-                        completion(taskTitle.data(using: .utf8), nil)
-                        return nil
-                    }
-                }
             }
             
-            // Use SwiftUI's drag preview system
             return itemProvider
         }
-        .onDrop(of: ["com.todoapp.taskid", UTType.plainText.identifier], isTargeted: $isDragTarget) { items, _ -> Bool in
+        .onDrop(of: [UTType.data.identifier], isTargeted: $isDragTarget) { items, location -> Bool in
             // Ignore drops onto the item being dragged
-            guard !isDragging, let taskId = task.id?.uuidString else { return false }
+            guard !isDragging else { return false }
+            
+            // Update the drag context with the current drag position
+            DispatchQueue.main.async {
+                dragContext.updateTargetForPosition(location)
+            }
             
             // Process the drop data
             guard let item = items.first else { return false }
             
-            item.loadDataRepresentation(forTypeIdentifier: "com.todoapp.taskid") { data, error in
+            item.loadDataRepresentation(forTypeIdentifier: UTType.data.identifier) { data, error in
                 if let error = error {
                     print("Error loading drag data: \(error)")
                     return
@@ -149,25 +154,28 @@ struct DraggableTaskRow: View {
                     if let sourceTask = sourceTask, sourceTask.id != self.task.id {
                         // Perform the actual reorder operation
                         onReorder(sourceTask, self.task)
-                    }
-                    
-                    // Reset all drag states
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        self.isDragging = false
-                        self.dragContext.endDragging()
+                        
+                        // Reset all drag states immediately after reordering
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            self.isDragging = false
+                            self.dragContext.endDragging()
+                        }
                     }
                 }
             }
             
             return true
         }
-        .onDisappear {
-            // Ensure we clean up state when view disappears
-            self.isDragging = false
-            if dragContext.draggedTaskId == task.id?.uuidString {
-                dragContext.endDragging()
-            }
-        }
+    }
+    
+    /// Visual indicator for insertion points
+    private var insertionIndicator: some View {
+        Rectangle()
+            .fill(Color.blue)
+            .frame(height: 2)
+            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity)
+            .transition(.opacity)
     }
     
     /// Calculate vertical offset for tasks during drag operations
@@ -178,16 +186,15 @@ struct DraggableTaskRow: View {
         }
         
         // If not in a drag operation, no offset needed
-        if !dragContext.isDragging || dragContext.targetTaskId == nil {
+        if !dragContext.isDragging {
             return 0
         }
         
-        // If this is the target task itself, create space above it
-        if isDragTarget {
-            return viewHeight * 0.5 // Create a half-row gap above the target
+        // If this task should be displaced, move it down
+        if isDisplaced {
+            return viewHeight
         }
         
-        // No offset needed for other tasks
         return 0
     }
     
