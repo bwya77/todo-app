@@ -3,6 +3,7 @@
 //  todo-app
 //
 //  Created on 3/13/25.
+//  Updated for drag & drop on 3/15/25.
 //
 
 import SwiftUI
@@ -98,6 +99,9 @@ struct EnhancedTaskListView: View {
                                     onDeleteTask: { task in
                                         viewModel.deleteTask(task)
                                     },
+                                    onReorderTask: { sourceTask, targetTask in
+                                        viewModel.reorderTask(sourceTask, before: targetTask)
+                                    },
                                     viewType: viewType
                                 )
                                 
@@ -163,6 +167,7 @@ struct SectionView: View {
     @Binding var expandedGroups: Set<String>
     let onToggleComplete: (Item) -> Void
     let onDeleteTask: (Item) -> Void
+    let onReorderTask: (Item, Item) -> Void
     let viewType: ViewType
     
     @Environment(\.managedObjectContext) private var viewContext
@@ -222,14 +227,19 @@ struct SectionView: View {
             // Tasks content
             if expandedGroups.contains(title) {
                 ForEach(tasks) { task in
-                    TaskRow(task: task, onToggleComplete: onToggleComplete, viewType: viewType)
-                        .contextMenu {
-                            Button(action: {
-                                onDeleteTask(task)
-                            }) {
-                                Label("Delete", systemImage: "trash")
-                            }
+                    DraggableTaskRow(
+                        task: task, 
+                        onToggleComplete: onToggleComplete, 
+                        viewType: viewType,
+                        onReorder: onReorderTask
+                    )
+                    .contextMenu {
+                        Button(action: {
+                            onDeleteTask(task)
+                        }) {
+                            Label("Delete", systemImage: "trash")
                         }
+                    }
                 }
             }
         }
