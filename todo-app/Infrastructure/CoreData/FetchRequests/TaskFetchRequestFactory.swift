@@ -3,6 +3,7 @@
 //  todo-app
 //
 //  Created on 3/13/25.
+//  Updated for drag & drop support on 3/15/25.
 //
 
 import Foundation
@@ -20,6 +21,7 @@ struct TaskFetchRequestFactory {
     static func allTasks(in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
@@ -41,6 +43,7 @@ struct TaskFetchRequestFactory {
         request.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@ AND dueDate < %@", 
                                         today as NSDate, tomorrow as NSDate)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true)
         ]
@@ -62,6 +65,7 @@ struct TaskFetchRequestFactory {
         request.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@", 
                                         startOfDay as NSDate, endOfDay as NSDate)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.isAllDay, ascending: false),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
@@ -82,6 +86,7 @@ struct TaskFetchRequestFactory {
         request.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@", 
                                         startDate as NSDate, endDate as NSDate)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
@@ -98,6 +103,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@", today as NSDate)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
@@ -114,6 +120,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "completed == NO AND dueDate < %@", today as NSDate)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
@@ -144,6 +151,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = predicate
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
@@ -162,6 +170,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "project == %@ AND completed == YES", project)
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.completionDate, ascending: false)
         ]
         
@@ -178,6 +187,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "project == nil AND completed == NO")
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.createdDate, ascending: false)
@@ -198,6 +208,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "completed == YES")
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.completionDate, ascending: false)
         ]
         
@@ -216,6 +227,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = NSPredicate(format: "completed == YES AND logged == YES")
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.completionDate, ascending: false)
         ]
         
@@ -245,6 +257,7 @@ struct TaskFetchRequestFactory {
         
         request.predicate = predicate
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]

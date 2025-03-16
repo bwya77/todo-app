@@ -3,6 +3,7 @@
 //  todo-app
 //
 //  Created on 3/12/25.
+//  Updated for v3 migration on 3/15/25.
 //
 
 import Foundation
@@ -32,6 +33,22 @@ class TodoAppMigrationPolicy: NSEntityMigrationPolicy {
             
             if destInstance.value(forKey: "title") == nil {
                 destInstance.setValue("", forKey: "title")
+            }
+            
+            // Handle v2 to v3 migration - set initial displayOrder
+            // We're checking if the model has the displayOrder attribute but the source doesn't
+            if destInstance.entity.attributesByName["displayOrder"] != nil &&
+               sInstance.entity.attributesByName["displayOrder"] == nil {
+                // Set initial display order based on creation date as a reasonable default
+                if let createdDate = sInstance.value(forKey: "createdDate") as? Date {
+                    let timeInterval = createdDate.timeIntervalSince1970
+                    // Limit to reasonable Int32 range
+                    let displayOrder = Int32(min(Double(Int32.max), timeInterval))
+                    destInstance.setValue(displayOrder, forKey: "displayOrder")
+                } else {
+                    // Fallback to a random value if no created date
+                    destInstance.setValue(Int32.random(in: 0..<10000), forKey: "displayOrder")
+                }
             }
         }
         
@@ -63,6 +80,57 @@ class TodoAppMigrationPolicy: NSEntityMigrationPolicy {
             if destInstance.value(forKey: "color") == nil {
                 destInstance.setValue("gray", forKey: "color")
             }
+        }
+    }
+    
+    // After migration is complete, organize items by project and adjust their display orders
+    override func endInstanceCreation(forMapping mapping: NSEntityMapping, manager: NSMigrationManager) throws {
+        try super.endInstanceCreation(forMapping: mapping, manager: manager)
+        
+        // Only proceed if this is the migration for the Item entity
+        guard mapping.destinationEntityName == "Item",
+              mapping.sourceEntityName == "Item" else {
+            return
+        }
+        
+        // Get all destination instances
+        let request = NSFetchRequest<NSManagedObject>(entityName: "Item")
+        let context = manager.destinationContext
+        
+        do {
+            let allItems = try context.fetch(request)
+            
+            // Group items by project
+            let itemsByProject = Dictionary(grouping: allItems) { item -> String in
+                if let project = item.value(forKeyPath: "project.id") as? UUID {
+                    return project.uuidString
+                }
+                return "no-project"
+            }
+            
+            // For each project group, set display orders with appropriate spacing
+            for (_, items) in itemsByProject {
+                // Sort by created date to preserve existing implied ordering
+                let sortedItems = items.sorted { 
+                    guard let date1 = $0.value(forKey: "createdDate") as? Date,
+                          let date2 = $1.value(forKey: "createdDate") as? Date else {
+                        return false
+                    }
+                    return date1 < date2
+                }
+                
+                // Set display order with spacing of 1000 between items
+                for (index, item) in sortedItems.enumerated() {
+                    let orderSpacing: Int32 = 1000
+                    item.setValue(Int32(index) * orderSpacing, forKey: "displayOrder")
+                }
+            }
+            
+            // Save the context to persist these changes
+            try context.save()
+            
+        } catch {
+            print("Error during migration finalization: \(error)")
         }
     }
 }
