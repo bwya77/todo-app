@@ -663,66 +663,67 @@ struct ProjectDetailView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        // Disable animations completely for this section to prevent any movement
-                        // when task completion state changes
-                        AnimationDisabledSection {
-                            // Active tasks (incomplete + newly completed but not logged yet)
-                            ForEach(activeTasks) { task in
-                                // Track if this task is in pending state
-                                let isPending = task.id != nil && pendingLoggedTaskIds.contains(task.id!)
-                                
-                                TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                                    .id("task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
-                                    .opacity(isPending ? 0.8 : 1.0)
-                                    .background(isPending ? Color.secondary.opacity(0.1) : Color.clear)
-                                    .cornerRadius(6)
-                                    .contextMenu {
-                                        Button(action: {
-                                            deleteTask(task)
-                                        }) {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                List {
+                    // Disable animations completely for this section to prevent any movement
+                    // when task completion state changes
+                    AnimationDisabledSection {
+                        // Active tasks (incomplete + newly completed but not logged yet)
+                        ForEach(activeTasks) { task in
+                            // Track if this task is in pending state
+                            let isPending = task.id != nil && pendingLoggedTaskIds.contains(task.id!)
+                            
+                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                .id("task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
+                                .opacity(isPending ? 0.8 : 1.0)
+                                .background(isPending ? Color.secondary.opacity(0.1) : Color.clear)
+                                .cornerRadius(6)
+                                .contextMenu {
+                                    Button(action: {
+                                        deleteTask(task)
+                                    }) {
+                                        Label("Delete", systemImage: "trash")
                                     }
-                                    // No movement transitions on completion - task stays in place
-                                    .transition(.identity)
-                            }
+                                }
+                                // No movement transitions on completion - task stays in place
+                                .transition(.identity)
                         }
+                        .onMove { source, destination in
+                            moveActiveTasks(from: source, to: destination)
+                        }
+                    }
                         
                         // Show the logged items toggle if there are any completed tasks
                         if !loggedTasks.isEmpty {
-                            LoggedItemsToggle(isExpanded: $showLoggedItems, itemCount: loggedTasks.count)
-                                .padding(.horizontal, 4)
-                                .padding(.top, 8)
-                                
-                            if showLoggedItems {
-                                AnimatedLoggedSection {
-                                    // Logged tasks section
-                                    ForEach(loggedTasks) { task in
-                                        TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
-                                            .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
-                                            .opacity(0.7) // Make logged items appear slightly faded
-                                            .contextMenu {
-                                                Button(action: {
-                                                    deleteTask(task)
-                                                }) {
-                                                    Label("Delete", systemImage: "trash")
+                            Section(header: LoggedItemsToggle(isExpanded: $showLoggedItems, itemCount: loggedTasks.count)) {
+                                if showLoggedItems {
+                                    AnimatedLoggedSection {
+                                        // Logged tasks section
+                                        ForEach(loggedTasks) { task in
+                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion)
+                                                .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)-\(taskUpdateCounter)")
+                                                .opacity(0.7) // Make logged items appear slightly faded
+                                                .contextMenu {
+                                                    Button(action: {
+                                                        deleteTask(task)
+                                                    }) {
+                                                        Label("Delete", systemImage: "trash")
+                                                    }
                                                 }
-                                            }
+                                        }
+                                        .onMove { source, destination in
+                                            moveLoggedTasks(from: source, to: destination)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .listStyle(SidebarListStyle())
+                    .background(Color.white)
                     // Handle animations carefully - only animate what we explicitly want to animate
                     .animation(nil, value: taskUpdateCounter) // Explicitly disable task update animations
                     .animation(nil, value: pendingLoggedTaskIds) // Disable pending task animations
                     .animation(.easeInOut(duration: 0.3), value: showLoggedItems) // Only animate logged section toggle
-                }
-                .background(Color.white)
             }
             
             // Bottom add task button removed
@@ -970,6 +971,64 @@ struct ProjectDetailView: View {
             }
             
             taskUpdateCounter += 1
+        }
+    }
+    
+    private func moveActiveTasks(from source: IndexSet, to destination: Int) {
+        // Store the task ordering in UserDefaults
+        var orderDict = UserDefaults.standard.dictionary(forKey: "ActiveTaskOrdering") as? [String: Int] ?? [:]
+        
+        // Create a mutable copy of the tasks
+        var tasks = Array(activeTasks)
+        
+        // Perform the move operation
+        tasks.move(fromOffsets: source, toOffset: destination)
+        
+        // Update the ordering for each task
+        for (index, task) in tasks.enumerated() {
+            if let taskId = task.id?.uuidString {
+                orderDict[taskId] = index
+            }
+        }
+        
+        // Save the ordering
+        UserDefaults.standard.set(orderDict, forKey: "ActiveTaskOrdering")
+        
+        // Save the context
+        do {
+            try viewContext.save()
+            taskUpdateCounter += 1
+        } catch {
+            print("Failed to save context after reordering: \(error)")
+        }
+    }
+    
+    private func moveLoggedTasks(from source: IndexSet, to destination: Int) {
+        // Store the task ordering in UserDefaults
+        var orderDict = UserDefaults.standard.dictionary(forKey: "LoggedTaskOrdering") as? [String: Int] ?? [:]
+        
+        // Create a mutable copy of the tasks
+        var tasks = Array(loggedTasks)
+        
+        // Perform the move operation
+        tasks.move(fromOffsets: source, toOffset: destination)
+        
+        // Update the ordering for each task
+        for (index, task) in tasks.enumerated() {
+            if let taskId = task.id?.uuidString {
+                orderDict[taskId] = index
+            }
+        }
+        
+        // Save the ordering
+        UserDefaults.standard.set(orderDict, forKey: "LoggedTaskOrdering")
+        
+        // Save the context
+        do {
+            try viewContext.save()
+            taskUpdateCounter += 1
+        } catch {
+            print("Failed to save context after reordering: \(error)")
         }
     }
     

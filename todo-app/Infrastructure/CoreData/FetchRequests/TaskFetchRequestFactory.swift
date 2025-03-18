@@ -25,6 +25,12 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
         ]
         
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
+        
         return request
     }
     
@@ -44,6 +50,12 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true)
         ]
+        
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
         
         return request
     }
@@ -102,6 +114,12 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
         
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
+        
         return request
     }
     
@@ -149,6 +167,12 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
         ]
         
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
+        
         return request
     }
     
@@ -182,6 +206,12 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.createdDate, ascending: false)
         ]
+        
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
         
         return request
     }
@@ -249,7 +279,45 @@ struct TaskFetchRequestFactory {
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
         
+        // Apply custom order from UserDefaults if available
+        if var descriptors = request.sortDescriptors {
+            applyCustomOrderSortDescriptor(to: &descriptors)
+            request.sortDescriptors = descriptors
+        }
+        
         return request
+    }
+    
+    // MARK: - Task Ordering
+    
+    /// Applies custom order sort descriptor based on UserDefaults stored ordering
+    /// - Parameter sortDescriptors: Sort descriptors array to modify
+    static func applyCustomOrderSortDescriptor(to sortDescriptors: inout [NSSortDescriptor]) {
+        // Only apply custom ordering if there's data in UserDefaults
+        guard let orderDict = UserDefaults.standard.dictionary(forKey: "TaskOrdering") as? [String: Int] else {
+            return
+        }
+        
+        // Create a custom comparator for our sort descriptor
+        let customOrderDescriptor = NSSortDescriptor(key: "id.uuidString", ascending: true) { (id1, id2) -> ComparisonResult in
+            guard let id1String = id1 as? String,
+                  let id2String = id2 as? String,
+                  let order1 = orderDict[id1String],
+                  let order2 = orderDict[id2String] else {
+                return .orderedSame
+            }
+            
+            if order1 < order2 {
+                return .orderedAscending
+            } else if order1 > order2 {
+                return .orderedDescending
+            } else {
+                return .orderedSame
+            }
+        }
+        
+        // Insert the custom descriptor at the beginning to prioritize it
+        sortDescriptors.insert(customOrderDescriptor, at: 0)
     }
     
     // MARK: - Batch Size Configuration

@@ -84,31 +84,24 @@ struct EnhancedTaskListView: View {
                     .padding(.bottom, 8)
                     
                     // Tasks list grouped by section
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(0..<viewModel.numberOfSections, id: \.self) { section in
-                                SectionView(
-                                    section: section,
-                                    title: viewModel.titleForSection(section),
-                                    tasks: viewModel.tasksForSection(section),
-                                    expandedGroups: $expandedGroups,
-                                    onToggleComplete: { task in
-                                        viewModel.toggleTaskCompletion(task)
-                                    },
-                                    onDeleteTask: { task in
-                                        viewModel.deleteTask(task)
-                                    },
-                                    viewType: viewType
-                                )
-                                
-                                // Add a small spacing between sections
-                                if section < viewModel.numberOfSections - 1 {
-                                    Spacer().frame(height: 12)
+                    List {
+                        // Break up complex expressions to help compiler
+                        ForEach(0..<viewModel.numberOfSections, id: \.self) { section in
+                            let sectionTitle = viewModel.titleForSection(section)
+                            let sectionTasks = viewModel.tasksForSection(section)
+                            let isExpanded = expandedGroups.contains(sectionTitle)
+                            
+                            Section(
+                                header: createSectionHeader(title: sectionTitle, isExpanded: isExpanded, itemCount: sectionTasks.count)
+                            ) {
+                                if isExpanded {
+                                    // Task rows
+                                    createTaskRows(tasks: sectionTasks, section: section)
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
                     }
+                    .listStyle(SidebarListStyle())
                     .background(Color.white)
                 }
             }
@@ -149,6 +142,46 @@ struct EnhancedTaskListView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showingAddTaskPopup = false
             }
+        }
+    }
+    
+    // Helper methods to break up complex expressions for the compiler
+    
+    @ViewBuilder
+    private func createSectionHeader(title: String, isExpanded: Bool, itemCount: Int) -> some View {
+        Button(action: {
+            withAnimation {
+                if expandedGroups.contains(title) {
+                    expandedGroups.remove(title)
+                } else {
+                    expandedGroups.insert(title)
+                }
+            }
+        }) {
+            SectionHeaderView(
+                title: title, 
+                isExpanded: isExpanded,
+                itemCount: itemCount,
+                viewContext: viewContext
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    @ViewBuilder
+    private func createTaskRows(tasks: [Item], section: Int) -> some View {
+        ForEach(tasks) { task in
+            TaskRow(task: task, onToggleComplete: { _ in viewModel.toggleTaskCompletion(task) }, viewType: viewType)
+                .contextMenu {
+                    Button(action: {
+                        viewModel.deleteTask(task)
+                    }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+        }
+        .onMove { source, destination in
+            viewModel.moveItems(in: section, from: source, to: destination)
         }
     }
 }

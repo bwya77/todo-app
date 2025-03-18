@@ -278,4 +278,44 @@ class EnhancedTaskViewModel: ObservableObject {
         guard section < tasksBySection.count else { return 0 }
         return tasksBySection[section].count
     }
+    
+    /// Moves items within a section to support drag and drop reordering
+    /// - Parameters:
+    ///   - section: The section containing the items
+    ///   - source: The source indices
+    ///   - destination: The destination index
+    func moveItems(in section: Int, from source: IndexSet, to destination: Int) {
+        // Make sure we have a valid section
+        guard section < tasksBySection.count else { return }
+        
+        // Get a mutable copy of the section's tasks
+        var sectionTasks = tasksBySection[section]
+        
+        // Perform the move operation on our local copy
+        sectionTasks.move(fromOffsets: source, toOffset: destination)
+        
+        // Store the new ordering in UserDefaults since we don't have an 'order' property
+        // This is a temporary solution until we can update the Core Data model
+        var orderDict = UserDefaults.standard.dictionary(forKey: "TaskOrdering") as? [String: Int] ?? [:]
+        
+        // Update the ordering for each task
+        for (index, task) in sectionTasks.enumerated() {
+            if let taskId = task.id?.uuidString {
+                orderDict[taskId] = index
+            }
+        }
+        
+        // Save the ordering
+        UserDefaults.standard.set(orderDict, forKey: "TaskOrdering")
+        
+        // Save the context for any other changes
+        do {
+            try viewContext.save()
+            
+            // Refresh the fetch to update the UI
+            self.refreshFetch()
+        } catch {
+            print("Failed to save context after reordering: \(error)")
+        }
+    }
 }

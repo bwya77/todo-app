@@ -107,6 +107,8 @@ struct TaskRow: View {
                 onToggleComplete(task)
             }
         }
+        // Make task reorderable
+        .taskReorderable(item: task)
     }
     
     private func isDueDateOverdue(_ date: Date) -> Bool {

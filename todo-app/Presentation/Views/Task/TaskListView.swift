@@ -123,21 +123,39 @@ struct TaskListView: View {
                     .padding(.bottom, 8)
                     
                     // Tasks list grouped by project
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
-                                if let groupTasks = groupTasks()[groupName] {
-                                    VStack(spacing: 0) {
-                                        // Custom disclosure header
-                                        Button(action: {
-                                            withAnimation {
-                                                if expandedGroups.contains(groupName) {
-                                                    expandedGroups.remove(groupName)
-                                                } else {
-                                                    expandedGroups.insert(groupName)
+                    List {
+                        ForEach(groupTasks().keys.sorted(), id: \.self) { groupName in
+                            if let groupTasks = groupTasks()[groupName] {
+                                Section {
+                                    // Only show tasks content if the group is expanded
+                                    if expandedGroups.contains(groupName) {
+                                        ForEach(groupTasks) { task in
+                                            TaskRow(task: task, onToggleComplete: toggleTaskCompletion, viewType: viewType)
+                                                .contextMenu {
+                                                    Button(action: {
+                                                        if let index = groupTasks.firstIndex(of: task) {
+                                                            deleteTasks(from: groupName, at: IndexSet(integer: index))
+                                                        }
+                                                    }) {
+                                                        Label("Delete", systemImage: "trash")
+                                                    }
                                                 }
+                                        }
+                                        .onMove { from, to in
+                                            // Handle moving tasks within the group
+                                            moveItems(in: groupName, from: from, to: to)
+                                        }
+                                    }
+                                } header: {
+                                    Button(action: {
+                                        withAnimation {
+                                            if expandedGroups.contains(groupName) {
+                                                expandedGroups.remove(groupName)
+                                            } else {
+                                                expandedGroups.insert(groupName)
                                             }
-                                        }) {
+                                        }
+                                    }) {
                                             HStack {
                                                 Image(systemName: expandedGroups.contains(groupName) ? "chevron.down" : "chevron.right")
                                                     .foregroundColor(.gray)
@@ -175,31 +193,11 @@ struct TaskListView: View {
                                             .background(Color.white)
                                         }
                                         .buttonStyle(PlainButtonStyle())
-                                        
-                                        // Tasks content
-                                        if expandedGroups.contains(groupName) {
-                                            ForEach(groupTasks) { task in
-                                                TaskRow(task: task, onToggleComplete: toggleTaskCompletion, viewType: viewType)
-                                                    .contextMenu {
-                                                        Button(action: {
-                                                            if let index = groupTasks.firstIndex(of: task) {
-                                                                deleteTasks(from: groupName, at: IndexSet(integer: index))
-                                                            }
-                                                        }) {
-                                                            Label("Delete", systemImage: "trash")
-                                                        }
-                                                    }
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Add a small spacing between groups but not dividers
-                                    Spacer().frame(height: 12)
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
                     }
+                    .listStyle(SidebarListStyle())
                     .background(Color.white)
                 }
             }
@@ -268,6 +266,38 @@ struct TaskListView: View {
             offsets.map { tasks[$0] }.forEach { task in
                 taskViewModel.deleteTask(task)
             }
+        }
+    }
+    
+    private func moveItems(in group: String, from source: IndexSet, to destination: Int) {
+        // Get the tasks for this group
+        guard var groupTasks = self.groupTasks()[group] else { return }
+        
+        // Create a mutable copy of the tasks
+        var items = groupTasks
+        
+        // Perform the move operation
+        items.move(fromOffsets: source, toOffset: destination)
+        
+        // Store the new ordering in UserDefaults since we don't have an 'order' property
+        // This is a temporary solution until we can update the Core Data model
+        var orderDict = UserDefaults.standard.dictionary(forKey: "TaskOrdering") as? [String: Int] ?? [:]
+        
+        // Update the ordering for each task
+        for (index, task) in items.enumerated() {
+            if let taskId = task.id?.uuidString {
+                orderDict[taskId] = index
+            }
+        }
+        
+        // Save the ordering
+        UserDefaults.standard.set(orderDict, forKey: "TaskOrdering")
+        
+        // Save the context for any other changes
+        do {
+            try viewContext.save()
+        } catch {
+            print("Failed to save context after reordering: \(error)")
         }
     }
 }
