@@ -11,6 +11,7 @@ import CoreData
 import Foundation
 import Combine
 import Dispatch
+import AppKit
 
 /// A custom pie chart view for showing progress as a slice with animation
 fileprivate struct ProgressPie: View {
@@ -107,9 +108,7 @@ struct SidebarView: View {
     // Reference to ContentView for showing popup
     var onShowTaskPopup: () -> Void
     
-    @State private var showingAddProject = false
-    @State private var newProjectName = ""
-    @State private var newProjectColor = "blue"
+    // No longer need state variables for popup since it's handled by ContentView
     
     init(selectedViewType: Binding<ViewType>, selectedProject: Binding<Project?>, context: NSManagedObjectContext, onShowTaskPopup: @escaping () -> Void) {
         self._selectedViewType = selectedViewType
@@ -256,13 +255,6 @@ struct SidebarView: View {
                     }
                     
                     Group {
-                        Text("Projects")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 8)
-                            .padding(.bottom, 4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
                         
                         ForEach(projects) { project in
                             Button(action: {
@@ -297,17 +289,7 @@ struct SidebarView: View {
                         }
                         .onDelete(perform: deleteProjects)
                         
-                        Button(action: {
-                            showingAddProject = true
-                        }) {
-                            HStack {
-                                Label("Add Project", systemImage: "plus")
-                                    .font(.system(size: 14))
-                                    .imageScale(.medium)
-                                    .foregroundColor(.black)
-                            }
-                        }
-                        .buttonStyle(CustomSidebarButtonStyle(isSelected: false))
+                        // Project buttons only - removed the Add Project button
                     }
                 }
                 .listStyle(SidebarListStyle())
@@ -317,20 +299,20 @@ struct SidebarView: View {
                 
                 // Bottom Bar with New List button
                 VStack(spacing: 0) {
-                    Divider().padding(.trailing, -20)  // Extend divider past the right edge
-                    HStack {
-                        Button(action: {
-                            // New list action
-                        }) {
-                            HStack {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 14))
-                                Text("New List")
-                                    .font(.system(size: 14))
-                            }
-                            .padding(8)
-                        }
-                        .buttonStyle(.plain)
+                Divider().padding(.trailing, -20)  // Extend divider past the right edge
+                HStack {
+                Button(action: {
+                showListCreationPopup()
+                }) {
+                HStack {
+                Image(systemName: "plus")
+                .font(.system(size: 14))
+                Text("New List")
+                .font(.system(size: 14))
+                }
+                .padding(8)
+                }
+                .buttonStyle(.plain)
                         
                         Spacer()
                         
@@ -362,47 +344,16 @@ struct SidebarView: View {
                 lastUpdateTime = now
             }
         }
-        .sheet(isPresented: $showingAddProject) {
-            VStack(spacing: 20) {
-                Text("Add Project")
-                    .font(.headline)
-                
-                TextField("Project Name", text: $newProjectName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Picker("Color", selection: $newProjectColor) {
-                    ForEach(Array(AppColors.colorMap.keys), id: \.self) { colorName in
-                        HStack {
-                            Circle()
-                                .fill(AppColors.colorMap[colorName] ?? .gray)
-                                .frame(width: 16, height: 16)
-                            Text(colorName.capitalized)
-                        }
-                        .tag(colorName)
-                    }
-                }
-                
-                HStack {
-                    Button("Cancel") {
-                        showingAddProject = false
-                        newProjectName = ""
-                    }
-                    
-                    Spacer()
-                    
-                    Button("Add") {
-                        guard !newProjectName.isEmpty else { return }
-                        taskViewModel.addProject(name: newProjectName, color: newProjectColor)
-                        newProjectName = ""
-                        showingAddProject = false
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding(.top)
-            }
-            .padding()
-            .frame(width: 300)
-        }
+        // Note: Instead of using an overlay here, we'll post a notification to show the popup from ContentView
+    }
+    
+    // Show the list creation popup by posting a notification to ContentView
+    private func showListCreationPopup() {
+        // Post notification for ContentView to show the list creation popup
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowListCreationPopup"),
+            object: nil
+        )
     }
     
     private func deleteProjects(offsets: IndexSet) {

@@ -10,6 +10,7 @@ import SwiftUI
 import CoreData
 import AppKit
 import Combine
+// Import custom components for list creation popup
 
 #if DEBUG
 import OSLog
@@ -137,9 +138,11 @@ struct ContentView: View {
     @State private var sidebarWidth: CGFloat = 250
     @State private var isSidebarVisible: Bool = true
     
-    // States for the task popup
+    // States for popups
     @State private var showingAddTaskPopup = false
-    @State private var animatePopup = false
+    @State private var showingListCreationPopup = false
+    @State private var animateTaskPopup = false
+    @State private var animateListPopup = false
     @State private var preselectedProject: Project? = nil
     
     // For debugging and testing
@@ -230,6 +233,11 @@ struct ContentView: View {
                 }
             }
             
+            // Listen for notification to show list creation popup
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowListCreationPopup"), object: nil, queue: .main) { _ in
+                showListCreationPopup()
+            }
+            
             #if DEBUG
             // Register keyboard shortcut for testing
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -246,10 +254,24 @@ struct ContentView: View {
         }
         .overlay {
             ZStack {
+                // Task Popup
                 if showingAddTaskPopup {
-                    PopupBlurView(isPresented: animatePopup, onDismiss: closePopup) {
-                        if animatePopup {
+                    PopupBlurView(isPresented: animateTaskPopup, onDismiss: closeTaskPopup) {
+                        if animateTaskPopup {
                             AddTaskPopup(taskViewModel: TaskViewModel(context: viewContext), selectedProject: preselectedProject)
+                                .environment(\.managedObjectContext, viewContext)
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(100)
+                    .edgesIgnoringSafeArea(.all)
+                }
+                
+                // List Creation Popup
+                if showingListCreationPopup {
+                    PopupBlurView(isPresented: animateListPopup, onDismiss: closeListPopup) {
+                        if animateListPopup {
+                            ListCreationPopup(taskViewModel: TaskViewModel(context: viewContext))
                                 .environment(\.managedObjectContext, viewContext)
                         }
                     }
@@ -299,18 +321,39 @@ struct ContentView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             showingAddTaskPopup = true
             // Immediate animation looks better with scale effect
-            animatePopup = true
+            animateTaskPopup = true
         }
     }
     
-    // Close popup with animation
-    private func closePopup() {
+    // Close task popup with animation
+    private func closeTaskPopup() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-            animatePopup = false
+            animateTaskPopup = false
             
             // Give it time to animate out before removing from view hierarchy
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showingAddTaskPopup = false
+            }
+        }
+    }
+    
+    // Show the list creation popup
+    func showListCreationPopup() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            showingListCreationPopup = true
+            // Immediate animation looks better with scale effect
+            animateListPopup = true
+        }
+    }
+    
+    // Close list popup with animation
+    private func closeListPopup() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            animateListPopup = false
+            
+            // Give it time to animate out before removing from view hierarchy
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showingListCreationPopup = false
             }
         }
     }
