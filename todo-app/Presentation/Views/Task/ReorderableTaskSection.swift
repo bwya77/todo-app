@@ -83,32 +83,25 @@ struct ReorderableTaskSection: View {
             
             // Tasks content with reorderable support
             if expandedGroups.contains(title) {
-                // Use ReorderableForEach instead of ForEach
-                ReorderableForEach(tasks, active: $activeTask) { task in
-                    TaskRow(task: task, onToggleComplete: onToggleComplete, viewType: viewType)
-                        .contentShape(Rectangle()) // Make entire area draggable
-                        .contextMenu {
-                            Button(action: {
-                                onDeleteTask(task)
-                            }) {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                } moveAction: { fromOffsets, toOffset in
-                    print("📲 ReorderableForEach moveAction: from \(fromOffsets) to \(toOffset) in section \(section)")
-                    
-                    // Call the provided move handler
-                    onMoveTask(fromOffsets, toOffset, section)
-                    
-                    // Force a context save when done
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        do {
-                            try viewContext.save()
-                            print("✅ Context saved after reordering")
-                        } catch {
-                            print("❌ Error saving context: \(error)")
-                        }
-                    }
+                // For Inbox view, use the dedicated Inbox list with identical behavior to Projects
+                if viewType == .inbox {
+                    InboxTaskList(
+                        tasks: tasks,
+                        onToggleComplete: onToggleComplete,
+                        onDeleteTask: onDeleteTask,
+                        activeTask: $activeTask
+                    )
+                } else {
+                    // For other views, use the unified task list
+                    UnifiedTaskListView(
+                        viewType: viewType,
+                        title: title,
+                        tasks: tasks,
+                        project: getProjectForGroupName(title),
+                        activeTask: $activeTask,
+                        onToggleComplete: onToggleComplete,
+                        onDeleteTask: onDeleteTask
+                    )
                 }
             }
         }

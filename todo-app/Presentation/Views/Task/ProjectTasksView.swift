@@ -54,6 +54,7 @@ struct ProjectTasksView: View {
     @State private var showLoggedItems: Bool = false
     @State private var pendingLoggedTaskIds: [UUID] = []
     @State private var taskUpdateCounter: Int = 0
+    @State private var activeTask: Item?
     
     init(project: Project, onToggleComplete: @escaping (Item) -> Void) {
         self.project = project
@@ -76,7 +77,8 @@ struct ProjectTasksView: View {
                         ReorderableTaskList(
                             tasks: activeTasks,
                             onToggleComplete: onToggleComplete,
-                            projectId: project.id
+                            projectId: project.id,
+                            activeTask: $activeTask
                         )
                         
                         // Logged tasks section

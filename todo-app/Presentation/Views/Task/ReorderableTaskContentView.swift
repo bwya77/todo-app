@@ -22,6 +22,7 @@ struct ReorderableTaskContentView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(0..<viewModel.numberOfSections, id: \.self) { section in
+                    // Use our unified solution for all sections
                     ReorderableTaskSection(
                         section: section,
                         title: viewModel.titleForSection(section),
@@ -35,24 +36,12 @@ struct ReorderableTaskContentView: View {
                             viewModel.deleteTask(task)
                         },
                         onMoveTask: { fromOffsets, toOffset, sectionIndex in
-                            // Use direct reordering to ensure proper save
+                            // Still need this for backward compatibility
                             viewModel.reorderTasksInSection(
                                 fromOffsets: fromOffsets,
                                 toOffset: toOffset,
                                 section: sectionIndex
                             )
-                            
-                            // Double-save attempt after a delay
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                // Force context save
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("ForceContextSave"),
-                                    object: nil
-                                )
-                                
-                                // Re-fetch data for display
-                                viewModel.refreshFetch()
-                            }
                         },
                         viewType: viewType
                     )

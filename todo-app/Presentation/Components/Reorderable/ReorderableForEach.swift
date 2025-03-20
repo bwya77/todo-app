@@ -80,7 +80,8 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
 
     private func contentView(for item: Item) -> some View {
         content(item)
-            .opacity(active == item && hasChangedLocation ? 0.5 : 1)
+            // Fade the dragged item and enhance the visual feedback with more subtle hints
+            .opacity(active == item && hasChangedLocation ? 0.7 : 1)
             .contentShape(Rectangle()) // Make entire area draggable
             .onDrop(
                 of: [.text],
@@ -90,7 +91,8 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
                     active: $active,
                     hasChangedLocation: $hasChangedLocation
                 ) { from, to in
-                    withAnimation {
+                    // Use spring animation for smoother sliding effect
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3)) {
                         moveAction(from, to)
                     }
                     

@@ -26,11 +26,47 @@ extension EnhancedTaskViewModel {
         
         print("\n🔄 DIRECT REORDERING tasks in section \(section) from \(fromOffsets) to \(toOffset)")
         
+        // Enhanced debugging to track the reordering operations
+        if let firstIndex = fromOffsets.first {
+            // Log the reordering operation for debugging
+            TaskOrderDebugger.logReorderingOperation(
+                fromIndex: firstIndex, 
+                toIndex: toOffset,
+                tasks: sectionTasks,
+                in: sectionTitles.count > section ? sectionTitles[section] : "Section \(section)"
+            )
+        }
+        
         // Create a mutable array of sectionTasks
         var updatedTasks = sectionTasks
         
+        // Validate operation bounds
+        guard let fromIndex = fromOffsets.first, fromIndex < updatedTasks.count else {
+            print("⚠️ Invalid source index: \(fromOffsets)")
+            return
+        }
+        
+        // Ensure destination is within bounds
+        let safeToOffset = min(toOffset, updatedTasks.count)
+        if safeToOffset != toOffset {
+            print("⚠️ Adjusted target index from \(toOffset) to \(safeToOffset)")
+        }
+        
         // Move the items
-        updatedTasks.move(fromOffsets: fromOffsets, toOffset: toOffset)
+        // This is the core of the reordering logic - make sure it's consistent with inbox behavior
+        updatedTasks.move(fromOffsets: fromOffsets, toOffset: safeToOffset)
+        
+        // Debug the move operation
+        if let fromIndex = fromOffsets.first {
+            // Safe index calculation
+            let displayIndex = min(safeToOffset > fromIndex && safeToOffset > 0 ? safeToOffset - 1 : safeToOffset, updatedTasks.count - 1)
+            
+            if displayIndex < updatedTasks.count {
+                print("🔄 Moving task '\(updatedTasks[displayIndex].title ?? "Untitled")' from position \(fromIndex) to \(safeToOffset)")
+            } else {
+                print("🔄 Moving task from position \(fromIndex) to \(safeToOffset)")
+            }
+        }
         
         print("New task order:")
         for (i, task) in updatedTasks.enumerated() {
@@ -57,6 +93,11 @@ extension EnhancedTaskViewModel {
         // Force UI refresh
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.refreshFetch()
+            
+            // Verify the integrity of the display order
+            if let project = self.selectedProject {
+                TaskOrderDebugger.verifyDisplayOrderIntegrity(for: project, in: context)
+            }
         }
     }
 }

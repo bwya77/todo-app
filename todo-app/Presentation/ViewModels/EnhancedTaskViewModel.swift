@@ -29,7 +29,7 @@ class EnhancedTaskViewModel: ObservableObject {
     
     /// Current view configuration
     private var currentViewType: ViewType?
-    private var currentProject: Project?
+    private(set) var selectedProject: Project?
     
     /// Cancellables for managing subscriptions
     private var cancellables = Set<AnyCancellable>()
@@ -50,7 +50,7 @@ class EnhancedTaskViewModel: ObservableObject {
     func configureFetch(for viewType: ViewType, project: Project? = nil, groupByProject: Bool = false) {
         // Store current configuration
         self.currentViewType = viewType
-        self.currentProject = project
+        self.selectedProject = project
         
         // Create the fetched results controller
         fetchedResultsController = TaskFetchedResultsController(

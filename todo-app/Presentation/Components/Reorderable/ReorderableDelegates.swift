@@ -30,7 +30,18 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
         guard let to = items.firstIndex(of: item) else { return }
         hasChangedLocation = true
         if items[to] != current {
-            moveAction(IndexSet(integer: from), to > from ? to + 1 : to)
+            // This gives the same smooth experience as the project view
+            // For vertical list dragging, this produces the best visual effect
+            let adjustedTargetPosition = to > from ? to + 1 : to
+            
+            // Ensure the target position is within bounds
+            let safePosition = min(adjustedTargetPosition, items.count)
+            
+            // Apply the move action with the more natural-feeling target position
+            // Use animation with a slight delay for the smooth sliding effect
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                moveAction(IndexSet(integer: from), safePosition)
+            }
         }
     }
     
