@@ -11,6 +11,7 @@ let package = Package(
     ],
     dependencies: [
         // CalendarKit removed - not compatible with macOS
+        .package(url: "https://github.com/nalexn/ViewInspector", from: "0.9.7")
     ],
     targets: [
         .executableTarget(
@@ -28,7 +29,7 @@ let package = Package(
         ),
         .testTarget(
             name: "TodoAppTests",
-            dependencies: ["TodoApp"],
+            dependencies: ["TodoApp", "ViewInspector"],
             path: "todo-appTests"
         ),
         .testTarget(

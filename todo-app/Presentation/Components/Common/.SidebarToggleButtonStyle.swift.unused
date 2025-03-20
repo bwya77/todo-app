@@ -1,0 +1,56 @@
+
+//
+//  SidebarToggleButtonStyle.swift
+//  todo-app
+//
+//  Created by Bradley Wyatt on 3/20/25.
+//
+
+import SwiftUI
+
+/// A custom button style for the sidebar toggle button in MainWindowToolbar
+struct SidebarToggleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(5)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(configuration.isPressed ? 
+                          AppColors.sidebarHover.opacity(0.8) : // Darker when pressed
+                          configuration.isPressed ? 
+                          AppColors.sidebarHover : // Hover color
+                          Color.clear) // Normal state
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.clear, lineWidth: 0)
+            )
+    }
+}
+
+// Extension for the dynamic hover effect
+extension View {
+    /// Applies hover effect for sidebar toggle button
+    func sidebarToggleHoverEffect() -> some View {
+        self.modifier(SidebarToggleHoverModifier())
+    }
+}
+
+/// Modifier that adds hover detection and styling for sidebar toggle button
+struct SidebarToggleHoverModifier: ViewModifier {
+    @State private var isHovering = false
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isHovering ? AppColors.sidebarHover : Color.clear)
+            )
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isHovering = hovering
+                }
+            }
+    }
+}

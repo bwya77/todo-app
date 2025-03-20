@@ -43,8 +43,8 @@ extension EnhancedTaskViewModel {
             task.setValue(order, forKey: "displayOrder")
         }
         
-        // Get the context
-        guard let context = sectionTasks.first?.managedObjectContext else {
+        // Validate that we have a valid context
+        guard sectionTasks.first?.managedObjectContext != nil else {
             return
         }
         

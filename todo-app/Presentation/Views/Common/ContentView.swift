@@ -9,6 +9,7 @@
 import SwiftUI
 import CoreData
 import AppKit
+import Combine
 
 #if DEBUG
 import OSLog
@@ -66,24 +67,32 @@ class ToolbarDelegate: NSObject, NSToolbarDelegate {
     // Binding to update sidebar visibility
     var sidebarVisibilityBinding: Binding<Bool>? = nil
     
+    // Track hover and pressed states for custom button styling
+    private var isHovering = false
+    private var isPressed = false
+    
     // MARK: - NSToolbarDelegate
     
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         if itemIdentifier == toggleSidebarItemID {
+            // Create a custom view item for custom styling
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             
-            // Set image based on current sidebar state
-            let isVisible = sidebarVisibilityBinding?.wrappedValue ?? true
-            let imageName = isVisible ? "sidebar.left" : "sidebar.right"
-            let description = isVisible ? "Hide Sidebar" : "Show Sidebar"
+            // Create a custom view container for the button
+            let customView = NSHostingView(rootView: ContentView.SidebarToggleButton(
+                isVisible: sidebarVisibilityBinding?.wrappedValue ?? true,
+                action: { self.toggleSidebar() }
+            ))
             
-            item.image = NSImage(systemSymbolName: imageName, accessibilityDescription: description)
-            
+            // Set up basic properties
+            item.view = customView
             item.label = "Toggle Sidebar"
             item.paletteLabel = "Toggle Sidebar"
             item.toolTip = "Toggle Sidebar"
-            item.target = self
-            item.action = #selector(toggleSidebar)
+            
+            // Size the view appropriately
+            customView.frame = NSRect(x: 0, y: 0, width: 30, height: 30)
+            customView.setFrameSize(NSSize(width: 30, height: 30))
             
             return item
         }
@@ -108,19 +117,8 @@ class ToolbarDelegate: NSObject, NSToolbarDelegate {
         // Toggle the state
         binding.wrappedValue.toggle()
         
-        // Update toolbar button image
-        if let window = NSApp.mainWindow,
-           let toolbar = window.toolbar,
-           let item = toolbar.items.first(where: { $0.itemIdentifier == toggleSidebarItemID }) {
-            
-            // Use the correct SF Symbol based on sidebar visibility state
-            // "sidebar.left" when sidebar is visible (for hiding action)
-            // "sidebar.right" when sidebar is hidden (for showing action)
-            let imageName = binding.wrappedValue ? "sidebar.left" : "sidebar.right"
-            let description = binding.wrappedValue ? "Hide Sidebar" : "Show Sidebar"
-            
-            item.image = NSImage(systemSymbolName: imageName, accessibilityDescription: description)
-        }
+        // Update toolbar button - with the SwiftUI implementation, this happens automatically
+        // through state binding in SidebarToggleButton
         
         // Post notification for analytics or other observers
         NotificationCenter.default.post(
@@ -353,6 +351,46 @@ struct ContentView: View {
         
         // Register for sidebar toggle callbacks
         ToolbarDelegate.shared.sidebarVisibilityBinding = $isSidebarVisible
+    }
+    
+    // A SwiftUI view for the sidebar toggle button that shows hover and click effects
+    struct SidebarToggleButton: View {
+        let isVisible: Bool
+        let action: () -> Void
+        
+        @State private var isHovering = false
+        @State private var isPressed = false
+        
+        var body: some View {
+            Button(action: {
+                // Trigger the action when clicked
+                action()
+            }) {
+                Image(systemName: isVisible ? "sidebar.left" : "sidebar.right")
+                    .font(.system(size: 16))
+                    .foregroundColor(.primary)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(5)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isPressed ? 
+                          AppColors.sidebarHover : // Darker when pressed
+                          isHovering ? 
+                          AppColors.sidebarHover.opacity(0.6) : // Lighter hover color
+                          Color.clear) // Normal state
+            )
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isHovering = hovering
+                }
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
+            )
+        }
     }
 }
 

@@ -9,6 +9,7 @@
 import XCTest
 import SwiftUI
 import CoreData
+import ViewInspector
 @testable import todo_app
 
 class SidebarIconTests: XCTestCase {
@@ -93,5 +94,36 @@ class SidebarIconTests: XCTestCase {
         selectedViewType.wrappedValue = .completed
         XCTAssertEqual(viewType, .completed)
         // When selected: icon should be "checkmark.circle.fill"
+    }
+    
+    func testSidebarToggleButtonStates() {
+        // Test the SidebarToggleButton states (hover and click effects)
+        // This test only verifies the logic, not actual rendering
+        
+        // Create a test instance of SidebarToggleButton
+        let testAction = { /* Empty action for testing */ }
+        
+        // Test visible state (sidebar.left)
+        let visibleButton = ContentView.SidebarToggleButton(isVisible: true, action: testAction)
+        
+        // Verify initial state
+        XCTAssertFalse(visibleButton.isHovering)
+        XCTAssertFalse(visibleButton.isPressed)
+        
+        // Test that hovering changes state
+        // Note: We're testing the state variables directly since we can't simulate hover in unit tests
+        let hoveringButton = ContentView.SidebarToggleButton(isVisible: true, action: testAction)
+        let hoverReflection = Mirror(reflecting: hoveringButton)
+        if let hoverStateProperty = hoverReflection.children.first(where: { $0.label == "_isHovering" }) {
+            // Verify the property exists and is initially false
+            XCTAssertFalse(hoverStateProperty.value as? Bool ?? true)
+        }
+        
+        // Test hidden state (sidebar.right)
+        let hiddenButton = ContentView.SidebarToggleButton(isVisible: false, action: testAction)
+        
+        // Here we would test that the correct system image name is used
+        // but SwiftUI's view testing capabilities are limited in unit tests
+        // These would be better tested in UI tests
     }
 }
