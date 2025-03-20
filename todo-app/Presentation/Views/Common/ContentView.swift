@@ -196,6 +196,7 @@ struct ContentView: View {
                 // VStack with layoutPriority helps main content area resize smoothly without jittering
                 // when sidebar appears/disappears
                 VStack {
+                    // Add the save order on navigation modifier
                     switch selectedViewType {
                     case .upcoming:
                     // Calendar view for upcoming tasks
@@ -216,6 +217,7 @@ struct ContentView: View {
                     }
                 }
                 .layoutPriority(1)
+                .withSaveOrderOnNavigation() // Add the task order persistence modifier
             }
             .animation(.easeInOut(duration: 0.25), value: isSidebarVisible)
         }

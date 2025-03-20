@@ -121,16 +121,17 @@ class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate
             print("🔍 CRITICAL: Project view using absolute displayOrder sort")
         }
         
-        // For reorderable tasks, always modify sort descriptors to prioritize display order
-        // Keep section-based sorting if needed but add displayOrder as first sort
+        // ALWAYS modify sort descriptors to prioritize display order
+        // This is critical for maintaining user-defined task ordering
         var sortDescriptors = fetchRequest.sortDescriptors ?? []
         
-        // Add displayOrder as primary sort only if it's not already there
-        if !sortDescriptors.contains(where: { $0.key == "displayOrder" }) {
-            sortDescriptors.insert(NSSortDescriptor(key: "displayOrder", ascending: true), at: 0)
-            fetchRequest.sortDescriptors = sortDescriptors
-            print("🔍 Set primary sort by displayOrder: \(String(describing: fetchRequest.sortDescriptors))")
-        }
+        // Remove any existing displayOrder sort descriptor to avoid duplicates
+        sortDescriptors.removeAll { $0.key == "displayOrder" }
+        
+        // Add displayOrder as primary sort
+        sortDescriptors.insert(NSSortDescriptor(key: "displayOrder", ascending: true), at: 0)
+        fetchRequest.sortDescriptors = sortDescriptors
+        print("🔍 Set primary sort by displayOrder: \(String(describing: fetchRequest.sortDescriptors))")
         
         // Initialize using the constructed fetch request
         self.init(

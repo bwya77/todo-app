@@ -20,21 +20,7 @@ extension EnhancedTaskViewModel {
         // Get the tasks for this section
         let sectionTasks = tasksForSection(section)
         guard !sectionTasks.isEmpty else { 
-            print("⚠️ No tasks in section \(section)")
             return 
-        }
-        
-        print("\n🔄 DIRECT REORDERING tasks in section \(section) from \(fromOffsets) to \(toOffset)")
-        
-        // Enhanced debugging to track the reordering operations
-        if let firstIndex = fromOffsets.first {
-            // Log the reordering operation for debugging
-            TaskOrderDebugger.logReorderingOperation(
-                fromIndex: firstIndex, 
-                toIndex: toOffset,
-                tasks: sectionTasks,
-                in: sectionTitles.count > section ? sectionTitles[section] : "Section \(section)"
-            )
         }
         
         // Create a mutable array of sectionTasks
@@ -42,62 +28,65 @@ extension EnhancedTaskViewModel {
         
         // Validate operation bounds
         guard let fromIndex = fromOffsets.first, fromIndex < updatedTasks.count else {
-            print("⚠️ Invalid source index: \(fromOffsets)")
             return
         }
         
         // Ensure destination is within bounds
         let safeToOffset = min(toOffset, updatedTasks.count)
-        if safeToOffset != toOffset {
-            print("⚠️ Adjusted target index from \(toOffset) to \(safeToOffset)")
-        }
         
-        // Move the items
-        // This is the core of the reordering logic - make sure it's consistent with inbox behavior
+        // Move the items - this is the core of the reordering logic
         updatedTasks.move(fromOffsets: fromOffsets, toOffset: safeToOffset)
         
-        // Debug the move operation
-        if let fromIndex = fromOffsets.first {
-            // Safe index calculation
-            let displayIndex = min(safeToOffset > fromIndex && safeToOffset > 0 ? safeToOffset - 1 : safeToOffset, updatedTasks.count - 1)
-            
-            if displayIndex < updatedTasks.count {
-                print("🔄 Moving task '\(updatedTasks[displayIndex].title ?? "Untitled")' from position \(fromIndex) to \(safeToOffset)")
-            } else {
-                print("🔄 Moving task from position \(fromIndex) to \(safeToOffset)")
-            }
-        }
-        
-        print("New task order:")
+        // Update display order values with spacing
         for (i, task) in updatedTasks.enumerated() {
             let order = Int32(i * 10)
-            print(" [\(i)] '\(task.title ?? "Untitled")' - setting order: \(order)")
             task.setValue(order, forKey: "displayOrder")
         }
         
         // Get the context
         guard let context = sectionTasks.first?.managedObjectContext else {
-            print("⚠️ Missing context")
             return
         }
         
-        // Use the new PersistentOrder class to ensure changes are saved to disk
-        PersistentOrder.save(context: context)
-        
-        // FORCE a notification to refresh UI
-        NotificationCenter.default.post(
-            name: NSNotification.Name.NSManagedObjectContextDidSave,
-            object: context
-        )
+        // Save changes
+        saveContext()
         
         // Force UI refresh
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.refreshFetch()
+        }
+    }
+    
+    /// Save current task order to ensure persistence
+    func persistCurrentTaskOrder() {
+        // Get any task's context, as they all share the same context
+        if let firstSection = tasksBySection.first, 
+           let firstTask = firstSection.first,
+           let context = firstTask.managedObjectContext {
             
-            // Verify the integrity of the display order
-            if let project = self.selectedProject {
-                TaskOrderDebugger.verifyDisplayOrderIntegrity(for: project, in: context)
+            // For each section, ensure display order values are properly set
+            for sectionIndex in 0..<tasksBySection.count {
+                let sectionTasks = tasksBySection[sectionIndex]
+                
+                // Skip empty sections
+                if sectionTasks.isEmpty {
+                    continue
+                }
+                
+                // Set display order values with spacing
+                for (index, task) in sectionTasks.enumerated() {
+                    let orderValue = Int32(index * 10)
+                    task.setValue(orderValue, forKey: "displayOrder")
+                }
             }
+            
+            // Save changes to disk
+            if context.hasChanges {
+                try? context.save()
+            }
+        } else {
+            // Try to use saveContext as a fallback
+            saveContext()
         }
     }
 }

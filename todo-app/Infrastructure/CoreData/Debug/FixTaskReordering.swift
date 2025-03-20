@@ -14,141 +14,143 @@ struct FixTaskReordering {
     
     /// Resets and repairs the display order for the entire database
     static func resetEverything() {
-        let context = PersistenceController.shared.container.viewContext
-        print("🚨 FULL RESET OF TASK ORDERING")
+        print("🚨 FULL RESET OF TASK ORDERING - Using proper initializer")
         
-        // 1. Set displayOrder property for all tasks
-        fixDisplayOrderProperty(in: context)
+        // Use the new task order initializer for proper setup
+        AppLaunchTaskOrderInitializer.shared.initializeTaskOrder()
         
-        // 2. Reindex all projects
-        reindexAllProjects(in: context)
-        
-        // 3. Reindex inbox
-        reindexInbox(in: context)
-        
-        // 4. Force save all changes to disk
+        // Force save all changes to disk
         PersistentOrder.saveAllContexts()
         
-        // Try again after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // Send a special notification to force UI refresh
+        // Force UI refresh after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             NotificationCenter.default.post(
                 name: NSNotification.Name("ForceUIRefresh"),
                 object: nil
             )
         }
 
-        print("✅ Full reset completed. Please restart the app.")
+        print("✅ Full reset completed using improved persistence system")
     }
     
-    /// Fix any items that don't have a displayOrder set
-    private static func fixDisplayOrderProperty(in context: NSManagedObjectContext) {
-        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+    /// Resets task order for a specific project
+    /// - Parameters:
+    ///   - project: The project to reset ordering for
+    ///   - context: The NSManagedObjectContext
+    static func resetProjectTaskOrder(for project: Project, in context: NSManagedObjectContext) {
+        print("🔄 Resetting task order for project: \(project.name ?? "Unknown")")
         
-        do {
-            let allItems = try context.fetch(fetchRequest)
-            print("🔍 Checking displayOrder for \(allItems.count) tasks")
-            
-            var fixedCount = 0
-            
-            for item in allItems {
-                // Check if displayOrder is accessible
-                if item.value(forKey: "displayOrder") == nil {
-                    // Set a default value
-                    item.setValue(999, forKey: "displayOrder")
-                    fixedCount += 1
-                }
-            }
-            
-            if fixedCount > 0 {
-                try context.save()
-                print("🔧 Fixed missing displayOrder for \(fixedCount) tasks")
-            } else {
-                print("✓ All tasks have displayOrder property")
-            }
-        } catch {
-            print("❌ Error fixing displayOrder: \(error)")
-        }
-    }
-    
-    /// Reindex all projects with sequential display order
-    private static func reindexAllProjects(in context: NSManagedObjectContext) {
-        let fetchRequest: NSFetchRequest<Project> = Project.fetchRequest()
-        
-        do {
-            let projects = try context.fetch(fetchRequest)
-            print("🗂️ Reindexing \(projects.count) projects")
-            
-            for project in projects {
-                reindexTasksForProject(project, in: context)
-            }
-            
-            print("✓ All projects reindexed")
-        } catch {
-            print("❌ Error reindexing projects: \(error)")
-        }
-    }
-    
-    /// Reindex all tasks in a specific project with sequential display order
-    private static func reindexTasksForProject(_ project: Project, in context: NSManagedObjectContext) {
-        guard let _ = project.id else {
-            print("⚠️ Project has no ID, skipping")
-            return
-        }
-        
+        // Fetch tasks for this project
         let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "project == %@", project)
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)]
         
         do {
             let tasks = try context.fetch(fetchRequest)
-            print("  📋 Reindexing \(tasks.count) tasks for project: \(project.name ?? "Unknown")")
+            print("  📋 Found \(tasks.count) tasks to reorder")
             
+            // Update display order sequentially with spacing
             for (index, task) in tasks.enumerated() {
-                task.setValue(Int32(index * 10), forKey: "displayOrder")
+                let newOrder = Int32(index * 10)
+                task.setValue(newOrder, forKey: "displayOrder")
             }
             
-            // Use persistent order saving instead of just context.save()
+            // Save changes
             PersistentOrder.save(context: context)
             
-            // Force the change to be recognized
+            // Force notification to update views
             NotificationCenter.default.post(
-                name: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
-                object: context
+                name: NSNotification.Name("TaskOrderChanged"),
+                object: nil
             )
             
-            print("  ✓ Project tasks reindexed")
+            print("  ✅ Project task order reset successfully")
         } catch {
-            print("  ❌ Error reindexing project tasks: \(error)")
+            print("  ❌ Error resetting project task order: \(error)")
         }
     }
     
-    /// Reindex inbox (tasks with no project)
-    private static func reindexInbox(in context: NSManagedObjectContext) {
+    /// Resets task order for Inbox (tasks without a project)
+    /// - Parameter context: The NSManagedObjectContext
+    static func resetInboxTaskOrder(in context: NSManagedObjectContext) {
+        print("🔄 Resetting task order for Inbox")
+        
+        // Fetch tasks without a project
         let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "project == nil")
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)]
         
         do {
             let tasks = try context.fetch(fetchRequest)
-            print("📥 Reindexing \(tasks.count) tasks in Inbox")
+            print("  📋 Found \(tasks.count) inbox tasks to reorder")
             
+            // Update display order sequentially with spacing
             for (index, task) in tasks.enumerated() {
-                task.setValue(Int32(index * 10), forKey: "displayOrder")
+                let newOrder = Int32(index * 10)
+                task.setValue(newOrder, forKey: "displayOrder")
             }
             
-            // Use persistent order saving instead of just context.save()
+            // Save changes
             PersistentOrder.save(context: context)
             
-            // Force the change to be recognized
+            // Force notification to update views
             NotificationCenter.default.post(
-                name: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
-                object: context
+                name: NSNotification.Name("TaskOrderChanged"),
+                object: nil
             )
             
-            print("✓ Inbox tasks reindexed")
+            print("  ✅ Inbox task order reset successfully")
         } catch {
-            print("❌ Error reindexing inbox tasks: \(error)")
+            print("  ❌ Error resetting inbox task order: \(error)")
+        }
+    }
+    
+    /// Resets order for both Today and Completed tasks
+    /// - Parameter context: The NSManagedObjectContext
+    static func resetSpecialViewsTaskOrder(in context: NSManagedObjectContext) {
+        // Reset Today tasks
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        
+        let todayRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        todayRequest.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@", 
+                                           today as NSDate, tomorrow as NSDate)
+        
+        resetTaskOrderForRequest(todayRequest, viewName: "Today", in: context)
+        
+        // Reset Completed tasks
+        let completedRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        completedRequest.predicate = NSPredicate(format: "completed == YES")
+        
+        resetTaskOrderForRequest(completedRequest, viewName: "Completed", in: context)
+    }
+    
+    /// Helper to reset task order for a specific fetch request
+    /// - Parameters:
+    ///   - request: The NSFetchRequest to use
+    ///   - viewName: Name for logging
+    ///   - context: The NSManagedObjectContext
+    private static func resetTaskOrderForRequest(_ request: NSFetchRequest<Item>, viewName: String, in context: NSManagedObjectContext) {
+        print("🔄 Resetting task order for \(viewName) view")
+        
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)]
+        
+        do {
+            let tasks = try context.fetch(request)
+            print("  📋 Found \(tasks.count) tasks to reorder")
+            
+            // Update display order sequentially with spacing
+            for (index, task) in tasks.enumerated() {
+                let newOrder = Int32(index * 10)
+                task.setValue(newOrder, forKey: "displayOrder")
+            }
+            
+            // Save changes
+            PersistentOrder.save(context: context)
+            
+            print("  ✅ \(viewName) task order reset successfully")
+        } catch {
+            print("  ❌ Error resetting \(viewName) task order: \(error)")
         }
     }
 }

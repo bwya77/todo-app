@@ -136,18 +136,6 @@ struct ReorderableTaskListView: View {
                 )
             }
             
-            // Fix display order on view appear
-            if viewType == .project, let project = selectedProject {
-                // Re-initialize display order for this specific project
-                InitializeDisplayOrderMigration.forceReInitializeProjectDisplayOrder(for: project, in: viewContext)
-                
-                // Debug the task order
-                TaskOrderDebugger.logTaskOrder(for: project, in: viewContext)
-            } else if viewType == .inbox {
-                // Re-initialize display order for all tasks
-                InitializeDisplayOrderMigration.initializeDisplayOrder(in: viewContext)
-            }
-            
             // Set Default as the initially expanded group
             expandedGroups.insert("Default")
             
@@ -155,6 +143,10 @@ struct ReorderableTaskListView: View {
             if viewType == .project, let projectName = selectedProject?.name {
                 expandedGroups.insert(projectName)
             }
+        }
+        .onDisappear {
+            // Ensure task ordering is saved when navigating away from this view
+            viewModel.persistCurrentTaskOrder()
         }
     }
     

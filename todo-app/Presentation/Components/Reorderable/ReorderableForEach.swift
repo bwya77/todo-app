@@ -91,16 +91,10 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
                     active: $active,
                     hasChangedLocation: $hasChangedLocation
                 ) { from, to in
-                    // Use spring animation for smoother sliding effect
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.3)) {
+                    // Use a simple animation for better performance
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         moveAction(from, to)
                     }
-                    
-                    // Force any context saves
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("ForceContextSave"),
-                        object: nil
-                    )
                 }
             )
     }

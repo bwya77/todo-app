@@ -18,7 +18,8 @@ extension Item {
     ///   - to: The destination index
     ///   - tasks: The array of tasks to reorder
     ///   - context: The managed object context to save changes in
-    static func reorderTasks(from: Int, to: Int, tasks: [Item], context: NSManagedObjectContext) {
+    ///   - notifyOrderChange: Whether to post a notification that task order changed (defaults to true)
+    static func reorderTasks(from: Int, to: Int, tasks: [Item], context: NSManagedObjectContext, notifyOrderChange: Bool = true) {
         guard from != to, from >= 0, to >= 0, from < tasks.count, to < tasks.count else { return }
         
         print("🔄 CRITICAL: Direct reordering task from index \(from) to \(to)")
@@ -42,7 +43,7 @@ extension Item {
             task.setValue(newOrder, forKey: "displayOrder")
         }
         
-        // Use the new PersistentOrder class to ensure changes are saved to disk
+        // Use the PersistentOrder class to ensure changes are saved to disk
         PersistentOrder.save(context: context)
         
         // Force a notification to update all views
@@ -57,6 +58,52 @@ extension Item {
             object: nil
         )
         
+        // Notify that task order has changed (for app-wide listeners)
+        if notifyOrderChange {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("TaskOrderChanged"),
+                object: nil
+            )
+        }
+        
         print("  ✅ Successfully saved reordering")
+    }
+    
+    /// Get the tasks in the correct display order for a project
+    /// - Parameters:
+    ///   - project: The project to get tasks for (nil for Inbox tasks)
+    ///   - context: The managed object context
+    ///   - includeCompleted: Whether to include completed tasks
+    /// - Returns: Array of tasks in the correct order
+    static func getOrderedTasks(for project: Project?, in context: NSManagedObjectContext, includeCompleted: Bool = false) -> [Item] {
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        
+        // Create appropriate predicate based on project and completion status
+        var predicates: [NSPredicate] = []
+        
+        if let project = project {
+            predicates.append(NSPredicate(format: "project == %@", project))
+        } else {
+            predicates.append(NSPredicate(format: "project == nil"))
+        }
+        
+        if !includeCompleted {
+            predicates.append(NSPredicate(format: "completed == NO"))
+        }
+        
+        // Combine predicates
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        
+        // Sort by display order
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(key: orderAttributeName, ascending: true)
+        ]
+        
+        do {
+            return try context.fetch(fetchRequest)
+        } catch {
+            print("❌ Error fetching ordered tasks: \(error)")
+            return []
+        }
     }
 }
