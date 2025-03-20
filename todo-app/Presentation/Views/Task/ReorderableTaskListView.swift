@@ -72,6 +72,10 @@ struct ReorderableTaskListView: View {
             // When in project mode, show the project detail view
             if viewType == .project && selectedProject != nil {
                 ProjectDetailView(project: selectedProject!, context: viewContext)
+            } 
+            // When in inbox mode, show the dedicated inbox view
+            else if viewType == .inbox {
+                InboxDetailView(context: viewContext)
             } else {
                 VStack(spacing: 0) {
                     // Additional whitespace at the top
@@ -111,11 +115,21 @@ struct ReorderableTaskListView: View {
         }
         .onAppear {
             // Configure the fetch when the view appears
-            viewModel.configureFetch(
-                for: viewType,
-                project: selectedProject,
-                groupByProject: viewType != .project // Group by project except when in project view
-            )
+            if viewType == .inbox {
+                // For inbox, configure without groupByProject to get a flat list
+                viewModel.configureFetch(
+                    for: viewType,
+                    project: nil,
+                    groupByProject: false
+                )
+            } else {
+                // For other views, use normal configuration
+                viewModel.configureFetch(
+                    for: viewType,
+                    project: selectedProject,
+                    groupByProject: viewType != .project // Group by project except when in project view
+                )
+            }
             
             // Fix display order on view appear
             if viewType == .project, let project = selectedProject {
@@ -155,9 +169,15 @@ struct ReorderableTaskListView: View {
     
     // Emergency function to reset task order if things get corrupted
     private func resetTaskOrder() {
-        if let project = selectedProject {
+        if viewType == .project, let project = selectedProject {
             print("🆘 Emergency reset of task order for project: \(project.name ?? "Unknown")")
             TaskOrderDebugger.resetTaskOrder(for: project, in: viewContext)
+            // Force refresh
+            viewModel.refreshFetch()
+        } else if viewType == .inbox {
+            print("🆘 Emergency reset of task order for Inbox")
+            // Initialize display order for all inbox tasks
+            InitializeDisplayOrderMigration.initializeInboxDisplayOrder(in: viewContext)
             // Force refresh
             viewModel.refreshFetch()
         }

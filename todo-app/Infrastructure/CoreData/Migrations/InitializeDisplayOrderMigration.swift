@@ -65,6 +65,45 @@ struct InitializeDisplayOrderMigration {
         }
     }
     
+    /// Initialize display order specifically for inbox tasks (tasks without a project)
+    /// - Parameter context: The managed object context
+    static func initializeInboxDisplayOrder(in context: NSManagedObjectContext) {
+        print("🔄 Initializing display order for inbox tasks...")
+        
+        // Fetch all inbox tasks (tasks without a project)
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "project == nil")
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
+            NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)
+        ]
+        
+        do {
+            let items = try context.fetch(fetchRequest)
+            print("📉 Found \(items.count) inbox tasks to update")
+            
+            // Update display order sequentially with spacing (like in projects)
+            for (index, item) in items.enumerated() {
+                let order = Int32(index * 10) // Use spacing for future insertions
+                print("  → Setting inbox task '\(item.title ?? "Untitled")' display order: \(order)")
+                item.setValue(order, forKey: Item.orderAttributeName)
+            }
+            
+            // Save changes
+            try context.save()
+            print("✅ Display order initialized for inbox tasks")
+            
+            // Force a notification to update all views
+            NotificationCenter.default.post(
+                name: NSNotification.Name.NSManagedObjectContextDidSave,
+                object: context
+            )
+            
+        } catch {
+            print("❌ Failed to initialize inbox display order: \(error)")
+        }
+    }
+    
     /// Force immediate re-initialization of display order for a specific project
     /// - Parameters:
     ///   - project: The project to update task ordering for

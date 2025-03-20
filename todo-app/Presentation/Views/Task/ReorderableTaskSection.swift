@@ -83,26 +83,16 @@ struct ReorderableTaskSection: View {
             
             // Tasks content with reorderable support
             if expandedGroups.contains(title) {
-                // For Inbox view, use the dedicated Inbox list with identical behavior to Projects
-                if viewType == .inbox {
-                    InboxTaskList(
-                        tasks: tasks,
-                        onToggleComplete: onToggleComplete,
-                        onDeleteTask: onDeleteTask,
-                        activeTask: $activeTask
-                    )
-                } else {
-                    // For other views, use the unified task list
-                    UnifiedTaskListView(
-                        viewType: viewType,
-                        title: title,
-                        tasks: tasks,
-                        project: getProjectForGroupName(title),
-                        activeTask: $activeTask,
-                        onToggleComplete: onToggleComplete,
-                        onDeleteTask: onDeleteTask
-                    )
-                }
+                // Use the unified task list for consistent behavior across all views
+                UnifiedTaskListView(
+                    viewType: viewType,
+                    title: title,
+                    tasks: tasks,
+                    project: getProjectForGroupName(title),
+                    activeTask: $activeTask,
+                    onToggleComplete: onToggleComplete,
+                    onDeleteTask: onDeleteTask
+                )
             }
         }
     }

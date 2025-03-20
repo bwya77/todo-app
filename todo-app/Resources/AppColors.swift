@@ -12,6 +12,9 @@ struct AppColors {
     static let background = Color.white
     static let secondaryBackground = Color.gray.opacity(0.05)
     
+    // Feature-specific colors
+    static let inboxColor = Color(red: 52/255, green: 152/255, blue: 219/255) // RGB(52,152,219) - Blue
+    
     // UI colors from legacy implementation
     static let selectedIconColor = Color(red: 41/255, green: 122/255, blue: 188/255) // RGB(41,122,188)
     static let selectedTextColor = Color(red: 30/255, green: 100/255, blue: 180/255) // RGB(30,100,180) - Slightly darker blue

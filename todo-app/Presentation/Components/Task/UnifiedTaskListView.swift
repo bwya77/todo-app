@@ -48,7 +48,7 @@ struct UnifiedTaskListView: View {
                             }
                         }
                     }
-                    .onChange(of: activeTask) { newValue in
+                    .onChange(of: activeTask) { _, newValue in
                         isDragging = newValue != nil
                     }
             } moveAction: { fromOffsets, toOffset in
