@@ -1,5 +1,5 @@
 //
-//  InboxDetailView.swift
+//  CompletedDetailView.swift
 //  todo-app
 //
 //  Created on 3/20/25.
@@ -8,8 +8,8 @@
 import SwiftUI
 import CoreData
 
-/// Dedicated view for the Inbox tasks, mirroring the ProjectDetailView structure
-struct InboxDetailView: View {
+/// Dedicated view for Completed tasks, mirroring the InboxDetailView structure
+struct CompletedDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var taskViewModel: TaskViewModel
     
@@ -17,35 +17,29 @@ struct InboxDetailView: View {
     @State private var activeTask: Item?
     @State private var taskUpdateCounter: Int = 0
     
-    // Task list using optimized fetch request
-    @FetchRequest private var inboxTasks: FetchedResults<Item>
+    // Task lists using optimized fetch requests
+    @FetchRequest private var completedTasks: FetchedResults<Item>
     
     // Initialize with context
     init(context: NSManagedObjectContext) {
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         
-        // Initialize fetch request using the InboxTasksRequest helper
-        let request = InboxTasksRequest.inboxTasksRequest()
-        // Add predicate to exclude completed tasks
-        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "project == nil"),
-            NSPredicate(format: "completed == NO")
-        ])
-        
-        self._inboxTasks = FetchRequest(fetchRequest: request)
+        // Initialize fetch requests using TaskFetchRequestFactory
+        let fetchRequest = TaskFetchRequestFactory.completedTasks(in: context)
+        self._completedTasks = FetchRequest(fetchRequest: fetchRequest)
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Inbox header
+            // Completed header
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
-                    // Inbox icon matching the sidebar
-                    Image(systemName: "tray.full.fill")
+                    // Completed icon matching the sidebar
+                    Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(AppColors.inboxColor)
+                        .foregroundColor(.green)
                     
-                    Text("Inbox")
+                    Text("Completed")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(Color.primary)
                 }
@@ -65,16 +59,16 @@ struct InboxDetailView: View {
                 .padding(.bottom, 0)
             
             // Tasks content
-            if inboxTasks.isEmpty {
+            if completedTasks.isEmpty {
                 emptyStateView
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        // Inbox tasks with reordering
+                        // Completed tasks with reordering
                         UnifiedTaskListView(
-                            viewType: .inbox,
-                            title: "Inbox",
-                            tasks: Array(inboxTasks),
+                            viewType: .completed,
+                            title: "Completed",
+                            tasks: Array(completedTasks),
                             project: nil,
                             activeTask: $activeTask,
                             onToggleComplete: toggleTaskCompletion,
@@ -95,10 +89,10 @@ struct InboxDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
-        .id("inbox-detail-view")
+        .id("completed-detail-view")
         .onAppear {
-            // Ensure inbox tasks have display order initialized
-            InitializeDisplayOrderMigration.initializeInboxDisplayOrder(in: viewContext)
+            // Ensure completed tasks have display order initialized
+            InitializeDisplayOrderMigration.initializeCompletedDisplayOrder(in: viewContext)
         }
     }
     
@@ -107,29 +101,17 @@ struct InboxDetailView: View {
         VStack(spacing: 16) {
             Spacer()
             
-            Image(systemName: "tray")
+            Image(systemName: "checkmark.circle")
                 .font(.system(size: 48))
                 .foregroundColor(Color.gray.opacity(0.5))
             
-            Text("No tasks in your Inbox")
+            Text("No completed tasks")
                 .font(.headline)
                 .foregroundColor(.secondary)
             
-            Text("Add a task to get started")
+            Text("Completed tasks will appear here")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            
-            Button(action: {
-                showAddTaskPopup()
-            }) {
-                Text("Add Task")
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(AppColors.inboxColor.opacity(0.2))
-                    .cornerRadius(8)
-            }
-            .buttonStyle(.plain)
             
             Spacer()
         }
@@ -138,20 +120,8 @@ struct InboxDetailView: View {
     
     // Task completion toggle with animations
     private func toggleTaskCompletion(_ task: Item) {
-        // Simply toggle the task state
+        // Toggle the task state
         taskViewModel.toggleTaskCompletion(task)
-        
-        // Update the counter so it refreshes the view
         taskUpdateCounter += 1
     }
-    
-    // Show add task popup
-    private func showAddTaskPopup() {
-        NotificationCenter.default.post(
-            name: NSNotification.Name("ShowAddTaskPopup"),
-            object: nil,
-            userInfo: nil
-        )
-    }
 }
-

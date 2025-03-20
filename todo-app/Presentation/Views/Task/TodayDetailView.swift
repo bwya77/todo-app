@@ -1,5 +1,5 @@
 //
-//  InboxDetailView.swift
+//  TodayDetailView.swift
 //  todo-app
 //
 //  Created on 3/20/25.
@@ -8,8 +8,8 @@
 import SwiftUI
 import CoreData
 
-/// Dedicated view for the Inbox tasks, mirroring the ProjectDetailView structure
-struct InboxDetailView: View {
+/// Dedicated view for Today's tasks, mirroring the InboxDetailView structure
+struct TodayDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var taskViewModel: TaskViewModel
     
@@ -17,35 +17,29 @@ struct InboxDetailView: View {
     @State private var activeTask: Item?
     @State private var taskUpdateCounter: Int = 0
     
-    // Task list using optimized fetch request
-    @FetchRequest private var inboxTasks: FetchedResults<Item>
+    // Task lists using optimized fetch requests
+    @FetchRequest private var todayTasks: FetchedResults<Item>
     
     // Initialize with context
     init(context: NSManagedObjectContext) {
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         
-        // Initialize fetch request using the InboxTasksRequest helper
-        let request = InboxTasksRequest.inboxTasksRequest()
-        // Add predicate to exclude completed tasks
-        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "project == nil"),
-            NSPredicate(format: "completed == NO")
-        ])
-        
-        self._inboxTasks = FetchRequest(fetchRequest: request)
+        // Initialize fetch requests using the helper from TaskFetchRequestFactory
+        self._todayTasks = FetchRequest(fetchRequest: TaskFetchRequestFactory.todayTasks(in: context))
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Inbox header
+            // Today header
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
-                    // Inbox icon matching the sidebar
-                    Image(systemName: "tray.full.fill")
+                    // Today icon matching the sidebar
+                    let dayNumber = Calendar.current.component(.day, from: Date())
+                    Image(systemName: "\(dayNumber).square.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(AppColors.inboxColor)
+                        .foregroundColor(.blue)
                     
-                    Text("Inbox")
+                    Text("Today")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(Color.primary)
                 }
@@ -65,16 +59,16 @@ struct InboxDetailView: View {
                 .padding(.bottom, 0)
             
             // Tasks content
-            if inboxTasks.isEmpty {
+            if todayTasks.isEmpty {
                 emptyStateView
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        // Inbox tasks with reordering
+                        // Today tasks with reordering
                         UnifiedTaskListView(
-                            viewType: .inbox,
-                            title: "Inbox",
-                            tasks: Array(inboxTasks),
+                            viewType: .today,
+                            title: "Today",
+                            tasks: Array(todayTasks),
                             project: nil,
                             activeTask: $activeTask,
                             onToggleComplete: toggleTaskCompletion,
@@ -95,10 +89,10 @@ struct InboxDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
-        .id("inbox-detail-view")
+        .id("today-detail-view")
         .onAppear {
-            // Ensure inbox tasks have display order initialized
-            InitializeDisplayOrderMigration.initializeInboxDisplayOrder(in: viewContext)
+            // Ensure today tasks have display order initialized
+            InitializeDisplayOrderMigration.initializeTodayDisplayOrder(in: viewContext)
         }
     }
     
@@ -107,15 +101,16 @@ struct InboxDetailView: View {
         VStack(spacing: 16) {
             Spacer()
             
-            Image(systemName: "tray")
+            let dayNumber = Calendar.current.component(.day, from: Date())
+            Image(systemName: "\(dayNumber).square")
                 .font(.system(size: 48))
                 .foregroundColor(Color.gray.opacity(0.5))
             
-            Text("No tasks in your Inbox")
+            Text("No tasks for today")
                 .font(.headline)
                 .foregroundColor(.secondary)
             
-            Text("Add a task to get started")
+            Text("Add a task due today to get started")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
@@ -126,7 +121,7 @@ struct InboxDetailView: View {
                     .font(.system(size: 14, weight: .medium))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(AppColors.inboxColor.opacity(0.2))
+                    .background(Color.blue.opacity(0.2))
                     .cornerRadius(8)
             }
             .buttonStyle(.plain)
@@ -141,8 +136,13 @@ struct InboxDetailView: View {
         // Simply toggle the task state
         taskViewModel.toggleTaskCompletion(task)
         
-        // Update the counter so it refreshes the view
-        taskUpdateCounter += 1
+        // If task is being completed, remove it from the list with animation
+        if !task.completed { // Check the state after toggling
+            // Move the task out of view with animation
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                taskUpdateCounter += 1
+            }
+        }
     }
     
     // Show add task popup
@@ -154,4 +154,3 @@ struct InboxDetailView: View {
         )
     }
 }
-

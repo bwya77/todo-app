@@ -104,6 +104,89 @@ struct InitializeDisplayOrderMigration {
         }
     }
     
+    /// Initialize display order specifically for today tasks
+    /// - Parameter context: The managed object context
+    static func initializeTodayDisplayOrder(in context: NSManagedObjectContext) {
+        print("🔄 Initializing display order for today tasks...")
+        
+        // Fetch today tasks
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@ AND dueDate < %@", 
+                                            today as NSDate, tomorrow as NSDate)
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
+            NSSortDescriptor(keyPath: \Item.priority, ascending: false),
+            NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)
+        ]
+        
+        do {
+            let items = try context.fetch(fetchRequest)
+            print("📉 Found \(items.count) today tasks to update")
+            
+            // Update display order sequentially with spacing
+            for (index, item) in items.enumerated() {
+                let order = Int32(index * 10) // Use spacing for future insertions
+                print("  → Setting today task '\(item.title ?? "Untitled")' display order: \(order)")
+                item.setValue(order, forKey: Item.orderAttributeName)
+            }
+            
+            // Save changes
+            try context.save()
+            print("✅ Display order initialized for today tasks")
+            
+            // Force a notification to update all views
+            NotificationCenter.default.post(
+                name: NSNotification.Name.NSManagedObjectContextDidSave,
+                object: context
+            )
+            
+        } catch {
+            print("❌ Failed to initialize today display order: \(error)")
+        }
+    }
+    
+    /// Initialize display order specifically for completed tasks
+    /// - Parameter context: The managed object context
+    static func initializeCompletedDisplayOrder(in context: NSManagedObjectContext) {
+        print("🔄 Initializing display order for completed tasks...")
+        
+        // Fetch completed tasks
+        let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed == YES")
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.completionDate, ascending: false),
+            NSSortDescriptor(keyPath: \Item.createdDate, ascending: true)
+        ]
+        
+        do {
+            let items = try context.fetch(fetchRequest)
+            print("📉 Found \(items.count) completed tasks to update")
+            
+            // Update display order sequentially with spacing
+            for (index, item) in items.enumerated() {
+                let order = Int32(index * 10) // Use spacing for future insertions
+                print("  → Setting completed task '\(item.title ?? "Untitled")' display order: \(order)")
+                item.setValue(order, forKey: Item.orderAttributeName)
+            }
+            
+            // Save changes
+            try context.save()
+            print("✅ Display order initialized for completed tasks")
+            
+            // Force a notification to update all views
+            NotificationCenter.default.post(
+                name: NSNotification.Name.NSManagedObjectContextDidSave,
+                object: context
+            )
+            
+        } catch {
+            print("❌ Failed to initialize completed display order: \(error)")
+        }
+    }
+    
     /// Force immediate re-initialization of display order for a specific project
     /// - Parameters:
     ///   - project: The project to update task ordering for

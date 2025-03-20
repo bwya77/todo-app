@@ -69,13 +69,18 @@ struct ReorderableTaskListView: View {
     
     var body: some View {
         ZStack {
-            // When in project mode, show the project detail view
+            // Show appropriate detail view based on view type
             if viewType == .project && selectedProject != nil {
                 ProjectDetailView(project: selectedProject!, context: viewContext)
             } 
-            // When in inbox mode, show the dedicated inbox view
             else if viewType == .inbox {
                 InboxDetailView(context: viewContext)
+            }
+            else if viewType == .today {
+                TodayDetailView(context: viewContext)
+            }
+            else if viewType == .completed {
+                CompletedDetailView(context: viewContext)
             } else {
                 VStack(spacing: 0) {
                     // Additional whitespace at the top

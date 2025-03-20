@@ -13,8 +13,11 @@ struct InboxTasksRequest {
     static func inboxTasksRequest() -> NSFetchRequest<Item> {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         
-        // Specifically only get tasks that have no project (null/nil project)
-        request.predicate = NSPredicate(format: "project == nil")
+        // Specifically only get tasks that have no project (null/nil project) and are not completed
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "project == nil"),
+            NSPredicate(format: "completed == NO")
+        ])
         
         // Sort by display order first, then other attributes
         request.sortDescriptors = [
