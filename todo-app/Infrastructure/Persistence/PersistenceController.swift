@@ -138,10 +138,27 @@ struct PersistenceController {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
         
-        // Add migration options
-        let description = container.persistentStoreDescriptions.first
-        description?.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
-        description?.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+        // CRITICAL UPDATE - Add pragmas for better durability
+        if let description = container.persistentStoreDescriptions.first, !inMemory {
+            // Set options for better durability
+            description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+            description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+            
+            // Configure SQLite options
+            var sqliteOptions = [String: String]()
+            
+            // Set journal mode to WAL (write-ahead logging) for better concurrency
+            sqliteOptions["journal_mode"] = "WAL"
+            
+            // Set synchronous mode to FULL for maximum durability (prevents data loss on system crash)
+            sqliteOptions["synchronous"] = "FULL"
+            
+            // Set busy timeout to 5 seconds (5000 ms)
+            sqliteOptions["busy_timeout"] = "5000"
+            
+            // Apply the options
+            description.setOption(sqliteOptions as NSDictionary, forKey: NSSQLitePragmasOption)
+        }
         
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
@@ -153,8 +170,7 @@ struct PersistenceController {
                     [NSPersistentStoreIncompatibleVersionHashError, NSMigrationError, NSMigrationMissingSourceModelError].contains(error.code)) {
                     print("Migration error - attempting recovery...")
                     
-                    // In a production app, you might attempt recovery strategies here
-                    // such as deleting and recreating the store or providing a manual migration path
+                    // We'll handle repair via AppDelegate instead
                 }
             }
         })

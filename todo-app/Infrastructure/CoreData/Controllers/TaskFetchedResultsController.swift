@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 import Combine
+import SwiftUI
 
 /// A manager class that encapsulates NSFetchedResultsController for better task list management
 class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate {
@@ -99,6 +100,7 @@ class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate
         case .project:
             if let project = selectedProject {
                 fetchRequest = TaskFetchRequestFactory.tasksForProject(project, in: context)
+                print("🔍 Creating fetch request for project: \(project.name ?? "Unknown")") 
             } else {
                 fetchRequest = TaskFetchRequestFactory.allTasks(in: context)
             }
@@ -110,6 +112,25 @@ class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate
         
         // Configure batch size for efficiency
         fetchRequest.fetchBatchSize = 20
+        
+        // Set a fixed sort descriptor for project view
+        if viewType == .project && selectedProject != nil {
+            fetchRequest.sortDescriptors = [
+                NSSortDescriptor(key: "displayOrder", ascending: true)
+            ]
+            print("🔍 CRITICAL: Project view using absolute displayOrder sort")
+        }
+        
+        // For reorderable tasks, always modify sort descriptors to prioritize display order
+        // Keep section-based sorting if needed but add displayOrder as first sort
+        var sortDescriptors = fetchRequest.sortDescriptors ?? []
+        
+        // Add displayOrder as primary sort only if it's not already there
+        if !sortDescriptors.contains(where: { $0.key == "displayOrder" }) {
+            sortDescriptors.insert(NSSortDescriptor(key: "displayOrder", ascending: true), at: 0)
+            fetchRequest.sortDescriptors = sortDescriptors
+            print("🔍 Set primary sort by displayOrder: \(String(describing: fetchRequest.sortDescriptors))")
+        }
         
         // Initialize using the constructed fetch request
         self.init(
@@ -144,12 +165,23 @@ class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate
     private func updateSections() {
         let sections = fetchedResultsController.sections ?? []
         
+        print("🧩 Updating sections: \(sections.count) sections found")
+        
         self.sections = sections.map { section in
-            return section.objects?.compactMap { $0 as? Item } ?? []
+            // Get items in this section
+            let items = section.objects?.compactMap { $0 as? Item } ?? []
+            
+            // Sort items by displayOrder within each section
+            return items.sorted { $0.displayOrder < $1.displayOrder }
         }
         
         self.sectionTitles = sections.map { section in
             return section.name
+        }
+        
+        // Log section information
+        for (index, section) in self.sections.enumerated() {
+            print("📂 Section \(index) (\(titleForSection(index))): \(section.count) items")
         }
     }
     

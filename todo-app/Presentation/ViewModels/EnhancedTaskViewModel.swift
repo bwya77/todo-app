@@ -236,10 +236,15 @@ class EnhancedTaskViewModel: ObservableObject {
         saveContext()
     }
     
-    // MARK: - Context Operations
+    // MARK: - Context Access
     
-    /// Saves the managed object context
-    private func saveContext() {
+    /// Access to the managed object context for extensions
+    var managedObjectContext: NSManagedObjectContext {
+        return viewContext
+    }
+    
+    /// Saves the managed object context (internal access to allow extensions to use it)
+    internal func saveContext() {
         do {
             try viewContext.save()
         } catch {

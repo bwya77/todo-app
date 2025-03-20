@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import SwiftUI
 
 extension Item {
     /// Validates and ensures all required properties are set correctly
@@ -26,9 +27,11 @@ extension Item {
             title = ""
         }
         
-        // Set default values if necessary
-        // Note: For Bool primitive types, we don't need to check for nil
-        // But we set default values to ensure consistency
+        // CRITICAL: Make sure displayOrder is set
+        if value(forKey: "displayOrder") == nil {
+            // Default to a high number so it appears at the end
+            setValue(9999, forKey: "displayOrder")
+        }
     }
     
     /// Creates a new Item with required properties
@@ -40,6 +43,7 @@ extension Item {
     ///   - isAllDay: Whether this is an all-day task
     ///   - project: The project this task belongs to (optional)
     ///   - notes: Optional notes for the task
+    ///   - displayOrder: Optional custom display order (if nil, will be set automatically)
     /// - Returns: The newly created Item
     static func create(in context: NSManagedObjectContext, 
                       title: String, 
@@ -47,7 +51,8 @@ extension Item {
                       priority: Priority = .none,
                       isAllDay: Bool = false,
                       project: Project? = nil,
-                      notes: String? = nil) -> Item {
+                      notes: String? = nil,
+                      displayOrder: Int32? = nil) -> Item {
         let item = Item(context: context)
         item.id = UUID()
         item.title = title
@@ -59,6 +64,27 @@ extension Item {
         item.isAllDay = isAllDay
         item.project = project
         item.notes = notes
+        
+        // CRITICAL: Always set display order - use direct setValue to bypass access control
+        if let displayOrder = displayOrder {
+            item.setValue(displayOrder, forKey: "displayOrder")
+        } else {
+            // For new items, determine displayOrder by fetching the current max order value
+            let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
+            fetchRequest.predicate = project != nil ? NSPredicate(format: "project == %@", project!) : NSPredicate(format: "project == nil")
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "displayOrder", ascending: false)]
+            fetchRequest.fetchLimit = 1
+            
+            do {
+                let results = try context.fetch(fetchRequest)
+                let maxOrder = results.first?.value(forKey: "displayOrder") as? Int32 ?? 0
+                item.setValue(maxOrder + 10, forKey: "displayOrder") // Add 10 for spacing
+            } catch {
+                // If fetch fails, use current timestamp as a fallback
+                let timestamp = Int32(Date().timeIntervalSinceReferenceDate)
+                item.setValue(timestamp, forKey: "displayOrder")
+            }
+        }
         return item
     }
     
@@ -184,6 +210,35 @@ extension Item {
                 try context.save()
             } catch {
                 print("Error saving priority: \(error)")
+            }
+        }
+    }
+    
+    // MARK: - Display Order Access
+    
+    /// Direct access method for display order (adding to avoid conflict with generated property)
+    func getDisplayOrder() -> Int32 {
+        // Use direct access to the property
+        return self.value(forKey: "displayOrder") as? Int32 ?? 9999
+    }
+    
+    /// Direct setting method for display order
+    func setDisplayOrder(_ newValue: Int32) {
+        // Use direct access to set the property
+        self.setValue(newValue, forKey: "displayOrder")
+    }
+    
+    /// Updates display order and persists changes
+    func updateDisplayOrder(_ newOrder: Int32, save: Bool = true) {
+        // Set the display order directly
+        self.setDisplayOrder(newOrder)
+        
+        if save, let context = managedObjectContext {
+            do {
+                try context.save()
+                print("Saved display order \(newOrder) for task \(title ?? "unknown")")
+            } catch {
+                print("Error saving display order: \(error)")
             }
         }
     }

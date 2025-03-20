@@ -9,6 +9,8 @@ import Foundation
 import CoreData
 
 extension Project {
+    // Remove the lastModifiedDate property to avoid crashing
+    // @NSManaged var lastModifiedDate: Date?
     /// Validates and ensures all required properties are set correctly
     func validateAndSetDefaults() {
         // Ensure ID is set

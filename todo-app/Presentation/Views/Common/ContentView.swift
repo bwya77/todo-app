@@ -147,6 +147,7 @@ struct ContentView: View {
     // For debugging and testing
     #if DEBUG
     @State private var showProgressTest = false
+    @State private var showDebugView = false
     #endif
     
     // Override the divider color for week view
@@ -204,8 +205,8 @@ struct ContentView: View {
                         .background(Color.white)
 
                     case .inbox, .today, .filters, .completed, .project:
-                    // List view for other views
-                    TaskListView(
+                    // Use the appropriate task list view based on feature flags
+                    TaskListViewFactory.createTaskListView(
                         viewType: selectedViewType,
                         selectedProject: selectedProject,
                         context: viewContext
@@ -235,6 +236,9 @@ struct ContentView: View {
                 if event.modifierFlags.contains(.command) && event.keyCode == 2 { // Command+D
                     self.showProgressTest.toggle()
                     return nil // Return nil to allow normal event processing
+                } else if event.modifierFlags.contains(.command) && event.keyCode == 3 { // Command+F
+                    self.showDebugView.toggle()
+                    return nil
                 }
                 return event
             }
@@ -257,18 +261,32 @@ struct ContentView: View {
                 #if DEBUG
                 // Progress test view for development testing
                 if showProgressTest {
-                    PopupBlurView(isPresented: showProgressTest, onDismiss: { showProgressTest = false }) {
-                        AnimatedProgressIndicatorTest()
-                            .frame(width: 500, height: 400)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                            .shadow(radius: 10)
-                    }
-                    .transition(.opacity)
-                    .zIndex(100)
-                    .edgesIgnoringSafeArea(.all)
+                PopupBlurView(isPresented: showProgressTest, onDismiss: { showProgressTest = false }) {
+                AnimatedProgressIndicatorTest()
+                .frame(width: 500, height: 400)
+                .background(Color.white)
+                .cornerRadius(12)
+                .shadow(radius: 10)
                 }
-                #endif
+                .transition(.opacity)
+                .zIndex(100)
+                .edgesIgnoringSafeArea(.all)
+                }
+                
+            // Debug task view for development testing
+            if showDebugView {
+                PopupBlurView(isPresented: showDebugView, onDismiss: { showDebugView = false }) {
+                    DebugTaskView()
+                        .frame(width: 500, height: 600)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .shadow(radius: 10)
+                }
+                .transition(.opacity)
+                .zIndex(100)
+                .edgesIgnoringSafeArea(.all)
+            }
+            #endif
             }
         }
     }

@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import SwiftUI
 
 /// A factory class for creating commonly used fetch requests for the Item entity
 /// Centralizes fetch logic and improves reusability across the application
@@ -19,7 +20,10 @@ struct TaskFetchRequestFactory {
     /// - Returns: A configured fetch request
     static func allTasks(in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
+        
+        // Always use displayOrder as primary sort
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
@@ -30,7 +34,7 @@ struct TaskFetchRequestFactory {
     
     // MARK: - Task Fetch Requests by Date
     
-    /// Creates a fetch request for tasks due today
+    /// Creates a fetch request for today's tasks
     /// - Parameter context: The managed object context
     /// - Returns: A configured fetch request
     static func todayTasks(in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
@@ -38,9 +42,12 @@ struct TaskFetchRequestFactory {
         let today = Calendar.current.startOfDay(for: Date())
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
         
+        // Only show incomplete tasks due today
         request.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@ AND dueDate < %@", 
                                         today as NSDate, tomorrow as NSDate)
+        
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true)
         ]
@@ -96,8 +103,11 @@ struct TaskFetchRequestFactory {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         let today = Calendar.current.startOfDay(for: Date())
         
+        // Only show incomplete tasks with due dates after today
         request.predicate = NSPredicate(format: "completed == NO AND dueDate >= %@", today as NSDate)
+        
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false)
         ]
@@ -130,6 +140,7 @@ struct TaskFetchRequestFactory {
     ///   - context: The managed object context
     /// - Returns: A configured fetch request
     static func tasksForProject(_ project: Project, includeCompleted: Bool = false, in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
+        print("Fetching tasks for project: \(project.name ?? "Unknown")") // Debug log
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         
         let projectPredicate = NSPredicate(format: "project == %@", project)
@@ -143,11 +154,16 @@ struct TaskFetchRequestFactory {
         }
         
         request.predicate = predicate
+        
+        // Ensure tasks are sorted by displayOrder first - make this explicit
         request.sortDescriptors = [
+            NSSortDescriptor(key: Item.orderAttributeName, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.title, ascending: true)
         ]
+        
+        print("Sort descriptors: \(String(describing: request.sortDescriptors))")
         
         return request
     }
@@ -176,8 +192,11 @@ struct TaskFetchRequestFactory {
     static func inboxTasks(in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         
+        // Only show tasks without a project and that aren't completed
         request.predicate = NSPredicate(format: "project == nil AND completed == NO")
+        
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
             NSSortDescriptor(keyPath: \Item.priority, ascending: false),
             NSSortDescriptor(keyPath: \Item.createdDate, ascending: false)
@@ -196,8 +215,11 @@ struct TaskFetchRequestFactory {
     static func completedTasks(limit: Int? = nil, in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
         let request: NSFetchRequest<Item> = Item.fetchRequest()
         
+        // Always show completed tasks
         request.predicate = NSPredicate(format: "completed == YES")
+        
         request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
             NSSortDescriptor(keyPath: \Item.completionDate, ascending: false)
         ]
         
@@ -261,6 +283,29 @@ struct TaskFetchRequestFactory {
     /// - Returns: The configured fetch request
     static func configureBatchFetching<T>(_ request: NSFetchRequest<T>, batchSize: Int = 20) -> NSFetchRequest<T> {
         request.fetchBatchSize = batchSize
+        return request
+    }
+    
+    // MARK: - Ordered Task Fetch Requests
+    
+    /// Creates a fetch request with custom display order
+    /// - Parameters:
+    ///   - predicate: The predicate to filter tasks
+    ///   - context: The managed object context
+    /// - Returns: A configured fetch request sorted by display order
+    static func orderedTasks(predicate: NSPredicate?, in context: NSManagedObjectContext) -> NSFetchRequest<Item> {
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        request.predicate = predicate
+        
+        // Primary sort by display order
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Item.displayOrder, ascending: true),
+            // Fallback sorts if display order is the same
+            NSSortDescriptor(keyPath: \Item.dueDate, ascending: true),
+            NSSortDescriptor(keyPath: \Item.priority, ascending: false),
+            NSSortDescriptor(keyPath: \Item.title, ascending: true)
+        ]
+        
         return request
     }
     

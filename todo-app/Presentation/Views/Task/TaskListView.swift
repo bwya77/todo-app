@@ -10,6 +10,7 @@ import SwiftUI
 import CoreData
 import AppKit
 import Combine
+import Foundation
 
 struct TaskListView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -40,12 +41,15 @@ struct TaskListView: View {
         var predicate: NSPredicate?
         
         // Create a fetch request based on view type
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        var request: NSFetchRequest<Item> = Item.fetchRequest()
         
         switch viewType {
         case .inbox:
             title = "Inbox"
+            // Use a correct predicate for Inbox that ensures the project is nil
             predicate = NSPredicate(format: "project == nil")
+            // Use the specialized request for inbox
+            request = InboxTasksRequest.inboxTasksRequest()
             
         case .today:
             title = "Today"
@@ -55,12 +59,13 @@ struct TaskListView: View {
             
         case .upcoming:
             title = "Upcoming"
-            let startOfDay = Calendar.current.startOfDay(for: Date())
-            predicate = NSPredicate(format: "dueDate >= %@", startOfDay as NSDate)
+            // Use the specialized request for upcoming
+            request = InboxTasksRequest.upcomingTasksRequest()
             
         case .completed:
             title = "Completed"
-            predicate = NSPredicate(format: "completed == YES")
+            // Use the specialized request for completed
+            request = InboxTasksRequest.completedTasksRequest()
             
         case .filters:
             title = "Filters & Labels"
@@ -85,13 +90,19 @@ struct TaskListView: View {
         self.title = title
     }
     
-    @State private var expandedGroups: Set<String> = ["Default"]
+    @State private var expandedGroups: Set<String> = ["Inbox"]
     
     func groupTasks() -> [String: [Item]] {
         var groups: [String: [Item]] = [:]
         
+        // Special handling for Inbox view - all tasks should go to "Inbox" group
+        if viewType == .inbox {
+            groups["Inbox"] = Array(tasks)
+            return groups
+        }
+        
         for task in tasks {
-            let groupName = task.project?.name ?? "Default"
+            let groupName = task.project?.name ?? "Inbox"
             if groups[groupName] == nil {
                 groups[groupName] = []
             }
@@ -143,7 +154,7 @@ struct TaskListView: View {
                                                     .foregroundColor(.gray)
                                                     .frame(width: 16)
                                                     
-                                                if groupName == "Default" {
+                                                if groupName == "Inbox" {
                                                     Circle()
                                                         .fill(getGroupColor(for: groupName))
                                                         .frame(width: 10, height: 10)
@@ -238,8 +249,8 @@ struct TaskListView: View {
     }
     
     private func getGroupColor(for groupName: String) -> Color {
-        if groupName == "Default" {
-            return .red
+        if groupName == "Inbox" {
+            return .blue // Change the Inbox color to blue
         } else if let project = getProjectForGroupName(groupName) {
             return AppColors.getColor(from: project.color)
         } else {
