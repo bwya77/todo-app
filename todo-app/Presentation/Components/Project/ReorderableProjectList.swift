@@ -138,7 +138,7 @@ struct ReorderableProjectList: View {
                 ))
             }
         }
-        .padding(.horizontal, 6)
+        
     }
 }
 

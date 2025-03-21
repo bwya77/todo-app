@@ -1,0 +1,14 @@
+Fix drag and drop reordering for sidebar projects
+
+This commit fixes an issue with the previous implementation that broke
+the drag and drop reordering functionality for projects in the sidebar.
+The changes include:
+
+1. Reverted from Button-based implementation to direct HStack to allow
+   proper interaction with drag and drop gestures
+2. Restored hover state tracking for visual feedback
+3. Maintained left alignment consistent with other sidebar items
+4. Ensured proper background coloring for selected and hovered states
+
+Projects now maintain the correct left alignment while fully supporting
+drag and drop reordering functionality.
