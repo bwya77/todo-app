@@ -96,6 +96,8 @@ struct ReorderableProjectList: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Add spacing between Completed and the first project
+            Spacer().frame(height: 16)
             ForEach(viewModel.projects, id: \.id) { project in
                 HStack(spacing: 10) {
                     ProjectRowView(
