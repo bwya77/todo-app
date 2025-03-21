@@ -80,7 +80,17 @@ struct CustomSidebarButtonStyle: ButtonStyle {
             }
         } else {
             // For non-selected items, use the hover color when pressed
-            return isPressed ? AppColors.sidebarHover : Color.clear
+            if isPressed {
+                if let projectColor = projectColor {
+                    // Use a very light shade of the project color for hover
+                    return AppColors.lightenColor(projectColor, by: 0.9)
+                } else {
+                    // Standard hover color for non-project items
+                    return AppColors.sidebarHover
+                }
+            } else {
+                return Color.clear
+            }
         }
     }
 }

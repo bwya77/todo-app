@@ -23,14 +23,15 @@ struct ProjectDropDelegate: DropDelegate {
     var moveAction: (Int, Int) -> Void
     
     func dropEntered(info: DropInfo) {
-        print("🔄 Drop entered for project: \(item.name ?? "undefined")")
+        // Only proceed if we have a dragged item that's different from the current one
         guard let draggedItem = draggedItem else { return }
         guard draggedItem != item else { return }
         
+        // Find the indices for the move operation
         guard let fromIndex = items.firstIndex(of: draggedItem),
               let toIndex = items.firstIndex(of: item) else { return }
         
-        print("🔄 Moving from index \(fromIndex) to \(toIndex)")
+        // Perform the move
         moveAction(fromIndex, toIndex)
     }
     
@@ -39,7 +40,7 @@ struct ProjectDropDelegate: DropDelegate {
     }
     
     func performDrop(info: DropInfo) -> Bool {
-        print("✅ Drop completed")
+        // Reset the dragged item when the drop is complete
         draggedItem = nil
         return true
     }
@@ -62,6 +63,7 @@ struct ReorderableProjectList: View {
         self._selectedViewType = selectedViewType
         self._selectedProject = selectedProject
     }
+    
     /// The view model for project reordering
     @StateObject private var viewModel = ProjectReorderingViewModel()
     
@@ -71,49 +73,72 @@ struct ReorderableProjectList: View {
     /// Whether to show completed projects
     @State private var showCompletedProjects = false
     
-    /// State for manual drag & drop implementation
+    // State for drag and hover tracking
+    @State private var hoveredProject: Project? = nil
     @State private var draggingProject: Project? = nil
-    @State private var dragLocation: CGPoint = .zero
-    @GestureState private var dragState = DragState.inactive
+    
+    // Helper function to determine the background color for a project
+    private func backgroundColorFor(project: Project) -> Color {
+        let isSelected = selectedViewType == .project && selectedProject?.id == project.id
+        let isHovered = hoveredProject?.id == project.id
+        
+        if isSelected {
+            // Selected state - use the lighter shade of project color
+            return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.7)
+        } else if isHovered {
+            // Hover state - use a very light shade of project color
+            return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.9)
+        } else {
+            // Normal state - transparent
+            return Color.clear
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                ForEach(Array(viewModel.projects.enumerated()), id: \.element.id) { index, project in
-                    HStack(spacing: 10) {
-                        ProjectRowView(
-                            project: project,
-                            isSelected: selectedViewType == .project && selectedProject?.id == project.id
-                        )
-                    }
-                    .contentShape(Rectangle())
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(selectedViewType == .project && selectedProject?.id == project.id ? 
-                                  AppColors.getColor(from: project.color).opacity(0.2) : 
-                                  Color.clear)
+            ForEach(viewModel.projects, id: \.id) { project in
+                HStack(spacing: 10) {
+                    ProjectRowView(
+                        project: project,
+                        isSelected: selectedViewType == .project && selectedProject?.id == project.id
                     )
-                    .onTapGesture {
-                        selectedViewType = .project
-                        selectedProject = project
-                    }
-                    .padding(.vertical, 6) // More vertical spacing between projects
-                    .onDrag {
-                        self.draggingProject = project
-                        return NSItemProvider(object: String(index) as NSString)
-                    }
-                    .onDrop(of: [.text], delegate: ProjectDropDelegate(
-                        item: project,
-                        items: viewModel.projects,
-                        draggedItem: $draggingProject,
-                        moveAction: { fromIndex, toIndex in
-                            viewModel.reorderProjects(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex)
-                        }
-                    ))
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(backgroundColorFor(project: project))
+                )
+                .onTapGesture {
+                    selectedViewType = .project
+                    selectedProject = project
+                }
+                .onHover { isHovered in
+                    hoveredProject = isHovered ? project : nil
+                    
+                    if isHovered && !(selectedViewType == .project && selectedProject?.id == project.id) {
+                        NSCursor.pointingHand.set()
+                    } else {
+                        NSCursor.arrow.set()
+                    }
+                }
+                .onDrag {
+                    self.draggingProject = project
+                    return NSItemProvider(object: "\(viewModel.projects.firstIndex(of: project) ?? 0)" as NSString)
+                }
+                .onDrop(of: [.text], delegate: ProjectDropDelegate(
+                    item: project,
+                    items: viewModel.projects,
+                    draggedItem: $draggingProject,
+                    moveAction: { fromIndex, toIndex in
+                        viewModel.reorderProjects(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex)
+                    }
+                ))
             }
-            .padding(.horizontal, 6)
         }
+        .padding(.horizontal, 6)
     }
 }
 
@@ -131,13 +156,13 @@ struct ProjectRowView: View {
     
     var body: some View {
         HStack(spacing: 10) {
-        // Project completion indicator or color indicator
-        ProjectCompletionIndicator(
-        project: project,
-        isSelected: isSelected,
-        viewContext: viewContext
-        )
-        .id("sidebar-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
+            // Project completion indicator or color indicator
+            ProjectCompletionIndicator(
+                project: project,
+                isSelected: isSelected,
+                viewContext: viewContext
+            )
+            .id("sidebar-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
             
             // Project name
             Text(project.name ?? "Unnamed Project")
