@@ -12,10 +12,17 @@ import CoreData
 class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Simplified approach to ensure basic task order initialization
-        let context = PersistenceController.shared.container.viewContext
+        // Initialize DisplayOrderManager to ensure proper ordering for tasks and projects
+        print("🚀 Initializing DisplayOrderManager for tasks and projects")
+        DisplayOrderManager.ensureDisplayOrderExists()
+        DisplayOrderManager.repairAllTaskOrder()
+        DisplayOrderManager.repairAllProjectOrder()
+        
+        // Initialize task order at launch
+        AppLaunchTaskOrderInitializer.shared.initializeTaskOrder()
         
         // Save any pending changes to ensure data consistency
+        let context = PersistenceController.shared.container.viewContext
         if context.hasChanges {
             try? context.save()
         }

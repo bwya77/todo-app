@@ -89,6 +89,8 @@ struct SidebarView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var taskViewModel: TaskViewModel
     
+    // SidebarView FetchRequest for projects (replaced by ReorderableProjectList)
+    // This is still needed to maintain task counts, but we don't display these directly
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Project.name, ascending: true)],
         animation: .default)
@@ -256,38 +258,11 @@ struct SidebarView: View {
                     
                     Group {
                         
-                        ForEach(projects) { project in
-                            Button(action: {
-                                selectedViewType = .project
-                                selectedProject = project
-                            }) {
-                                HStack {
-                                    Label {
-                                        Text(project.name ?? "Unnamed Project")
-                                    } icon: {
-                                        ProjectCompletionIndicator(
-                                            project: project,
-                                            isSelected: selectedViewType == .project && selectedProject?.id == project.id,
-                                            viewContext: viewContext
-                                        )
-                                        // Add a unique ID for this instance to force recreation when project changes
-                                        .id("sidebar-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
-                                    }
-                                    Spacer()
-                                    let taskCount = projectTaskCounts[project.id ?? UUID()] ?? 0
-                                    if taskCount > 0 {
-                                        Text("\(taskCount)")
-                                            .foregroundColor(.secondary)
-                                            .font(.system(size: 14))
-                                    }
-                                }
-                            }
-                            .buttonStyle(CustomSidebarButtonStyle(
-                                isSelected: selectedViewType == .project && selectedProject?.id == project.id,
-                                projectColor: AppColors.getColor(from: project.color)
-                            ))
-                        }
-                        .onDelete(perform: deleteProjects)
+                        // Custom ReorderableForEach for projects with selection bindings
+                        ReorderableProjectList(
+                            selectedViewType: $selectedViewType,
+                            selectedProject: $selectedProject
+                        )
                         
                         // Project buttons only - removed the Add Project button
                     }

@@ -18,9 +18,21 @@ struct ProjectFetchRequestFactory {
     static func allProjects(in context: NSManagedObjectContext) -> NSFetchRequest<Project> {
         let request: NSFetchRequest<Project> = Project.fetchRequest()
         
-        request.sortDescriptors = [
-            NSSortDescriptor(keyPath: \Project.name, ascending: true)
-        ]
+        // Check if displayOrder exists on the entity
+        let entity = context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Project"]
+        let hasDisplayOrder = entity?.propertiesByName["displayOrder"] != nil
+        
+        if hasDisplayOrder {
+            // If displayOrder exists, sort by it
+            request.sortDescriptors = [
+                NSSortDescriptor(key: "displayOrder", ascending: true)
+            ]
+        } else {
+            // Fallback to sorting by name
+            request.sortDescriptors = [
+                NSSortDescriptor(keyPath: \Project.name, ascending: true)
+            ]
+        }
         
         return request
     }

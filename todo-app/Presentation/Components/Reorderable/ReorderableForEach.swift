@@ -81,8 +81,10 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
     private func contentView(for item: Item) -> some View {
         content(item)
             // Fade the dragged item and enhance the visual feedback with more subtle hints
-            .opacity(active == item && hasChangedLocation ? 0.7 : 1)
+            .opacity(active == item && hasChangedLocation ? 0.5 : 1)
+            .scaleEffect(active == item && hasChangedLocation ? 1.02 : 1)
             .contentShape(Rectangle()) // Make entire area draggable
+            .border(Color.accentColor.opacity(active == item && hasChangedLocation ? 0.3 : 0), width: 1)
             .onDrop(
                 of: [.text],
                 delegate: ReorderableDragRelocateDelegate(
@@ -100,6 +102,7 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
     }
     
     private func dragData(for item: Item) -> NSItemProvider {
+        print("👉 Started dragging: \(item.id)")
         active = item
         return NSItemProvider(object: "\(item.id)" as NSString)
     }

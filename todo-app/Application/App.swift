@@ -25,6 +25,14 @@ struct TodoApp: App {
                     
                     // Ensure we have default data
                     DefaultDataProvider.shared.ensureDefaultData()
+                    
+                    // Initialize DisplayOrderManager for tasks and projects
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("🚀 Initializing DisplayOrderManager from SwiftUI App")
+                        DisplayOrderManager.ensureDisplayOrderExists()
+                        DisplayOrderManager.repairAllTaskOrder()
+                        DisplayOrderManager.repairAllProjectOrder()
+                    }
                 }
         }
         .windowToolbarStyle(.unifiedCompact)

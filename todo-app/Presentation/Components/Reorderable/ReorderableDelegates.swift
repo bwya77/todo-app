@@ -25,10 +25,26 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
     
     /// Called when a drag operation enters a drop area
     func dropEntered(info: DropInfo) {
-        guard item != active, let current = active else { return }
-        guard let from = items.firstIndex(of: current) else { return }
-        guard let to = items.firstIndex(of: item) else { return }
+        print("🔄 Drop entered")
+        // Ensure we have distinct active and target items
+        guard item != active, let current = active else { 
+            print("⚠️ Cannot reorder: active and target are the same or active is nil")
+            return 
+        }
+        
+        // Find the item indices
+        guard let from = items.firstIndex(of: current) else { 
+            print("⚠️ Cannot find source index")
+            return 
+        }
+        guard let to = items.firstIndex(of: item) else { 
+            print("⚠️ Cannot find target index")
+            return 
+        }
+        
         hasChangedLocation = true
+        print("✅ Found source: \(from) and target: \(to)")
+        
         if items[to] != current {
             // This gives the same smooth experience as the project view
             // For vertical list dragging, this produces the best visual effect
@@ -36,6 +52,8 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
             
             // Ensure the target position is within bounds
             let safePosition = min(adjustedTargetPosition, items.count)
+            
+            print("🔄 Moving item from \(from) to \(safePosition)")
             
             // Apply the move action with the more natural-feeling target position
             // Use animation with a slight delay for the smooth sliding effect
@@ -52,6 +70,7 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
     
     /// Called when a drag operation is completed within this drop area
     func performDrop(info: DropInfo) -> Bool {
+        print("✅ Drop completed")
         hasChangedLocation = false
         active = nil
         return true
@@ -75,6 +94,7 @@ struct ReorderableDropOutsideDelegate<Item: Reorderable>: DropDelegate {
     
     /// Called when a drag operation is completed within this drop area
     func performDrop(info: DropInfo) -> Bool {
+        print("🔄 Drop outside completed")
         active = nil
         return true
     }

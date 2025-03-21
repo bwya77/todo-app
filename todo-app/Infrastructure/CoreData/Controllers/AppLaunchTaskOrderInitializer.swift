@@ -19,21 +19,24 @@ class AppLaunchTaskOrderInitializer {
     
     private init() {}
     
-    /// Ensures task order is properly initialized at app launch
+    /// Ensures task and project order is properly initialized at app launch
     func initializeTaskOrder() {
         guard !hasInitialized else {
-            print("✓ Task order already initialized this session")
+            print("✓ Order already initialized this session")
             return
         }
         
-        print("🚀 Initializing task order at app launch")
+        print("🚀 Initializing order at app launch")
         let context = PersistenceController.shared.container.viewContext
         
-        // Verify all items have a valid displayOrder
-        verifyDisplayOrderExists(in: context)
+        // Verify all items and projects have a valid displayOrder
+        verifyEntityDisplayOrder(in: context)
         
         // Initialize task ordering for different views
         initializeTaskOrderByType(in: context)
+        
+        // Initialize project ordering
+        initializeProjectOrder(in: context)
         
         // Mark as initialized to prevent duplicate work
         hasInitialized = true
@@ -41,11 +44,20 @@ class AppLaunchTaskOrderInitializer {
         // Persist changes
         PersistentOrder.saveAllContexts()
         
-        print("✅ App launch task order initialization complete")
+        print("✅ App launch order initialization complete")
+    }
+    
+    /// Verifies that all entities have a valid displayOrder attribute
+    private func verifyEntityDisplayOrder(in context: NSManagedObjectContext) {
+        // Verify tasks have displayOrder
+        verifyTaskDisplayOrder(in: context)
+        
+        // Verify projects have displayOrder
+        verifyProjectDisplayOrder(in: context)
     }
     
     /// Verifies that all tasks have a valid displayOrder attribute
-    private func verifyDisplayOrderExists(in context: NSManagedObjectContext) {
+    private func verifyTaskDisplayOrder(in context: NSManagedObjectContext) {
         let fetchRequest: NSFetchRequest<Item> = Item.fetchRequest()
         
         do {
@@ -69,7 +81,60 @@ class AppLaunchTaskOrderInitializer {
                 print("✓ All tasks have displayOrder attribute")
             }
         } catch {
-            print("❌ Error verifying displayOrder: \(error)")
+            print("❌ Error verifying task displayOrder: \(error)")
+        }
+    }
+    
+    /// Verifies that all projects have a valid displayOrder attribute
+    private func verifyProjectDisplayOrder(in context: NSManagedObjectContext) {
+        // Check if displayOrder exists in the model
+        let entity = context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Project"]
+        let hasDisplayOrder = entity?.propertiesByName["displayOrder"] != nil
+        
+        if !hasDisplayOrder {
+            // Try to add the displayOrder attribute dynamically
+            context.persistentStoreCoordinator?.managedObjectModel.addDisplayOrderAttribute()
+            
+            // Verify it was added
+            let updatedEntity = context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Project"]
+            let nowHasDisplayOrder = updatedEntity?.propertiesByName["displayOrder"] != nil
+            
+            if !nowHasDisplayOrder {
+                print("⚠️ Could not add displayOrder attribute to Project entity. Skipping project order initialization.")
+                return
+            }
+        }
+        
+        let fetchRequest: NSFetchRequest<Project> = Project.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Project.name, ascending: true)]
+        
+        do {
+            let projects = try context.fetch(fetchRequest)
+            print("🔍 Verifying displayOrder for \(projects.count) projects")
+            
+            var fixedCount = 0
+            
+            for (index, project) in projects.enumerated() {
+                do {
+                    // Use a safer approach with try/catch for each project
+                    if project.value(forKey: "displayOrder") == nil {
+                        // Set a default value based on alphabetical index
+                        project.setValue(Int32(index * 10), forKey: "displayOrder")
+                        fixedCount += 1
+                    }
+                } catch {
+                    print("  ⚠️ Could not set displayOrder for project: \(project.name ?? "Unknown")")
+                }
+            }
+            
+            if fixedCount > 0 {
+                try context.save()
+                print("🔧 Fixed displayOrder for \(fixedCount) projects")
+            } else {
+                print("✓ All projects have displayOrder attribute")
+            }
+        } catch {
+            print("❌ Error verifying project displayOrder: \(error)")
         }
     }
     
@@ -79,6 +144,88 @@ class AppLaunchTaskOrderInitializer {
         
         for type in types {
             ensureTaskOrderConsistency(for: type, in: context)
+        }
+    }
+    
+    /// Initialize project ordering
+    private func initializeProjectOrder(in context: NSManagedObjectContext) {
+        // Check if displayOrder exists in the model
+        let entity = context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Project"]
+        let hasDisplayOrder = entity?.propertiesByName["displayOrder"] != nil
+        
+        if !hasDisplayOrder {
+            // Try to add the displayOrder attribute dynamically
+            context.persistentStoreCoordinator?.managedObjectModel.addDisplayOrderAttribute()
+            
+            // Verify it was added
+            let updatedEntity = context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Project"]
+            let nowHasDisplayOrder = updatedEntity?.propertiesByName["displayOrder"] != nil
+            
+            if !nowHasDisplayOrder {
+                print("⚠️ Could not add displayOrder attribute to Project entity. Skipping project order initialization.")
+                return
+            }
+        }
+        
+        let projectsRequest: NSFetchRequest<Project> = Project.fetchRequest()
+        
+        // Use appropriate sort descriptors
+        if hasDisplayOrder {
+            projectsRequest.sortDescriptors = [NSSortDescriptor(key: "displayOrder", ascending: true)]
+        } else {
+            projectsRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Project.name, ascending: true)]
+        }
+        
+        do {
+            let projects = try context.fetch(projectsRequest)
+            print("🔍 Checking order for \(projects.count) projects")
+            
+            // Check for discontinuities in displayOrder values
+            var hasOrderingIssues = false
+            
+            if projects.count >= 2 && hasDisplayOrder {
+                for i in 0..<projects.count-1 {
+                    do {
+                        let currentOrder = projects[i].value(forKey: "displayOrder") as? Int32 ?? 9999
+                        let nextOrder = projects[i+1].value(forKey: "displayOrder") as? Int32 ?? 9999
+                        
+                        // Look for identical ordering values (a critical issue)
+                        if currentOrder == nextOrder {
+                            hasOrderingIssues = true
+                            print("⚠️ Found duplicate display order values in projects")
+                            break
+                        }
+                    } catch {
+                        // If we can't check order, assume we need to reindex
+                        hasOrderingIssues = true
+                        break
+                    }
+                }
+            } else if !hasDisplayOrder {
+                // If displayOrder was just added, we need to initialize values
+                hasOrderingIssues = true
+            }
+            
+            // Always reindex if displayOrder was just added or if there are issues
+            if hasOrderingIssues {
+                print("🔄 Reindexing projects")
+                for (index, project) in projects.enumerated() {
+                    do {
+                        let newOrder = Int32(index * 10) // Use spacing for future insertions
+                        project.setValue(newOrder, forKey: "displayOrder")
+                    } catch {
+                        print("  ⚠️ Could not set displayOrder for project: \(project.name ?? "Unknown")")
+                    }
+                }
+                
+                // Save changes
+                try context.save()
+                print("✅ Project order fixed")
+            } else {
+                print("✓ Project order is consistent")
+            }
+        } catch {
+            print("❌ Error checking project order: \(error)")
         }
     }
     
@@ -140,8 +287,8 @@ class AppLaunchTaskOrderInitializer {
                     task.setValue(newOrder, forKey: "displayOrder")
                 }
                 
-                // Save changes
-                try context.save()
+                // Save changes safely
+                try? context.save()
                 print("✅ Task order fixed for \(type)")
             } else {
                 print("✓ Task order for \(type) is consistent")
@@ -198,8 +345,8 @@ class AppLaunchTaskOrderInitializer {
                         task.setValue(newOrder, forKey: "displayOrder")
                     }
                     
-                    // Save changes
-                    try context.save()
+                    // Save changes safely
+                    try? context.save()
                     print("  ✅ Task order fixed")
                 } else {
                     print("  ✓ Task order is consistent")
