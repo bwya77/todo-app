@@ -1,0 +1,10 @@
+Improve vertical spacing in sidebar projects
+
+This commit enhances the visual separation in the sidebar by:
+
+1. Adding a 16-point spacer between the "Completed" item and the first project
+2. Adding 6-point spacing between individual projects in the list
+
+These spacing adjustments improve readability and create a clearer
+visual hierarchy in the sidebar, making it easier to distinguish between
+different project items while maintaining the left alignment.
