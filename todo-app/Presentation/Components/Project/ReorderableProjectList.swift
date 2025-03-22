@@ -270,10 +270,10 @@ struct ReorderableProjectList: View {
     @State private var isHoveringOverNoAreaSection: Bool = false
     @State private var isDraggingFromAreaToNoArea: Bool = false
     
-    // Cache animations and transitions - using shorter, snappier animations
-    private let expandTransition = AnyTransition.move(edge: .top).combined(with: .opacity)
-    private let expandAnimation = Animation.spring(response: 0.2, dampingFraction: 0.7)
-    private let dragAnimation = Animation.spring(response: 0.3, dampingFraction: 0.6)
+    // Cache animations and transitions - using simpler animations to prevent layout issues
+    private let expandTransition = AnyTransition.opacity
+    private let expandAnimation = Animation.easeInOut(duration: 0.2)
+    private let dragAnimation = Animation.easeInOut(duration: 0.2)
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
         let isHovered = hoveredProject?.id == project.id
@@ -358,8 +358,10 @@ struct ReorderableProjectList: View {
                     renderAreaRow(area: area)
                     
                     if let areaId = area.id {
-                        VStack(spacing: 6) {
-                            if expandedAreas[areaId, default: true] {
+                        if expandedAreas[areaId, default: true] {
+                            // No transition or animation for the project content
+                            // Just show/hide the projects instantly
+                            VStack(spacing: 6) {
                                 ForEach(projectViewModel.projects.filter { $0.area?.id == areaId }, id: \.id) { project in
                                     renderProjectRow(project: project)
                                     
@@ -369,13 +371,10 @@ struct ReorderableProjectList: View {
                                             .fill(AppColors.getColor(from: area.color ?? "blue"))
                                             .frame(height: 2)
                                             .padding(.horizontal, 10)
-                                            .transition(.opacity)
                                     }
                                 }
                             }
                         }
-                        .transition(expandTransition)
-                        .animation(expandAnimation, value: expandedAreas[areaId, default: true])
                     }
                 }
                 .padding(isDraggingOver == area.id ? 4 : 0)
@@ -446,10 +445,9 @@ struct ReorderableProjectList: View {
         // Replaced the overlay with a group-level background
         .onTapGesture {
             if let areaId = area.id {
-                // Toggle expansion on tap with spring animation
-                withAnimation(dragAnimation) {
-                    expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
-                }
+                // Toggle expansion on tap with no animation
+                // This ensures nothing bounces or jiggles
+                expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
                 
                 // Don't change the selection on expand/collapse
                 if selectedArea?.id != area.id {
@@ -473,13 +471,11 @@ struct ReorderableProjectList: View {
         .onDrag {
             // Set the dragged area and remember expanded state
             if let areaId = area.id {
-            // Set the dragged area using optimized state update
-            updateAreaDragState(area: area, areaId: areaId)
+                // Set the dragged area using optimized state update
+                updateAreaDragState(area: area, areaId: areaId)
                 
-            // Collapse the area during drag - with spring animation for snappier feel
-            withAnimation(dragAnimation) {
+                // Collapse the area during drag with no animation
                 expandedAreas[areaId] = false
-            }
             }
             return NSItemProvider(object: "area-\(area.id?.uuidString ?? "")" as NSString)
         }
@@ -537,11 +533,9 @@ struct ReorderableProjectList: View {
             }
         }
         .onDrag {
-            // Set the dragged project using optimized state update
-            withAnimation(dragAnimation) {
-                dragState.isDragging = true
-                updateDragState(project: project)
-            }
+            // Set the dragged project with no animation
+            dragState.isDragging = true
+            updateDragState(project: project)
             return NSItemProvider(object: "project-\(project.id?.uuidString ?? "")" as NSString)
         }
         .onDrop(of: [.text], delegate: ProjectDropDelegate(
