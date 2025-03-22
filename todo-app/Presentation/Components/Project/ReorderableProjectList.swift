@@ -8,6 +8,29 @@
 import SwiftUI
 import CoreData
 
+struct DragState {
+    var isDragging: Bool = false
+    var draggedProject: Project?
+    var draggedArea: Area?
+    var isDraggingOver: UUID? = nil
+    var isHoveringOverNoAreaSection: Bool = false
+    var isDraggingFromAreaToNoArea: Bool = false
+    var dropTargetIndex: Int? = nil  // Store the index where item would be dropped
+    var lastPosition: CGPoint?
+    
+    // Reset all drag state
+    mutating func reset() {
+        isDragging = false
+        draggedProject = nil
+        draggedArea = nil
+        isDraggingOver = nil
+        isHoveringOverNoAreaSection = false
+        isDraggingFromAreaToNoArea = false
+        dropTargetIndex = nil
+        lastPosition = nil
+    }
+}
+
 /// Project drop delegate for efficient project-to-project reordering
 struct ProjectDropDelegate: DropDelegate {
     let project: Project
@@ -28,8 +51,10 @@ struct ProjectDropDelegate: DropDelegate {
         guard let fromIndex = projects.firstIndex(where: { $0.id == draggedProject.id }),
               let toIndex = projects.firstIndex(where: { $0.id == project.id }) else { return }
         
-        // Perform the move without animation
-        moveAction(fromIndex, toIndex)
+        // Store the drop target index in state but don't actually move yet
+        withAnimation(nil) {
+            isDraggingOver = project.id // Just highlight the target
+        }
         
         // Highlight target area if it's a different area
         if draggedProject.area != project.area, let projectAreaId = project.area?.id {
@@ -52,28 +77,34 @@ struct ProjectDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedProject = draggedProject else { return false }
         
+        // Find the indices for the actual move operation
+        guard let fromIndex = projects.firstIndex(where: { $0.id == draggedProject.id }),
+              let toIndex = projects.firstIndex(where: { $0.id == project.id }) else { return false }
+        
+        // Now actually perform the move with animation
+        moveAction(fromIndex, toIndex)
+        
         // If dragging to a standalone project with no area
         if project.area == nil {
-        withAnimation(nil) {
-            // Highlight the standalone projects section
-                isHoveringOverNoAreaSection = true
-                }
-                // Remove from area if coming from an area
-                if draggedProject.area != nil {
-                    isDraggingFromAreaToNoArea = true
-                    removeFromAreaAction(draggedProject)
-                }
+            // Remove from area if coming from an area
+            if draggedProject.area != nil {
+                removeFromAreaAction(draggedProject)
             }
+        }
         // If dragging between different areas
         else if draggedProject.area != project.area {
             // Assign to target project's area
             assignToAreaAction(draggedProject, project)
         }
         
-        isDraggingOver = nil
-        isHoveringOverNoAreaSection = false
-        isDraggingFromAreaToNoArea = false
-        self.draggedProject = nil
+        // Reset all drag state
+        withAnimation(nil) {
+            isDraggingOver = nil
+            isHoveringOverNoAreaSection = false
+            isDraggingFromAreaToNoArea = false
+            self.draggedProject = nil
+        }
+        
         return true
     }
 }
@@ -224,6 +255,9 @@ struct ReorderableProjectList: View {
     /// Whether to show completed projects
     @State private var showCompletedProjects = false
     
+    // Add state for tracking drag animations
+    @State private var dragState = DragState()
+    
     // State for drag and hover tracking
     @State private var hoveredProject: Project? = nil
     @State private var hoveredArea: Area? = nil
@@ -236,9 +270,10 @@ struct ReorderableProjectList: View {
     @State private var isHoveringOverNoAreaSection: Bool = false
     @State private var isDraggingFromAreaToNoArea: Bool = false
     
-    // Cache animations and transitions
+    // Cache animations and transitions - using shorter, snappier animations
     private let expandTransition = AnyTransition.move(edge: .top).combined(with: .opacity)
-    private let expandAnimation = Animation.easeInOut(duration: 0.25)
+    private let expandAnimation = Animation.spring(response: 0.2, dampingFraction: 0.7)
+    private let dragAnimation = Animation.spring(response: 0.3, dampingFraction: 0.6)
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
         let isHovered = hoveredProject?.id == project.id
@@ -294,6 +329,15 @@ struct ReorderableProjectList: View {
             VStack(spacing: 6) {
                 ForEach(projectViewModel.projects.filter { $0.area == nil }, id: \.id) { project in
                     renderProjectRow(project: project)
+                    
+                    // Add drop indicator line if this is where we're dragging
+                    if draggedProject != nil && isDraggingOver == project.id {
+                        Rectangle()
+                            .fill(AppColors.todayHighlight)
+                            .frame(height: 2)
+                            .padding(.horizontal, 10)
+                            .transition(.opacity)
+                    }
                 }
             }
             .padding((isHoveringOverNoAreaSection || isDraggingFromAreaToNoArea) ? 4 : 0)
@@ -318,6 +362,15 @@ struct ReorderableProjectList: View {
                             if expandedAreas[areaId, default: true] {
                                 ForEach(projectViewModel.projects.filter { $0.area?.id == areaId }, id: \.id) { project in
                                     renderProjectRow(project: project)
+                                    
+                                    // Add drop indicator line if this is where we're dragging
+                                    if draggedProject != nil && isDraggingOver == project.id {
+                                        Rectangle()
+                                            .fill(AppColors.getColor(from: area.color ?? "blue"))
+                                            .frame(height: 2)
+                                            .padding(.horizontal, 10)
+                                            .transition(.opacity)
+                                    }
                                 }
                             }
                         }
@@ -393,9 +446,10 @@ struct ReorderableProjectList: View {
         // Replaced the overlay with a group-level background
         .onTapGesture {
             if let areaId = area.id {
-                // Toggle expansion on tap without animating everything
-                // The animation is now applied only to the specific content
-                expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
+                // Toggle expansion on tap with spring animation
+                withAnimation(dragAnimation) {
+                    expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
+                }
                 
                 // Don't change the selection on expand/collapse
                 if selectedArea?.id != area.id {
@@ -422,8 +476,8 @@ struct ReorderableProjectList: View {
             // Set the dragged area using optimized state update
             updateAreaDragState(area: area, areaId: areaId)
                 
-            // Collapse the area during drag - limit the animation scope
-            withAnimation(.easeInOut(duration: 0.1)) {
+            // Collapse the area during drag - with spring animation for snappier feel
+            withAnimation(dragAnimation) {
                 expandedAreas[areaId] = false
             }
             }
@@ -484,7 +538,10 @@ struct ReorderableProjectList: View {
         }
         .onDrag {
             // Set the dragged project using optimized state update
-            updateDragState(project: project)
+            withAnimation(dragAnimation) {
+                dragState.isDragging = true
+                updateDragState(project: project)
+            }
             return NSItemProvider(object: "project-\(project.id?.uuidString ?? "")" as NSString)
         }
         .onDrop(of: [.text], delegate: ProjectDropDelegate(
