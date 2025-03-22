@@ -300,6 +300,7 @@ struct SidebarView: View {
                             selectedProject: $selectedProject,
                             selectedArea: $selectedArea
                         )
+                        .animateExpandCollapse(using: [:])
                         
                         // Project buttons only - removed the Add Project button
                     }

@@ -43,7 +43,9 @@ struct MixedItemDropDelegate: DropDelegate {
     
     func performDrop(info: DropInfo) -> Bool {
         // Clear the dragging over state
-        isDraggingOver = nil
+        withAnimation {
+            isDraggingOver = nil
+        }
         
         // Handle area assignment if we're dropping a project onto an area
         if let project = draggedItem as? Project,
@@ -131,6 +133,7 @@ struct ReorderableProjectList: View {
     @State private var hoveredArea: Area? = nil
     @State private var draggedItem: Any? = nil
     @State private var isDraggingOver: UUID? = nil
+    @State private var expandedAreas: [UUID: Bool] = [:]
     
     // Helper function to determine the background color for a project
     private func backgroundColorFor(project: Project) -> Color {
@@ -170,6 +173,16 @@ struct ReorderableProjectList: View {
         }
     }
     
+    // Initialize expanded areas state
+    private func initializeExpandedAreas() {
+        // Initialize all areas to expanded state
+        for area in areaViewModel.areas {
+            if let areaId = area.id, expandedAreas[areaId] == nil {
+                expandedAreas[areaId] = true
+            }
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 6) { // Add spacing between items
             // Add spacing between Completed and the first item
@@ -182,10 +195,27 @@ struct ReorderableProjectList: View {
                 if let area = combinedItems[index] as? Area {
                     // Render area row
                     HStack(spacing: 10) {
-                        AreaRowView(
-                            area: area,
-                            isSelected: selectedViewType == .area && selectedArea?.id == area.id
-                        )
+                        // Use shippingbox for collapsed, cube.fill for expanded
+                        if let areaId = area.id {
+                            let isExpanded = expandedAreas[areaId, default: true]
+                            Image(systemName: isExpanded ? "cube.fill" : "shippingbox")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+                        }
+                        
+                        Text(area.name ?? "Unnamed Area")
+                            .lineLimit(1)
+                            .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
+                            .font(.system(size: 14))
+                            
+                        Spacer()
+                        
+                        // Task count badge
+                        if area.totalTaskCount > 0 {
+                            Text("\(area.totalTaskCount)")
+                                .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
+                                .font(.system(size: 14))
+                        }
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 5)
@@ -203,8 +233,16 @@ struct ReorderableProjectList: View {
                             : nil
                     )
                     .onTapGesture {
-                        selectedViewType = .area
-                        selectedArea = area
+                        if let areaId = area.id {
+                            // Just toggle expansion on tap, without changing selection
+                            expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
+                            
+                            // Don't change the selection on expand/collapse
+                            if selectedArea?.id != area.id {
+                                selectedViewType = .area
+                                selectedArea = area
+                            }
+                        }
                     }
                     .onHover { isHovered in
                         hoveredArea = isHovered ? area : nil
@@ -216,9 +254,8 @@ struct ReorderableProjectList: View {
                         }
                     }
                     .onDrag {
-                        withAnimation {
-                            self.draggedItem = area
-                        }
+                        // Just set the dragged item with no animation
+                        self.draggedItem = area
                         return NSItemProvider(object: "area-\(index)" as NSString)
                     }
                     .onDrop(of: [.text], delegate: MixedItemDropDelegate(
@@ -227,9 +264,8 @@ struct ReorderableProjectList: View {
                         draggedItem: $draggedItem,
                         isDraggingOver: $isDraggingOver,
                         moveAction: { fromIndex, toIndex in
-                            withAnimation {
-                                reorderItems(from: fromIndex, to: toIndex)
-                            }
+                            // No animation during reordering
+                            reorderItems(from: fromIndex, to: toIndex)
                         },
                         assignToAreaAction: { project, area in
                             assignProjectToArea(project: project, area: area)
@@ -270,9 +306,8 @@ struct ReorderableProjectList: View {
                         }
                     }
                     .onDrag {
-                        withAnimation {
-                            self.draggedItem = project
-                        }
+                        // Just set the dragged item with no animation
+                        self.draggedItem = project
                         return NSItemProvider(object: "project-\(index)" as NSString)
                     }
                     .onDrop(of: [.text], delegate: MixedItemDropDelegate(
@@ -281,9 +316,8 @@ struct ReorderableProjectList: View {
                         draggedItem: $draggedItem,
                         isDraggingOver: $isDraggingOver,
                         moveAction: { fromIndex, toIndex in
-                            withAnimation {
-                                reorderItems(from: fromIndex, to: toIndex)
-                            }
+                            // No animation during reordering
+                            reorderItems(from: fromIndex, to: toIndex)
                         },
                         assignToAreaAction: { project, area in
                             assignProjectToArea(project: project, area: area)
@@ -291,6 +325,10 @@ struct ReorderableProjectList: View {
                     ))
                 }
             }
+        }
+        .onAppear {
+            // Initialize expanded state for areas
+            initializeExpandedAreas()
         }
     }
     
@@ -321,14 +359,17 @@ struct ReorderableProjectList: View {
         for (item, _) in combinedItems {
             result.append(item)
             
-            // If this is an area, add its child projects
+            // If this is an area, add its child projects if area is expanded
             if let area = item as? Area, let areaId = area.id {
-                let childProjects = projectViewModel.projects.filter { $0.area?.id == areaId }
-                                                           .sorted { $0.displayOrder < $1.displayOrder }
-                
-                // Add all child projects
-                for project in childProjects {
-                    result.append(project)
+                // Only show children if expanded
+                if expandedAreas[areaId, default: true] {
+                    let childProjects = projectViewModel.projects.filter { $0.area?.id == areaId }
+                                                             .sorted { $0.displayOrder < $1.displayOrder }
+                    
+                    // Add all child projects
+                    for project in childProjects {
+                        result.append(project)
+                    }
                 }
             }
         }
@@ -336,11 +377,33 @@ struct ReorderableProjectList: View {
         return result
     }
     
+    // Get all top-level items (areas and projects with no parent area)
+    private func getAllTopLevelItems() -> [Any] {
+        var result: [Any] = []
+        
+        // Add all areas
+        result.append(contentsOf: areaViewModel.areas)
+        
+        // Add top-level projects
+        for project in projectViewModel.projects {
+            if project.area == nil {
+                result.append(project)
+            }
+        }
+        
+        // Sort by display order
+        return result.sorted { 
+            let order1 = ($0 as? Area)?.displayOrder ?? ($0 as? Project)?.displayOrder ?? 0
+            let order2 = ($1 as? Area)?.displayOrder ?? ($1 as? Project)?.displayOrder ?? 0
+            return order1 < order2
+        }
+    }
+    
     // Reorder items within the combined list
     private func reorderItems(from sourceIndex: Int, to destinationIndex: Int) {
         let updatedItems = getCombinedItems()
         
-        // Get the items we're moving
+        // Get the item we're moving
         let sourceItem = updatedItems[sourceIndex]
         
         // If source is before destination, we need to adjust destination index
@@ -354,16 +417,9 @@ struct ReorderableProjectList: View {
             project.displayOrder = Int32(adjustedDestIndex * 10)
         }
         
-        // Save context
+        // Save context immediately without animations
         do {
             try viewContext.save()
-            // Refresh data
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation {
-                    self.areaViewModel.fetchAreas()
-                    self.projectViewModel.fetchProjects()
-                }
-            }
         } catch {
             print("Error saving reordered items: \(error)")
         }
@@ -377,17 +433,23 @@ struct ReorderableProjectList: View {
         // Save changes
         do {
             try viewContext.save()
-            
-            // Refresh data
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation {
-                    self.projectViewModel.fetchProjects()
-                    self.areaViewModel.fetchAreas()
-                }
-            }
         } catch {
             print("Error assigning project to area: \(error)")
         }
+    }
+}
+
+// Add the modifier conformance to enable animations
+extension View {
+    @ViewBuilder
+    func animateExpandCollapse(using expandedAreas: [UUID: Bool]) -> some View {
+        self.animation(.easeInOut(duration: 0.25), value: expandedAreas)
+    }
+}
+
+extension ReorderableProjectList {
+    var animatedView: some View {
+        self.animateExpandCollapse(using: expandedAreas)
     }
 }
 
@@ -438,5 +500,6 @@ struct ReorderableProjectList_Previews: PreviewProvider {
     static var previews: some View {
         ReorderableProjectList()
             .frame(width: 250, height: 400)
+            .animateExpandCollapse(using: [:])
     }
 }
