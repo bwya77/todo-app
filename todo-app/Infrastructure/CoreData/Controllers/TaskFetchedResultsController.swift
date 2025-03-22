@@ -108,6 +108,11 @@ class TaskFetchedResultsController: NSObject, NSFetchedResultsControllerDelegate
         case .filters:
             // Default to all tasks for now
             fetchRequest = TaskFetchRequestFactory.allTasks(in: context)
+            
+        case .area:
+            // For area view, we'll just show all tasks for now
+            // The AreaDetailView will handle filtering by area
+            fetchRequest = TaskFetchRequestFactory.allTasks(in: context)
         }
         
         // Configure batch size for efficiency

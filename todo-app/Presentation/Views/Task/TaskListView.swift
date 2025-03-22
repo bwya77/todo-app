@@ -76,6 +76,9 @@ struct TaskListView: View {
                 title = project.name ?? "Project"
                 predicate = NSPredicate(format: "project == %@", project)
             }
+            
+        case .area:
+            title = "Area"
         }
         
         // Set predicate and sort

@@ -115,15 +115,11 @@ class AppLaunchTaskOrderInitializer {
             var fixedCount = 0
             
             for (index, project) in projects.enumerated() {
-                do {
-                    // Use a safer approach with try/catch for each project
-                    if project.value(forKey: "displayOrder") == nil {
-                        // Set a default value based on alphabetical index
-                        project.setValue(Int32(index * 10), forKey: "displayOrder")
-                        fixedCount += 1
-                    }
-                } catch {
-                    print("  ⚠️ Could not set displayOrder for project: \(project.name ?? "Unknown")")
+                // Use a safer approach for each project
+                if project.value(forKey: "displayOrder") == nil {
+                    // Set a default value based on alphabetical index
+                    project.setValue(Int32(index * 10), forKey: "displayOrder")
+                    fixedCount += 1
                 }
             }
             
@@ -185,19 +181,13 @@ class AppLaunchTaskOrderInitializer {
             
             if projects.count >= 2 && hasDisplayOrder {
                 for i in 0..<projects.count-1 {
-                    do {
-                        let currentOrder = projects[i].value(forKey: "displayOrder") as? Int32 ?? 9999
-                        let nextOrder = projects[i+1].value(forKey: "displayOrder") as? Int32 ?? 9999
-                        
-                        // Look for identical ordering values (a critical issue)
-                        if currentOrder == nextOrder {
-                            hasOrderingIssues = true
-                            print("⚠️ Found duplicate display order values in projects")
-                            break
-                        }
-                    } catch {
-                        // If we can't check order, assume we need to reindex
+                    let currentOrder = projects[i].value(forKey: "displayOrder") as? Int32 ?? 9999
+                    let nextOrder = projects[i+1].value(forKey: "displayOrder") as? Int32 ?? 9999
+                    
+                    // Look for identical ordering values (a critical issue)
+                    if currentOrder == nextOrder {
                         hasOrderingIssues = true
+                        print("⚠️ Found duplicate display order values in projects")
                         break
                     }
                 }
@@ -210,12 +200,8 @@ class AppLaunchTaskOrderInitializer {
             if hasOrderingIssues {
                 print("🔄 Reindexing projects")
                 for (index, project) in projects.enumerated() {
-                    do {
-                        let newOrder = Int32(index * 10) // Use spacing for future insertions
-                        project.setValue(newOrder, forKey: "displayOrder")
-                    } catch {
-                        print("  ⚠️ Could not set displayOrder for project: \(project.name ?? "Unknown")")
-                    }
+                    let newOrder = Int32(index * 10) // Use spacing for future insertions
+                    project.setValue(newOrder, forKey: "displayOrder")
                 }
                 
                 // Save changes
@@ -288,7 +274,7 @@ class AppLaunchTaskOrderInitializer {
                 }
                 
                 // Save changes safely
-                try? context.save()
+                try context.save()
                 print("✅ Task order fixed for \(type)")
             } else {
                 print("✓ Task order for \(type) is consistent")
@@ -346,7 +332,7 @@ class AppLaunchTaskOrderInitializer {
                     }
                     
                     // Save changes safely
-                    try? context.save()
+                    try context.save()
                     print("  ✅ Task order fixed")
                 } else {
                     print("  ✓ Task order is consistent")

@@ -17,6 +17,7 @@ enum ViewType: Hashable {
     case completed
     case filters
     case project
+    case area
     
     var name: String {
         switch self {
@@ -32,6 +33,8 @@ enum ViewType: Hashable {
             return "Filters"
         case .project:
             return "Project"
+        case .area:
+            return "Area"
         }
     }
     
@@ -50,6 +53,8 @@ enum ViewType: Hashable {
             return "tag.fill"
         case .project:
             return "folder"
+        case .area:
+            return "cube.fill"
         }
     }
 }

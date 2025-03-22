@@ -138,9 +138,12 @@ struct ListCreationPopup: View {
             let color = AppColors.colorMap.keys.sorted()[colorPopup.indexOfSelectedItem]
             
             if !name.isEmpty {
-                // For now, we're just creating projects since the data model doesn't seem to distinguish between projects and areas
-                // In a future enhancement, we could add an "isArea" flag to the Project entity
-                taskViewModel.addProject(name: name, color: color)
+                // Create either a project or area based on the selected type
+                if selectedType == .project {
+                    taskViewModel.addProject(name: name, color: color)
+                } else {
+                    taskViewModel.addArea(name: name, color: color)
+                }
             }
         }
         

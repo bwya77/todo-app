@@ -57,6 +57,8 @@ struct ReorderableTaskListView: View {
             if let project = selectedProject {
                 title = project.name ?? "Project"
             }
+        case .area:
+            title = "Area"
         }
         
         self.title = title

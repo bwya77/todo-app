@@ -127,11 +127,27 @@ class TaskViewModel: ObservableObject {
     
     // MARK: - Projects
     
-    func addProject(name: String, color: String = "gray") {
+    func addProject(name: String, color: String = "gray", area: Area? = nil) {
         let newProject = Project(context: viewContext)
         newProject.id = UUID()
         newProject.name = name
         newProject.color = color
+        newProject.displayOrder = Project.getNextDisplayOrder(in: viewContext)
+        newProject.area = area
+        
+        saveContext()
+    }
+    
+    /// Adds a new area
+    /// - Parameters:
+    ///   - name: Area name
+    ///   - color: Area color
+    func addArea(name: String, color: String = "green") {
+        let area = Area(context: viewContext)
+        area.id = UUID()
+        area.name = name
+        area.color = color
+        area.displayOrder = Area.getNextDisplayOrder(in: viewContext)
         
         saveContext()
     }
@@ -152,6 +168,13 @@ class TaskViewModel: ObservableObject {
     
     func deleteProject(_ project: Project) {
         viewContext.delete(project)
+        saveContext()
+    }
+    
+    /// Deletes an area
+    /// - Parameter area: The area to delete
+    func deleteArea(_ area: Area) {
+        viewContext.delete(area)
         saveContext()
     }
     
@@ -344,5 +367,27 @@ func getProjectTaskCount(project: Project) -> Int {
             print("Error fetching filtered task count: \(error)")
             return 0
         }
+    }
+    
+    // MARK: - Area Tasks
+    
+    /// Gets the total count of active tasks in an area (across all projects)
+    /// - Parameter area: The area to count tasks for
+    /// - Returns: The count of active tasks
+    func getAreaTaskCount(area: Area) -> Int {
+        // Get all projects in this area
+        guard let projects = area.projects as? Set<Project> else { return 0 }
+        
+        // Sum up the active task counts for each project
+        return projects.reduce(0) { count, project in
+            return count + getProjectTaskCount(project: project)
+        }
+    }
+    
+    /// Gets the count of projects in an area
+    /// - Parameter area: The area to count projects for
+    /// - Returns: The count of projects
+    func getAreaProjectCount(area: Area) -> Int {
+        return area.projects?.count ?? 0
     }
 }

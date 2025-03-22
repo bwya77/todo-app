@@ -106,8 +106,15 @@ struct SidebarView: View {
         animation: .default)
     private var projects: FetchedResults<Project>
     
+    // FetchRequest for areas
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Area.displayOrder, ascending: true)],
+        animation: .default)
+    private var areas: FetchedResults<Area>
+    
     // Cache for task counts to improve performance
     @State private var projectTaskCounts: [UUID: Int] = [:]
+    @State private var areaTaskCounts: [UUID: Int] = [:]
     @State private var inboxTaskCount: Int = 0
     @State private var todayTaskCount: Int = 0
     
@@ -116,15 +123,17 @@ struct SidebarView: View {
     @State private var lastUpdateTime: Date = Date()
     @Binding var selectedViewType: ViewType
     @Binding var selectedProject: Project?
+    @Binding var selectedArea: Area?
     
     // Reference to ContentView for showing popup
     var onShowTaskPopup: () -> Void
     
     // No longer need state variables for popup since it's handled by ContentView
     
-    init(selectedViewType: Binding<ViewType>, selectedProject: Binding<Project?>, context: NSManagedObjectContext, onShowTaskPopup: @escaping () -> Void) {
+    init(selectedViewType: Binding<ViewType>, selectedProject: Binding<Project?>, selectedArea: Binding<Area?>, context: NSManagedObjectContext, onShowTaskPopup: @escaping () -> Void) {
         self._selectedViewType = selectedViewType
         self._selectedProject = selectedProject
+        self._selectedArea = selectedArea
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
         self.onShowTaskPopup = onShowTaskPopup
     }
@@ -142,6 +151,14 @@ struct SidebarView: View {
             if let projectId = project.id {
                 let count = taskViewModel.getProjectTaskCount(project: project)
                 projectTaskCounts[projectId] = count
+            }
+        }
+        
+        // Update area counts
+        for area in areas {
+            if let areaId = area.id {
+                let count = taskViewModel.getAreaTaskCount(area: area)
+                areaTaskCounts[areaId] = count
             }
         }
     }
@@ -267,11 +284,21 @@ struct SidebarView: View {
                     }
                     
                     Group {
+                        // Projects Section Title with Areas inside
+                        Text("PROJECTS")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 16)
+                            .padding(.bottom, 4)
                         
                         // Custom ReorderableForEach for projects with selection bindings
+                        // We're now including both areas and projects in a single list
                         ReorderableProjectList(
                             selectedViewType: $selectedViewType,
-                            selectedProject: $selectedProject
+                            selectedProject: $selectedProject,
+                            selectedArea: $selectedArea
                         )
                         
                         // Project buttons only - removed the Add Project button

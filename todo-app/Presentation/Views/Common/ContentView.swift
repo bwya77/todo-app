@@ -134,6 +134,7 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var selectedViewType: ViewType = .upcoming
     @State private var selectedProject: Project? = nil
+    @State private var selectedArea: Area? = nil
     @State private var currentDate = Date()
     @State private var sidebarWidth: CGFloat = 250
     @State private var isSidebarVisible: Bool = true
@@ -173,6 +174,7 @@ struct ContentView: View {
                         SidebarView(
                             selectedViewType: $selectedViewType,
                             selectedProject: $selectedProject,
+                            selectedArea: $selectedArea,
                             context: viewContext,
                             onShowTaskPopup: { showTaskPopup() }
                         )
@@ -206,11 +208,12 @@ struct ContentView: View {
                         .edgesIgnoringSafeArea(.bottom)
                         .background(Color.white)
 
-                    case .inbox, .today, .filters, .completed, .project:
+                    case .inbox, .today, .filters, .completed, .project, .area:
                     // Use the appropriate task list view based on feature flags
                     TaskListViewFactory.createTaskListView(
                         viewType: selectedViewType,
                         selectedProject: selectedProject,
+                        selectedArea: selectedArea,
                         context: viewContext
                     )
                     
@@ -236,6 +239,14 @@ struct ContentView: View {
             // Listen for notification to show list creation popup
             NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowListCreationPopup"), object: nil, queue: .main) { _ in
                 showListCreationPopup()
+            }
+            
+            // Listen for notification to select a project
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("SelectProject"), object: nil, queue: .main) { notification in
+                if let project = notification.userInfo?["project"] as? Project {
+                    selectedProject = project
+                    selectedViewType = .project
+                }
             }
             
             #if DEBUG
