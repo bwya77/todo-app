@@ -14,6 +14,8 @@ struct ProjectDropDelegate: DropDelegate {
     var projects: [Project]
     @Binding var draggedProject: Project?
     @Binding var isDraggingOver: UUID?
+    @Binding var isHoveringOverNoAreaSection: Bool
+    @Binding var isDraggingFromAreaToNoArea: Bool
     var moveAction: (Int, Int) -> Void
     var removeFromAreaAction: (Project) -> Void
     var assignToAreaAction: (Project, Project) -> Void
@@ -29,10 +31,10 @@ struct ProjectDropDelegate: DropDelegate {
         // Perform the move without animation
         moveAction(fromIndex, toIndex)
         
-        // Highlight target project if it's in a different area
-        if draggedProject.area != project.area, let projectId = project.id {
+        // Highlight target area if it's a different area
+        if draggedProject.area != project.area, let projectAreaId = project.area?.id {
             withAnimation(nil) {
-                isDraggingOver = projectId
+                isDraggingOver = projectAreaId
             }
         }
     }
@@ -50,11 +52,18 @@ struct ProjectDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedProject = draggedProject else { return false }
         
-        // If dragging from an area to no area (top level)
-        if draggedProject.area != nil && project.area == nil {
-            // Remove from area
-            removeFromAreaAction(draggedProject)
-        }
+        // If dragging to a standalone project with no area
+        if project.area == nil {
+        withAnimation(nil) {
+            // Highlight the standalone projects section
+                isHoveringOverNoAreaSection = true
+                }
+                // Remove from area if coming from an area
+                if draggedProject.area != nil {
+                    isDraggingFromAreaToNoArea = true
+                    removeFromAreaAction(draggedProject)
+                }
+            }
         // If dragging between different areas
         else if draggedProject.area != project.area {
             // Assign to target project's area
@@ -62,6 +71,8 @@ struct ProjectDropDelegate: DropDelegate {
         }
         
         isDraggingOver = nil
+        isHoveringOverNoAreaSection = false
+        isDraggingFromAreaToNoArea = false
         self.draggedProject = nil
         return true
     }
@@ -136,6 +147,8 @@ struct ProjectListAreaDropDelegate: DropDelegate {
 struct EmptySpaceDropDelegate: DropDelegate {
     @Binding var draggedProject: Project?
     @Binding var isDraggingOver: UUID?
+    @Binding var isHoveringOverNoAreaSection: Bool
+    @Binding var isDraggingFromAreaToNoArea: Bool
     var removeFromAreaAction: (Project) -> Void
     
     func dropEntered(info: DropInfo) {
@@ -143,6 +156,9 @@ struct EmptySpaceDropDelegate: DropDelegate {
             withAnimation(nil) {
                 // Use a special value to indicate hovering over empty space
                 isDraggingOver = UUID(uuidString: "00000000-0000-0000-0000-000000000000")
+                // Set flag to show outline around no-area projects section
+                isHoveringOverNoAreaSection = true
+                isDraggingFromAreaToNoArea = true
             }
         }
     }
@@ -150,6 +166,7 @@ struct EmptySpaceDropDelegate: DropDelegate {
     func dropExited(info: DropInfo) {
         withAnimation(nil) {
             isDraggingOver = nil
+            isHoveringOverNoAreaSection = false
         }
     }
     
@@ -163,6 +180,8 @@ struct EmptySpaceDropDelegate: DropDelegate {
             removeFromAreaAction(project)
             draggedProject = nil
             isDraggingOver = nil
+            isHoveringOverNoAreaSection = false
+            isDraggingFromAreaToNoArea = false
             return true
         }
         return false
@@ -214,21 +233,19 @@ struct ReorderableProjectList: View {
     @State private var expandedAreas: [UUID: Bool] = [:]
     @State private var areaBeingDragged: UUID? = nil
     @State private var expandedStateBeforeDrag: Bool = true
+    @State private var isHoveringOverNoAreaSection: Bool = false
+    @State private var isDraggingFromAreaToNoArea: Bool = false
     
     // Helper function to determine the background color for a project
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
         let isHovered = hoveredProject?.id == project.id
-        let isDraggingOnto = isDraggingOver == project.id
         let emptySpaceUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")
         let isDraggingToEmptySpace = isDraggingOver == emptySpaceUUID && draggedProject?.id == project.id
         
         if isSelected {
             // Selected state - use the lighter shade of project color
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.7)
-        } else if isDraggingOnto {
-            // Dragging over state to indicate target for area change
-            return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.6)
         } else if isHovered || isDraggingToEmptySpace {
             // Hover state - use a very light shade of project color
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.9)
@@ -271,10 +288,19 @@ struct ReorderableProjectList: View {
     
     var body: some View {
         VStack(spacing: 6) {
-            // Standalone projects first
-            ForEach(projectViewModel.projects.filter { $0.area == nil }, id: \.id) { project in
-                renderProjectRow(project: project)
+            // Standalone projects first with optional border
+            VStack(spacing: 6) {
+                ForEach(projectViewModel.projects.filter { $0.area == nil }, id: \.id) { project in
+                    renderProjectRow(project: project)
+                }
             }
+            .padding((isHoveringOverNoAreaSection || isDraggingFromAreaToNoArea) ? 4 : 0)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isHoveringOverNoAreaSection || isDraggingFromAreaToNoArea ? AppColors.todayHighlight : Color.clear, lineWidth: 2)
+                    .background(isHoveringOverNoAreaSection || isDraggingFromAreaToNoArea ? AppColors.todayHighlight.opacity(0.1) : Color.clear)
+                    .cornerRadius(6)
+            )
             
             if !projectViewModel.projects.filter({ $0.area == nil }).isEmpty && !areaViewModel.areas.isEmpty {
                 Spacer().frame(height: 16)
@@ -297,11 +323,20 @@ struct ReorderableProjectList: View {
                         .animation(.easeInOut(duration: 0.25), value: expandedAreas[areaId, default: true])
                     }
                 }
+                .padding(isDraggingOver == area.id ? 4 : 0)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(isDraggingOver == area.id ? AppColors.getColor(from: area.color ?? "blue") : Color.clear, lineWidth: 2)
+                        .background(isDraggingOver == area.id ? AppColors.getColor(from: area.color ?? "blue").opacity(0.1) : Color.clear)
+                        .cornerRadius(6)
+                )
             }
         }
         .onDrop(of: [.text], delegate: EmptySpaceDropDelegate(
             draggedProject: $draggedProject,
             isDraggingOver: $isDraggingOver,
+            isHoveringOverNoAreaSection: $isHoveringOverNoAreaSection,
+            isDraggingFromAreaToNoArea: $isDraggingFromAreaToNoArea,
             removeFromAreaAction: { project in
                 assignProjectToArea(project: project, area: nil)
             }
@@ -318,7 +353,7 @@ struct ReorderableProjectList: View {
             // Icon for the area type
             if let areaId = area.id {
                 let isExpanded = expandedAreas[areaId, default: true]
-                Image(systemName: isExpanded ? "cube.fill" : "shippingbox")
+                Image(systemName: isExpanded ? "cube" : "shippingbox.fill")
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
             }
@@ -353,13 +388,7 @@ struct ReorderableProjectList: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(backgroundColorFor(area: area))
         )
-        .overlay(
-            // Show a border when hovering with a project
-            isDraggingOver == area.id ?
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(AppColors.getColor(from: area.color), lineWidth: 1.5)
-                : nil
-        )
+        // Replaced the overlay with a group-level background
         .onTapGesture {
             if let areaId = area.id {
                 // Toggle expansion on tap without animating everything
@@ -438,13 +467,7 @@ struct ReorderableProjectList: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(backgroundColorFor(project: project))
         )
-        .overlay(
-            // Show a border when hovering with a project for area change
-            isDraggingOver == project.id ?
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(AppColors.getColor(from: project.color), lineWidth: 1.5)
-                : nil
-        )
+        // No longer showing individual project borders - we use group borders instead
         .onTapGesture {
             selectedViewType = .project
             selectedProject = project
@@ -468,6 +491,8 @@ struct ReorderableProjectList: View {
             projects: projectViewModel.projects,
             draggedProject: $draggedProject,
             isDraggingOver: $isDraggingOver,
+            isHoveringOverNoAreaSection: $isHoveringOverNoAreaSection,
+            isDraggingFromAreaToNoArea: $isDraggingFromAreaToNoArea,
             moveAction: { fromIndex, toIndex in
                 reorderProjects(from: fromIndex, to: toIndex)
             },
