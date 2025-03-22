@@ -8,15 +8,25 @@
 import SwiftUI
 import CoreData
 
-/// Custom drop delegate for mixed items reordering
+/// Custom drop delegate for mixed items reordering with area support
 struct MixedItemDropDelegate: DropDelegate {
     let index: Int
     var items: [Any]
     @Binding var draggedItem: Any?
+    @Binding var isDraggingOver: UUID?
     var moveAction: (Int, Int) -> Void
+    var assignToAreaAction: ((Project, Area?) -> Void)? = nil
     
     func dropEntered(info: DropInfo) {
         guard let draggedItem = draggedItem else { return }
+        
+        // Check for area and enable visual feedback
+        if let targetItem = items[index] as? Area, let areaId = targetItem.id {
+            // Only show feedback when dragging a project onto an area
+            if draggedItem is Project {
+                isDraggingOver = areaId
+            }
+        }
         
         // Find the source index
         let sourceIndex = findIndex(for: draggedItem)
@@ -32,9 +42,39 @@ struct MixedItemDropDelegate: DropDelegate {
     }
     
     func performDrop(info: DropInfo) -> Bool {
+        // Clear the dragging over state
+        isDraggingOver = nil
+        
+        // Handle area assignment if we're dropping a project onto an area
+        if let project = draggedItem as? Project,
+           let targetItem = items[index] as? Area,
+           let assignAction = assignToAreaAction {
+            assignAction(project, targetItem)
+        }
+        // Or handle removing from area if we're dropping a project between items
+        else if let project = draggedItem as? Project,
+                project.area != nil,
+                items[index] is Project,
+                let assignAction = assignToAreaAction {
+            // Check if the destination is a different area's project
+            if let destProject = items[index] as? Project, 
+               destProject.area != project.area {
+                // Set the project to the same area as the destination project
+                assignAction(project, destProject.area)
+            } else {
+                // This is a project being moved out of an area to top level
+                assignAction(project, nil)
+            }
+        }
+        
         // Reset the dragged item when the drop is complete
         draggedItem = nil
         return true
+    }
+    
+    func dropExited(info: DropInfo) {
+        // Clear the dragging over state when we exit
+        isDraggingOver = nil
     }
     
     // Helper to find the index of an item
@@ -88,6 +128,7 @@ struct ReorderableProjectList: View {
     @State private var hoveredProject: Project? = nil
     @State private var hoveredArea: Area? = nil
     @State private var draggedItem: Any? = nil
+    @State private var isDraggingOver: UUID? = nil
     
     // Helper function to determine the background color for a project
     private func backgroundColorFor(project: Project) -> Color {
@@ -110,10 +151,14 @@ struct ReorderableProjectList: View {
     private func backgroundColorFor(area: Area) -> Color {
         let isSelected = selectedViewType == .area && selectedArea?.id == area.id
         let isHovered = hoveredArea?.id == area.id
+        let isDraggingOnto = isDraggingOver == area.id
         
         if isSelected {
             // Selected state - use the lighter shade of area color
             return AppColors.lightenColor(AppColors.getColor(from: area.color), by: 0.7)
+        } else if isDraggingOnto {
+            // Dragging over state - highlight more strongly to indicate drop target
+            return AppColors.lightenColor(AppColors.getColor(from: area.color), by: 0.5)
         } else if isHovered {
             // Hover state - use a very light shade of area color
             return AppColors.lightenColor(AppColors.getColor(from: area.color), by: 0.9)
@@ -148,6 +193,13 @@ struct ReorderableProjectList: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(backgroundColorFor(area: area))
                     )
+                    .overlay(
+                        // Show a border when hovering with a project
+                        isDraggingOver == area.id ?
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(AppColors.getColor(from: area.color), lineWidth: 1.5)
+                            : nil
+                    )
                     .onTapGesture {
                         selectedViewType = .area
                         selectedArea = area
@@ -169,13 +221,24 @@ struct ReorderableProjectList: View {
                         index: index,
                         items: combinedItems,
                         draggedItem: $draggedItem,
+                        isDraggingOver: $isDraggingOver,
                         moveAction: { fromIndex, toIndex in
-                            reorderItems(from: fromIndex, to: toIndex)
+                            withAnimation {
+                                reorderItems(from: fromIndex, to: toIndex)
+                            }
+                        },
+                        assignToAreaAction: { project, area in
+                            assignProjectToArea(project: project, area: area)
                         }
                     ))
                 } else if let project = combinedItems[index] as? Project {
                     // Render project row
                     HStack(spacing: 10) {
+                        // Add indentation for projects within areas
+                        if project.area != nil {
+                            Spacer().frame(width: 16) // Indentation for area nesting
+                        }
+                        
                         ProjectRowView(
                             project: project,
                             isSelected: selectedViewType == .project && selectedProject?.id == project.id
@@ -210,8 +273,14 @@ struct ReorderableProjectList: View {
                         index: index,
                         items: combinedItems,
                         draggedItem: $draggedItem,
+                        isDraggingOver: $isDraggingOver,
                         moveAction: { fromIndex, toIndex in
-                            reorderItems(from: fromIndex, to: toIndex)
+                            withAnimation {
+                                reorderItems(from: fromIndex, to: toIndex)
+                            }
+                        },
+                        assignToAreaAction: { project, area in
+                            assignProjectToArea(project: project, area: area)
                         }
                     ))
                 }
@@ -221,43 +290,82 @@ struct ReorderableProjectList: View {
     
     // Helper method to get combined list of areas and projects sorted by displayOrder
     private func getCombinedItems() -> [Any] {
-        var combinedItems: [(item: Any, order: Int32)] = []
+        var combinedItems: [(item: Any, order: Int32, level: Int)] = []
+        
+        // Dictionary to keep track of areas by ID for quick lookup
+        var areaMap: [UUID: Area] = [:]
         
         // Add areas with their display order
         for area in areaViewModel.areas {
-            combinedItems.append((item: area, order: area.displayOrder))
+            if let areaId = area.id {
+                combinedItems.append((item: area, order: area.displayOrder, level: 0))
+                areaMap[areaId] = area
+            }
         }
         
-        // Add projects with their display order
-        for project in projectViewModel.projects {
-            combinedItems.append((item: project, order: project.displayOrder))
-        }
-        
-        // Sort by display order
+        // Sort items so far by display order (just areas at this point)
         combinedItems.sort { $0.order < $1.order }
         
-        // Return just the items
-        return combinedItems.map { $0.item }
+        // Add projects, keeping track of which area they belong to
+        var projectsByArea: [UUID?: [(Project, Int32)]] = [:]
+        
+        // Group projects by area ID
+        for project in projectViewModel.projects {
+            let areaId = project.area?.id
+            let existingProjects = projectsByArea[areaId] ?? []
+            projectsByArea[areaId] = existingProjects + [(project, project.displayOrder)]
+        }
+        
+        // Sort projects by display order within each area
+        for (areaId, projects) in projectsByArea {
+            projectsByArea[areaId] = projects.sorted(by: { $0.1 < $1.1 })
+        }
+        
+        // Now build a new combined array that puts projects under their areas
+        var result: [(item: Any, order: Int32, level: Int)] = []
+        
+        // For each area in the sorted list
+        for (item, order, _) in combinedItems {
+            if let area = item as? Area, let areaId = area.id {
+                // Add the area
+                result.append((item: area, order: order, level: 0))
+                
+                // Add all projects belonging to this area with indentation
+                if let projects = projectsByArea[areaId] {
+                    for (project, projectOrder) in projects {
+                        result.append((item: project, order: projectOrder, level: 1))
+                    }
+                }
+            }
+        }
+        
+        // Add any projects not in areas
+        if let projectsWithoutArea = projectsByArea[nil] {
+            for (project, projectOrder) in projectsWithoutArea {
+                result.append((item: project, order: projectOrder, level: 0))
+            }
+        }
+        
+        // Return just the items - we'll use the level for indentation
+        return result.map { $0.item }
     }
     
     // Reorder items within the combined list
     private func reorderItems(from sourceIndex: Int, to destinationIndex: Int) {
-        var updatedItems = getCombinedItems()
+        let updatedItems = getCombinedItems()
+        
+        // Get the items we're moving
+        let sourceItem = updatedItems[sourceIndex]
         
         // If source is before destination, we need to adjust destination index
         let adjustedDestIndex = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
         
-        // Move the item within the array
-        let itemToMove = updatedItems.remove(at: sourceIndex)
-        updatedItems.insert(itemToMove, at: adjustedDestIndex)
-        
-        // Update display orders for all items
-        for (idx, item) in updatedItems.enumerated() {
-            if let area = item as? Area {
-                area.displayOrder = Int32(idx * 10)
-            } else if let project = item as? Project {
-                project.displayOrder = Int32(idx * 10)
-            }
+        if let area = sourceItem as? Area {
+            // Handle area reordering
+            area.displayOrder = Int32(adjustedDestIndex * 10)
+        } else if let project = sourceItem as? Project {
+            // Handle project reordering
+            project.displayOrder = Int32(adjustedDestIndex * 10)
         }
         
         // Save context
@@ -270,6 +378,25 @@ struct ReorderableProjectList: View {
             }
         } catch {
             print("Error saving reordered items: \(error)")
+        }
+    }
+    
+    // Assign a project to an area (or remove it from one)
+    private func assignProjectToArea(project: Project, area: Area?) {
+        // Update the project's area reference
+        project.area = area
+        
+        // Save changes
+        do {
+            try viewContext.save()
+            
+            // Refresh data
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.projectViewModel.fetchProjects()
+                self.areaViewModel.fetchAreas()
+            }
+        } catch {
+            print("Error assigning project to area: \(error)")
         }
     }
 }
