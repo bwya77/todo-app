@@ -68,7 +68,9 @@ struct MixedItemDropDelegate: DropDelegate {
         }
         
         // Reset the dragged item when the drop is complete
-        draggedItem = nil
+        withAnimation {
+            draggedItem = nil
+        }
         return true
     }
     
@@ -214,7 +216,9 @@ struct ReorderableProjectList: View {
                         }
                     }
                     .onDrag {
-                        self.draggedItem = area
+                        withAnimation {
+                            self.draggedItem = area
+                        }
                         return NSItemProvider(object: "area-\(index)" as NSString)
                     }
                     .onDrop(of: [.text], delegate: MixedItemDropDelegate(
@@ -266,7 +270,9 @@ struct ReorderableProjectList: View {
                         }
                     }
                     .onDrag {
-                        self.draggedItem = project
+                        withAnimation {
+                            self.draggedItem = project
+                        }
                         return NSItemProvider(object: "project-\(index)" as NSString)
                     }
                     .onDrop(of: [.text], delegate: MixedItemDropDelegate(
@@ -290,64 +296,44 @@ struct ReorderableProjectList: View {
     
     // Helper method to get combined list of areas and projects sorted by displayOrder
     private func getCombinedItems() -> [Any] {
-        var combinedItems: [(item: Any, order: Int32, level: Int)] = []
-        
-        // Dictionary to keep track of areas by ID for quick lookup
-        var areaMap: [UUID: Area] = [:]
+        var combinedItems: [(item: Any, order: Int32)] = []
         
         // Add areas with their display order
         for area in areaViewModel.areas {
-            if let areaId = area.id {
-                combinedItems.append((item: area, order: area.displayOrder, level: 0))
-                areaMap[areaId] = area
+            combinedItems.append((item: area, order: area.displayOrder))
+        }
+        
+        // Add projects with their display order
+        for project in projectViewModel.projects {
+            // Only add projects that don't belong to an area at the top level
+            if project.area == nil {
+                combinedItems.append((item: project, order: project.displayOrder))
             }
         }
         
-        // Sort items so far by display order (just areas at this point)
+        // Sort by display order
         combinedItems.sort { $0.order < $1.order }
         
-        // Add projects, keeping track of which area they belong to
-        var projectsByArea: [UUID?: [(Project, Int32)]] = [:]
+        // Next, add child projects under their respective areas
+        var result: [Any] = []
         
-        // Group projects by area ID
-        for project in projectViewModel.projects {
-            let areaId = project.area?.id
-            let existingProjects = projectsByArea[areaId] ?? []
-            projectsByArea[areaId] = existingProjects + [(project, project.displayOrder)]
-        }
-        
-        // Sort projects by display order within each area
-        for (areaId, projects) in projectsByArea {
-            projectsByArea[areaId] = projects.sorted(by: { $0.1 < $1.1 })
-        }
-        
-        // Now build a new combined array that puts projects under their areas
-        var result: [(item: Any, order: Int32, level: Int)] = []
-        
-        // For each area in the sorted list
-        for (item, order, _) in combinedItems {
+        // First pass - add the main items
+        for (item, _) in combinedItems {
+            result.append(item)
+            
+            // If this is an area, add its child projects
             if let area = item as? Area, let areaId = area.id {
-                // Add the area
-                result.append((item: area, order: order, level: 0))
+                let childProjects = projectViewModel.projects.filter { $0.area?.id == areaId }
+                                                           .sorted { $0.displayOrder < $1.displayOrder }
                 
-                // Add all projects belonging to this area with indentation
-                if let projects = projectsByArea[areaId] {
-                    for (project, projectOrder) in projects {
-                        result.append((item: project, order: projectOrder, level: 1))
-                    }
+                // Add all child projects
+                for project in childProjects {
+                    result.append(project)
                 }
             }
         }
         
-        // Add any projects not in areas
-        if let projectsWithoutArea = projectsByArea[nil] {
-            for (project, projectOrder) in projectsWithoutArea {
-                result.append((item: project, order: projectOrder, level: 0))
-            }
-        }
-        
-        // Return just the items - we'll use the level for indentation
-        return result.map { $0.item }
+        return result
     }
     
     // Reorder items within the combined list
@@ -373,8 +359,10 @@ struct ReorderableProjectList: View {
             try viewContext.save()
             // Refresh data
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.areaViewModel.fetchAreas()
-                self.projectViewModel.fetchProjects()
+                withAnimation {
+                    self.areaViewModel.fetchAreas()
+                    self.projectViewModel.fetchProjects()
+                }
             }
         } catch {
             print("Error saving reordered items: \(error)")
@@ -392,8 +380,10 @@ struct ReorderableProjectList: View {
             
             // Refresh data
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.projectViewModel.fetchProjects()
-                self.areaViewModel.fetchAreas()
+                withAnimation {
+                    self.projectViewModel.fetchProjects()
+                    self.areaViewModel.fetchAreas()
+                }
             }
         } catch {
             print("Error assigning project to area: \(error)")
