@@ -300,7 +300,7 @@ struct SidebarView: View {
                             selectedProject: $selectedProject,
                             selectedArea: $selectedArea
                         )
-                        .animateExpandCollapse(using: [:])
+                        // Don't apply any global animation modifier here - animation is handled internally now
                         
                         // Project buttons only - removed the Add Project button
                     }

@@ -8,33 +8,39 @@
 import SwiftUI
 import CoreData
 
-/// Custom drop delegate for mixed items reordering with area support
-struct MixedItemDropDelegate: DropDelegate {
-    let index: Int
-    var items: [Any]
-    @Binding var draggedItem: Any?
+/// Project drop delegate for efficient project-to-project reordering
+struct ProjectDropDelegate: DropDelegate {
+    let project: Project
+    var projects: [Project]
+    @Binding var draggedProject: Project?
     @Binding var isDraggingOver: UUID?
     var moveAction: (Int, Int) -> Void
-    var assignToAreaAction: ((Project, Area?) -> Void)? = nil
+    var removeFromAreaAction: (Project) -> Void
+    var assignToAreaAction: (Project, Project) -> Void
     
     func dropEntered(info: DropInfo) {
-        guard let draggedItem = draggedItem else { return }
+        guard let draggedProject = draggedProject else { return }
+        guard draggedProject.id != project.id else { return }
         
-        // Check for area and enable visual feedback
-        if let targetItem = items[index] as? Area, let areaId = targetItem.id {
-            // Only show feedback when dragging a project onto an area
-            if draggedItem is Project {
-                isDraggingOver = areaId
+        // Find the indices for the move operation
+        guard let fromIndex = projects.firstIndex(where: { $0.id == draggedProject.id }),
+              let toIndex = projects.firstIndex(where: { $0.id == project.id }) else { return }
+        
+        // Perform the move without animation
+        moveAction(fromIndex, toIndex)
+        
+        // Highlight target project if it's in a different area
+        if draggedProject.area != project.area, let projectId = project.id {
+            withAnimation(nil) {
+                isDraggingOver = projectId
             }
         }
-        
-        // Find the source index
-        let sourceIndex = findIndex(for: draggedItem)
-        guard sourceIndex != index else { return } // Don't do anything if dropping on self
-        guard sourceIndex >= 0 else { return } // Invalid source
-        
-        // Perform the move
-        moveAction(sourceIndex, index)
+    }
+    
+    func dropExited(info: DropInfo) {
+        withAnimation(nil) {
+            isDraggingOver = nil
+        }
     }
     
     func dropUpdated(info: DropInfo) -> DropProposal? {
@@ -42,53 +48,124 @@ struct MixedItemDropDelegate: DropDelegate {
     }
     
     func performDrop(info: DropInfo) -> Bool {
-        // Clear the dragging over state
-        withAnimation {
-            isDraggingOver = nil
+        guard let draggedProject = draggedProject else { return false }
+        
+        // If dragging from an area to no area (top level)
+        if draggedProject.area != nil && project.area == nil {
+            // Remove from area
+            removeFromAreaAction(draggedProject)
+        }
+        // If dragging between different areas
+        else if draggedProject.area != project.area {
+            // Assign to target project's area
+            assignToAreaAction(draggedProject, project)
         }
         
-        // Handle area assignment if we're dropping a project onto an area
-        if let project = draggedItem as? Project,
-           let targetItem = items[index] as? Area,
-           let assignAction = assignToAreaAction {
-            assignAction(project, targetItem)
+        isDraggingOver = nil
+        self.draggedProject = nil
+        return true
+    }
+}
+
+/// Area drop delegate for efficient area-to-area reordering in project list
+struct ProjectListAreaDropDelegate: DropDelegate {
+    let area: Area
+    var areas: [Area]
+    @Binding var draggedArea: Area?
+    @Binding var draggedProject: Project?
+    @Binding var expandedAreas: [UUID: Bool]
+    @Binding var areaBeingDragged: UUID?
+    @Binding var isDraggingOver: UUID?
+    var moveAction: (Int, Int) -> Void
+    var assignProjectAction: (Project, Area) -> Void
+    
+    func dropEntered(info: DropInfo) {
+        // Handle area dragging
+        if let draggedArea = draggedArea, draggedArea.id != area.id {
+            // Find the indices for the move operation
+            guard let fromIndex = areas.firstIndex(where: { $0.id == draggedArea.id }),
+                  let toIndex = areas.firstIndex(where: { $0.id == area.id }) else { return }
+            
+            // Perform the move without animation
+            moveAction(fromIndex, toIndex)
         }
-        // Or handle removing from area if we're dropping a project between items
-        else if let project = draggedItem as? Project,
-                project.area != nil,
-                items[index] is Project,
-                let assignAction = assignToAreaAction {
-            // Check if the destination is a different area's project
-            if let destProject = items[index] as? Project, 
-               destProject.area != project.area {
-                // Set the project to the same area as the destination project
-                assignAction(project, destProject.area)
-            } else {
-                // This is a project being moved out of an area to top level
-                assignAction(project, nil)
+        
+        // Handle project dragging - highlight area
+        if draggedProject != nil, let areaId = area.id {
+            withAnimation(nil) {
+                isDraggingOver = areaId
             }
         }
-        
-        // Reset the dragged item when the drop is complete
-        withAnimation {
-            draggedItem = nil
-        }
-        return true
     }
     
     func dropExited(info: DropInfo) {
-        // Clear the dragging over state when we exit
-        isDraggingOver = nil
+        // Clear highlight without animation
+        withAnimation(nil) {
+            isDraggingOver = nil
+        }
     }
     
-    // Helper to find the index of an item
-    private func findIndex(for item: Any) -> Int {
-        if let area = item as? Area, let index = items.firstIndex(where: { ($0 as? Area)?.id == area.id }) {
-            return index
-        } else if let project = item as? Project, let index = items.firstIndex(where: { ($0 as? Project)?.id == project.id }) {
-            return index
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        // Handle area drop
+        if let areaId = areaBeingDragged, let wasExpanded = expandedAreas[areaId] {
+            // Re-expand the area that was being dragged
+            // The animation is now controlled in the view hierarchy
+            expandedAreas[areaId] = wasExpanded
+            areaBeingDragged = nil
+            draggedArea = nil
         }
-        return -1
+        
+        // Handle project drop into area
+        if let project = draggedProject {
+            assignProjectAction(project, area)
+            draggedProject = nil
+        }
+        
+        // Clear the dragging over state
+        isDraggingOver = nil
+        
+        return true
+    }
+}
+
+/// Container drop delegate for dropping into empty space (to remove from area)
+struct EmptySpaceDropDelegate: DropDelegate {
+    @Binding var draggedProject: Project?
+    @Binding var isDraggingOver: UUID?
+    var removeFromAreaAction: (Project) -> Void
+    
+    func dropEntered(info: DropInfo) {
+        if let project = draggedProject, project.area != nil {
+            withAnimation(nil) {
+                // Use a special value to indicate hovering over empty space
+                isDraggingOver = UUID(uuidString: "00000000-0000-0000-0000-000000000000")
+            }
+        }
+    }
+    
+    func dropExited(info: DropInfo) {
+        withAnimation(nil) {
+            isDraggingOver = nil
+        }
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        // If dropping a project into empty space, remove it from its area
+        if let project = draggedProject, project.area != nil {
+            removeFromAreaAction(project)
+            draggedProject = nil
+            isDraggingOver = nil
+            return true
+        }
+        return false
     }
 }
 
@@ -131,19 +208,28 @@ struct ReorderableProjectList: View {
     // State for drag and hover tracking
     @State private var hoveredProject: Project? = nil
     @State private var hoveredArea: Area? = nil
-    @State private var draggedItem: Any? = nil
+    @State private var draggedProject: Project? = nil
+    @State private var draggedArea: Area? = nil
     @State private var isDraggingOver: UUID? = nil
     @State private var expandedAreas: [UUID: Bool] = [:]
+    @State private var areaBeingDragged: UUID? = nil
+    @State private var expandedStateBeforeDrag: Bool = true
     
     // Helper function to determine the background color for a project
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
         let isHovered = hoveredProject?.id == project.id
+        let isDraggingOnto = isDraggingOver == project.id
+        let emptySpaceUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")
+        let isDraggingToEmptySpace = isDraggingOver == emptySpaceUUID && draggedProject?.id == project.id
         
         if isSelected {
             // Selected state - use the lighter shade of project color
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.7)
-        } else if isHovered {
+        } else if isDraggingOnto {
+            // Dragging over state to indicate target for area change
+            return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.6)
+        } else if isHovered || isDraggingToEmptySpace {
             // Hover state - use a very light shade of project color
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.9)
         } else {
@@ -184,272 +270,315 @@ struct ReorderableProjectList: View {
     }
     
     var body: some View {
-        VStack(spacing: 6) { // Add spacing between items
-            // Add spacing between Completed and the first item
-            Spacer().frame(height: 16)
+        VStack(spacing: 6) {
+            // Standalone projects first
+            ForEach(projectViewModel.projects.filter { $0.area == nil }, id: \.id) { project in
+                renderProjectRow(project: project)
+            }
             
-            // Combine areas and projects in a single list, sorted by displayOrder
-            let combinedItems = getCombinedItems()
+            if !projectViewModel.projects.filter({ $0.area == nil }).isEmpty && !areaViewModel.areas.isEmpty {
+                Spacer().frame(height: 16)
+            }
             
-            ForEach(Array(combinedItems.indices), id: \.self) { index in
-                if let area = combinedItems[index] as? Area {
-                    // Render area row
-                    HStack(spacing: 10) {
-                        // Use shippingbox for collapsed, cube.fill for expanded
-                        if let areaId = area.id {
-                            let isExpanded = expandedAreas[areaId, default: true]
-                            Image(systemName: isExpanded ? "cube.fill" : "shippingbox")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
-                        }
-                        
-                        Text(area.name ?? "Unnamed Area")
-                            .lineLimit(1)
-                            .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
-                            .font(.system(size: 14))
-                            
-                        Spacer()
-                        
-                        // Task count badge
-                        if area.totalTaskCount > 0 {
-                            Text("\(area.totalTaskCount)")
-                                .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
-                                .font(.system(size: 14))
-                        }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 5)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(backgroundColorFor(area: area))
-                    )
-                    .overlay(
-                        // Show a border when hovering with a project
-                        isDraggingOver == area.id ?
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(AppColors.getColor(from: area.color), lineWidth: 1.5)
-                            : nil
-                    )
-                    .onTapGesture {
-                        if let areaId = area.id {
-                            // Just toggle expansion on tap, without changing selection
-                            expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
-                            
-                            // Don't change the selection on expand/collapse
-                            if selectedArea?.id != area.id {
-                                selectedViewType = .area
-                                selectedArea = area
+            // Then areas with their child projects
+            ForEach(areaViewModel.areas, id: \.id) { area in
+                VStack(spacing: 6) {
+                    renderAreaRow(area: area)
+                    
+                    if let areaId = area.id {
+                        VStack(spacing: 6) {
+                            if expandedAreas[areaId, default: true] {
+                                ForEach(projectViewModel.projects.filter { $0.area?.id == areaId }, id: \.id) { project in
+                                    renderProjectRow(project: project)
+                                }
                             }
                         }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(.easeInOut(duration: 0.25), value: expandedAreas[areaId, default: true])
                     }
-                    .onHover { isHovered in
-                        hoveredArea = isHovered ? area : nil
-                        
-                        if isHovered && !(selectedViewType == .area && selectedArea?.id == area.id) {
-                            NSCursor.pointingHand.set()
-                        } else {
-                            NSCursor.arrow.set()
-                        }
-                    }
-                    .onDrag {
-                        // Just set the dragged item with no animation
-                        self.draggedItem = area
-                        return NSItemProvider(object: "area-\(index)" as NSString)
-                    }
-                    .onDrop(of: [.text], delegate: MixedItemDropDelegate(
-                        index: index,
-                        items: combinedItems,
-                        draggedItem: $draggedItem,
-                        isDraggingOver: $isDraggingOver,
-                        moveAction: { fromIndex, toIndex in
-                            // No animation during reordering
-                            reorderItems(from: fromIndex, to: toIndex)
-                        },
-                        assignToAreaAction: { project, area in
-                            assignProjectToArea(project: project, area: area)
-                        }
-                    ))
-                } else if let project = combinedItems[index] as? Project {
-                    // Render project row
-                    HStack(spacing: 10) {
-                        // Add indentation for projects within areas
-                        if project.area != nil {
-                            Spacer().frame(width: 16) // Indentation for area nesting
-                        }
-                        
-                        ProjectRowView(
-                            project: project,
-                            isSelected: selectedViewType == .project && selectedProject?.id == project.id
-                        )
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 5)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(backgroundColorFor(project: project))
-                    )
-                    .onTapGesture {
-                        selectedViewType = .project
-                        selectedProject = project
-                    }
-                    .onHover { isHovered in
-                        hoveredProject = isHovered ? project : nil
-                        
-                        if isHovered && !(selectedViewType == .project && selectedProject?.id == project.id) {
-                            NSCursor.pointingHand.set()
-                        } else {
-                            NSCursor.arrow.set()
-                        }
-                    }
-                    .onDrag {
-                        // Just set the dragged item with no animation
-                        self.draggedItem = project
-                        return NSItemProvider(object: "project-\(index)" as NSString)
-                    }
-                    .onDrop(of: [.text], delegate: MixedItemDropDelegate(
-                        index: index,
-                        items: combinedItems,
-                        draggedItem: $draggedItem,
-                        isDraggingOver: $isDraggingOver,
-                        moveAction: { fromIndex, toIndex in
-                            // No animation during reordering
-                            reorderItems(from: fromIndex, to: toIndex)
-                        },
-                        assignToAreaAction: { project, area in
-                            assignProjectToArea(project: project, area: area)
-                        }
-                    ))
                 }
             }
         }
+        .onDrop(of: [.text], delegate: EmptySpaceDropDelegate(
+            draggedProject: $draggedProject,
+            isDraggingOver: $isDraggingOver,
+            removeFromAreaAction: { project in
+                assignProjectToArea(project: project, area: nil)
+            }
+        ))
         .onAppear {
-            // Initialize expanded state for areas
             initializeExpandedAreas()
         }
     }
     
-    // Helper method to get combined list of areas and projects sorted by displayOrder
-    private func getCombinedItems() -> [Any] {
-        var combinedItems: [(item: Any, order: Int32)] = []
-        
-        // Add areas with their display order
-        for area in areaViewModel.areas {
-            combinedItems.append((item: area, order: area.displayOrder))
-        }
-        
-        // Add projects with their display order
-        for project in projectViewModel.projects {
-            // Only add projects that don't belong to an area at the top level
-            if project.area == nil {
-                combinedItems.append((item: project, order: project.displayOrder))
+    // Helper method to render an area row
+    @ViewBuilder
+    private func renderAreaRow(area: Area) -> some View {
+        HStack(spacing: 10) {
+            // Icon for the area type
+            if let areaId = area.id {
+                let isExpanded = expandedAreas[areaId, default: true]
+                Image(systemName: isExpanded ? "cube.fill" : "shippingbox")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+            }
+            
+            Text(area.name ?? "Unnamed Area")
+                .lineLimit(1)
+                .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
+                .font(.system(size: 14))
+                
+            Spacer()
+            
+            // Task count badge
+            if area.totalTaskCount > 0 {
+                Text("\(area.totalTaskCount)")
+                    .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
+                    .font(.system(size: 14))
+            }
+            
+            // Add caret icon to indicate expanded/collapsed state
+            if let areaId = area.id {
+                let isExpanded = expandedAreas[areaId, default: true]
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
             }
         }
-        
-        // Sort by display order
-        combinedItems.sort { $0.order < $1.order }
-        
-        // Next, add child projects under their respective areas
-        var result: [Any] = []
-        
-        // First pass - add the main items
-        for (item, _) in combinedItems {
-            result.append(item)
-            
-            // If this is an area, add its child projects if area is expanded
-            if let area = item as? Area, let areaId = area.id {
-                // Only show children if expanded
-                if expandedAreas[areaId, default: true] {
-                    let childProjects = projectViewModel.projects.filter { $0.area?.id == areaId }
-                                                             .sorted { $0.displayOrder < $1.displayOrder }
-                    
-                    // Add all child projects
-                    for project in childProjects {
-                        result.append(project)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(backgroundColorFor(area: area))
+        )
+        .overlay(
+            // Show a border when hovering with a project
+            isDraggingOver == area.id ?
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(AppColors.getColor(from: area.color), lineWidth: 1.5)
+                : nil
+        )
+        .onTapGesture {
+            if let areaId = area.id {
+                // Toggle expansion on tap without animating everything
+                // The animation is now applied only to the specific content
+                expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
+                
+                // Don't change the selection on expand/collapse
+                if selectedArea?.id != area.id {
+                    // Use withAnimation(nil) to disable animations for selection changes
+                    withAnimation(nil) {
+                        selectedViewType = .area
+                        selectedArea = area
                     }
                 }
             }
         }
-        
-        return result
+        .onHover { isHovered in
+            hoveredArea = isHovered ? area : nil
+            
+            if isHovered && !(selectedViewType == .area && selectedArea?.id == area.id) {
+                NSCursor.pointingHand.set()
+            } else {
+                NSCursor.arrow.set()
+            }
+        }
+        .onDrag {
+            // Set the dragged area and remember expanded state
+            if let areaId = area.id {
+                self.draggedArea = area
+                self.areaBeingDragged = areaId
+                expandedStateBeforeDrag = expandedAreas[areaId, default: true]
+                
+                // Collapse the area during drag
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    expandedAreas[areaId] = false
+                }
+            }
+            return NSItemProvider(object: "area-\(area.id?.uuidString ?? "")" as NSString)
+        }
+        .onDrop(of: [.text], delegate: ProjectListAreaDropDelegate(
+            area: area,
+            areas: areaViewModel.areas,
+            draggedArea: $draggedArea,
+            draggedProject: $draggedProject,
+            expandedAreas: $expandedAreas,
+            areaBeingDragged: $areaBeingDragged,
+            isDraggingOver: $isDraggingOver,
+            moveAction: { fromIndex, toIndex in
+                reorderAreas(from: fromIndex, to: toIndex)
+            },
+            assignProjectAction: { project, area in
+                assignProjectToArea(project: project, area: area)
+            }
+        ))
     }
     
-    // Get all top-level items (areas and projects with no parent area)
-    private func getAllTopLevelItems() -> [Any] {
-        var result: [Any] = []
+    // Helper method to render a project row
+    @ViewBuilder
+    private func renderProjectRow(project: Project) -> some View {
+        HStack(spacing: 10) {
+            // Add indentation for projects within areas
+            if project.area != nil {
+                Spacer().frame(width: 16) // Indentation for area nesting
+            }
+            
+            ProjectRowView(
+                project: project,
+                isSelected: selectedViewType == .project && selectedProject?.id == project.id
+            )
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(backgroundColorFor(project: project))
+        )
+        .overlay(
+            // Show a border when hovering with a project for area change
+            isDraggingOver == project.id ?
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(AppColors.getColor(from: project.color), lineWidth: 1.5)
+                : nil
+        )
+        .onTapGesture {
+            selectedViewType = .project
+            selectedProject = project
+        }
+        .onHover { isHovered in
+            hoveredProject = isHovered ? project : nil
+            
+            if isHovered && !(selectedViewType == .project && selectedProject?.id == project.id) {
+                NSCursor.pointingHand.set()
+            } else {
+                NSCursor.arrow.set()
+            }
+        }
+        .onDrag {
+            // Set the dragged project
+            self.draggedProject = project
+            return NSItemProvider(object: "project-\(project.id?.uuidString ?? "")" as NSString)
+        }
+        .onDrop(of: [.text], delegate: ProjectDropDelegate(
+            project: project,
+            projects: projectViewModel.projects,
+            draggedProject: $draggedProject,
+            isDraggingOver: $isDraggingOver,
+            moveAction: { fromIndex, toIndex in
+                reorderProjects(from: fromIndex, to: toIndex)
+            },
+            removeFromAreaAction: { project in
+                assignProjectToArea(project: project, area: nil)
+            },
+            assignToAreaAction: { draggedProject, targetProject in
+                // Assign to the same area as the target project
+                assignProjectToArea(project: draggedProject, area: targetProject.area)
+            }
+        ))
+    }
+    
+    // Reorder projects efficiently
+    private func reorderProjects(from sourceIndex: Int, to destinationIndex: Int) {
+        // Disable animations during reordering
+        withAnimation(nil) {
+            Project.reorderProjects(
+                from: sourceIndex,
+                to: destinationIndex,
+                projects: projectViewModel.projects,
+                context: viewContext,
+                notifyOrderChange: false // We'll handle the refresh ourselves
+            )
+        }
         
-        // Add all areas
-        result.append(contentsOf: areaViewModel.areas)
-        
-        // Add top-level projects
-        for project in projectViewModel.projects {
-            if project.area == nil {
-                result.append(project)
+        // Force a UI refresh
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ForceUIRefresh"),
+            object: nil
+        )
+    }
+    
+    // Reorder areas efficiently
+    private func reorderAreas(from sourceIndex: Int, to destinationIndex: Int) {
+        // Disable animations during reordering
+        withAnimation(nil) {
+            // Get all areas
+            let areas = areaViewModel.areas
+            
+            // Get the area being moved
+            let areaToMove = areas[sourceIndex]
+            
+            // Create a mutable copy of the areas array
+            var mutableAreas = areas
+            
+            // Remove the area from its current position
+            mutableAreas.remove(at: sourceIndex)
+            
+            // Insert the area at the new position
+            mutableAreas.insert(areaToMove, at: destinationIndex)
+            
+            // Update display orders - use 10-spacing for future insertions
+            for (index, area) in mutableAreas.enumerated() {
+                area.setValue(Int32(index * 10), forKey: "displayOrder")
+            }
+            
+            // Save changes directly
+            do {
+                try viewContext.save()
+            } catch {
+                print("Error saving reordered areas: \(error)")
             }
         }
         
-        // Sort by display order
-        return result.sorted { 
-            let order1 = ($0 as? Area)?.displayOrder ?? ($0 as? Project)?.displayOrder ?? 0
-            let order2 = ($1 as? Area)?.displayOrder ?? ($1 as? Project)?.displayOrder ?? 0
-            return order1 < order2
-        }
-    }
-    
-    // Reorder items within the combined list
-    private func reorderItems(from sourceIndex: Int, to destinationIndex: Int) {
-        let updatedItems = getCombinedItems()
-        
-        // Get the item we're moving
-        let sourceItem = updatedItems[sourceIndex]
-        
-        // If source is before destination, we need to adjust destination index
-        let adjustedDestIndex = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
-        
-        if let area = sourceItem as? Area {
-            // Handle area reordering
-            area.displayOrder = Int32(adjustedDestIndex * 10)
-        } else if let project = sourceItem as? Project {
-            // Handle project reordering
-            project.displayOrder = Int32(adjustedDestIndex * 10)
-        }
-        
-        // Save context immediately without animations
-        do {
-            try viewContext.save()
-        } catch {
-            print("Error saving reordered items: \(error)")
-        }
+        // Force a UI refresh
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ForceUIRefresh"),
+            object: nil
+        )
     }
     
     // Assign a project to an area (or remove it from one)
     private func assignProjectToArea(project: Project, area: Area?) {
+        print("Assigning project \(project.name ?? "unnamed") to area \(area?.name ?? "none")")
+        
         // Update the project's area reference
         project.area = area
         
-        // Save changes
+        // Save changes directly
         do {
             try viewContext.save()
+            
+            // Reset UI state
+            draggedProject = nil
+            isDraggingOver = nil
+            
+            // Force a UI refresh
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ForceUIRefresh"),
+                object: nil
+            )
         } catch {
             print("Error assigning project to area: \(error)")
         }
     }
 }
 
-// Add the modifier conformance to enable animations
+// Add the modifier conformance to enable animations but only for the expanding/collapsing elements
 extension View {
     @ViewBuilder
     func animateExpandCollapse(using expandedAreas: [UUID: Bool]) -> some View {
-        self.animation(.easeInOut(duration: 0.25), value: expandedAreas)
+        // We don't apply animation at this level anymore
+        // Instead, we apply it directly to the child content that needs to animate
+        self
     }
 }
 
 extension ReorderableProjectList {
     var animatedView: some View {
-        self.animateExpandCollapse(using: expandedAreas)
+        self
     }
 }
 
@@ -493,13 +622,10 @@ struct ProjectRowView: View {
     }
 }
 
-// Using the AreaRowView from ReorderableAreaList.swift
-
 // Preview provider for SwiftUI canvas
 struct ReorderableProjectList_Previews: PreviewProvider {
     static var previews: some View {
         ReorderableProjectList()
             .frame(width: 250, height: 400)
-            .animateExpandCollapse(using: [:])
     }
 }
