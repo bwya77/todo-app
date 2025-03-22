@@ -120,6 +120,7 @@ struct ProjectListAreaDropDelegate: DropDelegate {
     @Binding var isDraggingOver: UUID?
     var moveAction: (Int, Int) -> Void
     var assignProjectAction: (Project, Area) -> Void
+    var saveExpansionStatesAction: () -> Void
     
     func dropEntered(info: DropInfo) {
         // Handle area dragging
@@ -159,6 +160,9 @@ struct ProjectListAreaDropDelegate: DropDelegate {
             expandedAreas[areaId] = wasExpanded
             areaBeingDragged = nil
             draggedArea = nil
+            
+            // Save the expansion state after restoring it
+            saveExpansionStatesAction()
         }
         
         // Handle project drop into area
@@ -313,14 +317,48 @@ struct ReorderableProjectList: View {
         }
     }
     
-    // Initialize expanded areas state
+    // User defaults key for storing area expansion states
+    private let areaExpansionStateKey = "com.todo-app.areaExpansionStates"
+    
+    // Initialize expanded areas state from user defaults or default to expanded
     private func initializeExpandedAreas() {
-        // Initialize all areas to expanded state
+        // Get the saved expansion states
+        let savedStates = loadAreaExpansionStates()
+        
+        // Initialize all areas with saved state or default to expanded
         for area in areaViewModel.areas {
-            if let areaId = area.id, expandedAreas[areaId] == nil {
-                expandedAreas[areaId] = true
+            if let areaId = area.id {
+                // If we have a saved state for this area, use it; otherwise default to expanded
+                if let savedState = savedStates[areaId.uuidString] {
+                    expandedAreas[areaId] = savedState
+                } else {
+                    expandedAreas[areaId] = true // Default to expanded
+                }
             }
         }
+    }
+    
+    // Save the area expansion states to UserDefaults
+    private func saveAreaExpansionStates() {
+        var statesToSave: [String: Bool] = [:]
+        
+        // Convert UUID keys to strings for UserDefaults storage
+        for (areaId, isExpanded) in expandedAreas {
+            statesToSave[areaId.uuidString] = isExpanded
+        }
+        
+        // Save to UserDefaults
+        UserDefaults.standard.set(statesToSave, forKey: areaExpansionStateKey)
+    }
+    
+    // Load the area expansion states from UserDefaults
+    private func loadAreaExpansionStates() -> [String: Bool] {
+        // Get the dictionary from UserDefaults
+        if let savedStates = UserDefaults.standard.dictionary(forKey: areaExpansionStateKey) as? [String: Bool] {
+            return savedStates
+        }
+        
+        return [:] // Return empty dictionary if nothing is saved
     }
     
     var body: some View {
@@ -449,6 +487,9 @@ struct ReorderableProjectList: View {
                 // This ensures nothing bounces or jiggles
                 expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
                 
+                // Save the updated expansion state
+                saveAreaExpansionStates()
+                
                 // Don't change the selection on expand/collapse
                 if selectedArea?.id != area.id {
                     // Use withAnimation(nil) to disable animations for selection changes
@@ -476,6 +517,9 @@ struct ReorderableProjectList: View {
                 
                 // Collapse the area during drag with no animation
                 expandedAreas[areaId] = false
+                
+                // Save the updated expansion state
+                saveAreaExpansionStates()
             }
             return NSItemProvider(object: "area-\(area.id?.uuidString ?? "")" as NSString)
         }
@@ -492,6 +536,9 @@ struct ReorderableProjectList: View {
             },
             assignProjectAction: { project, area in
                 assignProjectToArea(project: project, area: area)
+            },
+            saveExpansionStatesAction: {
+                saveAreaExpansionStates()
             }
         ))
     }
