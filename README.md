@@ -45,7 +45,7 @@ You can drag and reorder projects in the sidebar to customize the order of your 
 
 ## Areas
 Add projects to areas to keep your workspace organized. You can add a project to an area by dragging and dropping the project into the area.
-![areas](/images/areaproject.png)
+![areas](/images/areaProject.png)
 
 ### Month/Year Animation
 
