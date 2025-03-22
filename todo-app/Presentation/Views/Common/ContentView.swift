@@ -225,6 +225,7 @@ struct ContentView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: isSidebarVisible)
         }
+        .ignoreAppInactiveState() // Apply our custom modifier to maintain appearance when app loses focus
         .onAppear {
             // Set up the toolbar for sidebar toggle when view appears
             setupToolbar()

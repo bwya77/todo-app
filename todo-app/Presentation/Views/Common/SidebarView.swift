@@ -62,6 +62,7 @@ struct CustomSidebarButtonStyle: ButtonStyle {
         .contentShape(Rectangle())
         .background(backgroundForState(isSelected: isSelected, isPressed: configuration.isPressed))
         .cornerRadius(4)
+        .environment(\.isEnabled, true) // Force enabled state regardless of app focus
     }
     
     /// Determines the appropriate background color based on selection state and project color

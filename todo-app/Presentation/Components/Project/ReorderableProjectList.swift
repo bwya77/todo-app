@@ -478,7 +478,7 @@ struct ReorderableProjectList: View {
         .contentShape(Rectangle())
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(backgroundColorFor(area: area))
+            .fill(backgroundColorFor(area: area))
         )
         // Replaced the overlay with a group-level background
         .onTapGesture {
@@ -500,6 +500,7 @@ struct ReorderableProjectList: View {
                 }
             }
         }
+        .environment(\.isEnabled, true) // Force enabled state to maintain appearance when app loses focus
         .onHover { isHovered in
             hoveredArea = isHovered ? area : nil
             
@@ -603,6 +604,7 @@ struct ReorderableProjectList: View {
                 assignProjectToArea(project: draggedProject, area: targetProject.area)
             }
         ))
+        .environment(\.isEnabled, true) // Force enabled state to maintain appearance when app loses focus
     }
     
     // Use performant batch update for state changes during drag

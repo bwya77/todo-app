@@ -20,6 +20,7 @@ struct TodoApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .frame(minWidth: 1000, minHeight: 700)
+                .ignoreAppInactiveState() // Force app to maintain its appearance when inactive
                 .onAppear {
                     setupAppearance()
                     
