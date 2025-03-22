@@ -2,7 +2,7 @@
 
 A minimal, sleek, responsive, and modern to-do application built for macOS using Swift and SwiftUI.
 
-![UI Screenshot](/images/UI_main4.png)
+![UI Screenshot](/images/UI_main5.png)
 
 ## Features
 
@@ -35,10 +35,17 @@ Customizable sidebar with resizable width and collapsible design
 
 ![sidebar](/images/sidebar.gif)
 
-### Project Logged Tasks
+## Project Logged Tasks
 When a task is completed, it will transition to the bottom of the project view. You are able to view logged items and unlog them if needed.
 
 ![logged tasks](/images/loggedtasks.gif)
+
+## Drag and Reorder Sidebar
+You can drag and reorder projects in the sidebar to customize the order of your projects. You can also drag projects into areas to keep your workspace organized.
+
+## Areas
+Add projects to areas to keep your workspace organized. You can add a project to an area by dragging and dropping the project into the area.
+![areas](/images/areaproject.png)
 
 ### Month/Year Animation
 

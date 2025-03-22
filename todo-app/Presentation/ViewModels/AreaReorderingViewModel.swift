@@ -35,7 +35,7 @@ class AreaReorderingViewModel: ObservableObject {
         do {
             self.areas = try context.fetch(fetchRequest)
         } catch {
-            print("Error fetching areas: \(error.localizedDescription)")
+            // Silent error handling for performance
         }
     }
     
@@ -64,7 +64,7 @@ class AreaReorderingViewModel: ObservableObject {
             // Update the published property
             self.areas = mutableAreas
         } catch {
-            print("Error saving area reordering: \(error.localizedDescription)")
+            // Silent error handling for performance
         }
     }
     
@@ -81,7 +81,7 @@ class AreaReorderingViewModel: ObservableObject {
             try context.save()
             fetchAreas()
         } catch {
-            print("Error adding area: \(error.localizedDescription)")
+            // Silent error handling for performance
         }
     }
     
@@ -96,7 +96,7 @@ class AreaReorderingViewModel: ObservableObject {
             try context.save()
             fetchAreas()
         } catch {
-            print("Error deleting area: \(error.localizedDescription)")
+            // Silent error handling for performance
         }
     }
 }

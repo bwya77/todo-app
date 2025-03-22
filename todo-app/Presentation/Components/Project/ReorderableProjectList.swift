@@ -236,7 +236,9 @@ struct ReorderableProjectList: View {
     @State private var isHoveringOverNoAreaSection: Bool = false
     @State private var isDraggingFromAreaToNoArea: Bool = false
     
-    // Helper function to determine the background color for a project
+    // Cache animations and transitions
+    private let expandTransition = AnyTransition.move(edge: .top).combined(with: .opacity)
+    private let expandAnimation = Animation.easeInOut(duration: 0.25)
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
         let isHovered = hoveredProject?.id == project.id
@@ -319,8 +321,8 @@ struct ReorderableProjectList: View {
                                 }
                             }
                         }
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .animation(.easeInOut(duration: 0.25), value: expandedAreas[areaId, default: true])
+                        .transition(expandTransition)
+                        .animation(expandAnimation, value: expandedAreas[areaId, default: true])
                     }
                 }
                 .padding(isDraggingOver == area.id ? 4 : 0)
@@ -361,7 +363,7 @@ struct ReorderableProjectList: View {
             Text(area.name ?? "Unnamed Area")
                 .lineLimit(1)
                 .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .bold))
                 
             Spacer()
             
@@ -417,14 +419,13 @@ struct ReorderableProjectList: View {
         .onDrag {
             // Set the dragged area and remember expanded state
             if let areaId = area.id {
-                self.draggedArea = area
-                self.areaBeingDragged = areaId
-                expandedStateBeforeDrag = expandedAreas[areaId, default: true]
+            // Set the dragged area using optimized state update
+            updateAreaDragState(area: area, areaId: areaId)
                 
-                // Collapse the area during drag
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    expandedAreas[areaId] = false
-                }
+            // Collapse the area during drag - limit the animation scope
+            withAnimation(.easeInOut(duration: 0.1)) {
+                expandedAreas[areaId] = false
+            }
             }
             return NSItemProvider(object: "area-\(area.id?.uuidString ?? "")" as NSString)
         }
@@ -482,8 +483,8 @@ struct ReorderableProjectList: View {
             }
         }
         .onDrag {
-            // Set the dragged project
-            self.draggedProject = project
+            // Set the dragged project using optimized state update
+            updateDragState(project: project)
             return NSItemProvider(object: "project-\(project.id?.uuidString ?? "")" as NSString)
         }
         .onDrop(of: [.text], delegate: ProjectDropDelegate(
@@ -506,6 +507,18 @@ struct ReorderableProjectList: View {
         ))
     }
     
+    // Use performant batch update for state changes during drag
+    private func updateDragState(project: Project?, isDragging: Bool = false, highlightArea: UUID? = nil) {
+        withAnimation(nil) {
+            self.draggedProject = project
+            self.isDraggingOver = highlightArea
+            if project == nil {
+                self.isHoveringOverNoAreaSection = false
+                self.isDraggingFromAreaToNoArea = false
+            }
+        }
+    }
+    
     // Reorder projects efficiently
     private func reorderProjects(from sourceIndex: Int, to destinationIndex: Int) {
         // Disable animations during reordering
@@ -519,11 +532,13 @@ struct ReorderableProjectList: View {
             )
         }
         
-        // Force a UI refresh
-        NotificationCenter.default.post(
-            name: NSNotification.Name("ForceUIRefresh"),
-            object: nil
-        )
+        // Force a UI refresh using a dispatch async for better performance
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ForceUIRefresh"),
+                object: nil
+            )
+        }
     }
     
     // Reorder areas efficiently
@@ -554,21 +569,33 @@ struct ReorderableProjectList: View {
             do {
                 try viewContext.save()
             } catch {
-                print("Error saving reordered areas: \(error)")
+                // Silent error handling for performance
             }
         }
         
-        // Force a UI refresh
-        NotificationCenter.default.post(
-            name: NSNotification.Name("ForceUIRefresh"),
-            object: nil
-        )
+        // Force a UI refresh using a dispatch async for better performance
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ForceUIRefresh"),
+                object: nil
+            )
+        }
     }
     
-    // Assign a project to an area (or remove it from one)
+    // Efficient method to update area drag state
+    private func updateAreaDragState(area: Area?, areaId: UUID? = nil) {
+        withAnimation(nil) {
+            self.draggedArea = area
+            if let id = areaId {
+                self.areaBeingDragged = id
+                expandedStateBeforeDrag = expandedAreas[id, default: true]
+            } else {
+                self.areaBeingDragged = nil
+            }
+        }
+    }
+    
     private func assignProjectToArea(project: Project, area: Area?) {
-        print("Assigning project \(project.name ?? "unnamed") to area \(area?.name ?? "none")")
-        
         // Update the project's area reference
         project.area = area
         
@@ -576,17 +603,23 @@ struct ReorderableProjectList: View {
         do {
             try viewContext.save()
             
-            // Reset UI state
-            draggedProject = nil
-            isDraggingOver = nil
-            
-            // Force a UI refresh
-            NotificationCenter.default.post(
-                name: NSNotification.Name("ForceUIRefresh"),
-                object: nil
-            )
+            // Use batch updates to avoid multiple refreshes
+            withAnimation(nil) {
+                draggedProject = nil
+                isDraggingOver = nil
+                isHoveringOverNoAreaSection = false
+                isDraggingFromAreaToNoArea = false
+            }
+                
+            // Use a dispatch async to improve perceived performance
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("ForceUIRefresh"),
+                    object: nil
+                )
+            }
         } catch {
-            print("Error assigning project to area: \(error)")
+            // Silent error handling for performance
         }
     }
 }

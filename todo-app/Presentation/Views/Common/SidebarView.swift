@@ -283,16 +283,9 @@ struct SidebarView: View {
                         .buttonStyle(CustomSidebarButtonStyle(isSelected: selectedViewType == .completed))
                     }
                     
+                    Spacer().frame(height: 24)
+                    
                     Group {
-                        // Projects Section Title with Areas inside
-                        Text("PROJECTS")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 16)
-                            .padding(.bottom, 4)
-                        
                         // Custom ReorderableForEach for projects with selection bindings
                         // We're now including both areas and projects in a single list
                         ReorderableProjectList(
