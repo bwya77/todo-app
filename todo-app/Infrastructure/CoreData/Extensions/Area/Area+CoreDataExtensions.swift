@@ -38,6 +38,14 @@ extension Area {
         }
     }
     
+    /// The computed property for active (incomplete) task count
+    var activeTaskCount: Int {
+        guard let projects = projects as? Set<Project> else { return 0 }
+        return projects.reduce(0) { count, project in
+            return count + project.activeTaskCount
+        }
+    }
+    
     /// Create a new Area with the given details
     /// - Parameters:
     ///   - name: The name of the area

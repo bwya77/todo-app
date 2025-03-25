@@ -294,6 +294,9 @@ struct ReorderableProjectList: View {
     // Add state for tracking drag animations
     @State private var dragState = DragState()
     
+    // State for tracking hover on area count badges
+    @State private var hoveredAreaCountIds: Set<UUID> = []
+    
     // State for drag and hover tracking
     @State private var hoveredProject: Project? = nil
     @State private var hoveredArea: Area? = nil
@@ -493,97 +496,28 @@ struct ReorderableProjectList: View {
     // Helper method to render an area row
     @ViewBuilder
     private func renderAreaRow(area: Area) -> some View {
-        HStack(spacing: 10) {
-            // Area row main content (without caret)
-            HStack(spacing: 10) {
-                // Icon for the area type
-                if let areaId = area.id {
-                    let isExpanded = expandedAreas[areaId, default: true]
-                    Image(systemName: isExpanded ? "cube" : "shippingbox.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
-                }
-                
-                Text(area.name ?? "Unnamed Area")
-                    .lineLimit(1)
-                    .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
-                    .font(.system(size: 14, weight: .bold))
-                    
-                Spacer()
-                
-                // Task count badge
-                if area.totalTaskCount > 0 {
-                    Text("\(area.totalTaskCount)")
-                        .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
-                        .font(.system(size: 14))
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                // Only change area selection on tap, don't toggle expansion
-                withAnimation(nil) {
-                    selectedViewType = .area
-                    selectedArea = area
-                }
-            }
+        if let areaId = area.id {
+            let isExpanded = expandedAreas[areaId, default: true]
             
-            // Caret button with large clickable area
-            if let areaId = area.id {
-                let isExpanded = expandedAreas[areaId, default: true]
-                Button(action: {
-                    // Toggle expansion on caret click with no animation
-                    expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
-                    
-                    // Save the updated expansion state
+            AreaRowView(
+                area: area,
+                isSelected: selectedViewType == .area && selectedArea?.id == area.id,
+                isExpanded: isExpanded,
+                onSelect: {
+                    // Navigate to the area view
+                    withAnimation(nil) {
+                        selectedViewType = .area
+                        selectedArea = area
+                    }
+                },
+                onToggleExpand: {
+                    // Toggle expansion state
+                    expandedAreas[areaId] = !isExpanded
                     saveAreaExpansionStates()
-                }) {
-                    HStack {
-                        // Add some space for a larger hit area
-                        Spacer()
-                            .frame(width: 8)
-                            
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
-                    }
-                    .frame(width: 40, height: 30) // Larger hit area
-                    .contentShape(Rectangle()) // Make the whole area clickable
-                    .background(Color.clear)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.trailing, -15) // Move it closer to the edge
-                .onHover { hovering in
-                    if hovering {
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-            .fill(backgroundColorFor(area: area))
-        )
-        .environment(\.isEnabled, true) // Force enabled state to maintain appearance when app loses focus
-        .onHover { isHovered in
-            // Only update hover state if not currently dragging
-            if draggedProject == nil && draggedArea == nil {
-                hoveredArea = isHovered ? area : nil
-                
-                if isHovered && !(selectedViewType == .area && selectedArea?.id == area.id) {
-                    NSCursor.pointingHand.set()
-                } else {
-                    NSCursor.arrow.set()
-                }
-            }
-        }
-        .onDrag {
-            // Set the dragged area and remember expanded state
-            if let areaId = area.id {
-                // Set the dragged area using optimized state update
+            )
+            .onDrag {
+                // Set the dragged area and remember expanded state
                 updateAreaDragState(area: area, areaId: areaId)
                 
                 // Collapse the area during drag with no animation
@@ -591,27 +525,28 @@ struct ReorderableProjectList: View {
                 
                 // Save the updated expansion state
                 saveAreaExpansionStates()
+                
+                return NSItemProvider(object: "area-\(areaId.uuidString)" as NSString)
             }
-            return NSItemProvider(object: "area-\(area.id?.uuidString ?? "")" as NSString)
+            .onDrop(of: [.text], delegate: ProjectListAreaDropDelegate(
+                area: area,
+                areas: areaViewModel.areas,
+                draggedArea: $draggedArea,
+                draggedProject: $draggedProject,
+                expandedAreas: $expandedAreas,
+                areaBeingDragged: $areaBeingDragged,
+                isDraggingOver: $isDraggingOver,
+                moveAction: { fromIndex, toIndex in
+                    reorderAreas(from: fromIndex, to: toIndex)
+                },
+                assignProjectAction: { project, area in
+                    assignProjectToArea(project: project, area: area)
+                },
+                saveExpansionStatesAction: {
+                    saveAreaExpansionStates()
+                }
+            ))
         }
-        .onDrop(of: [.text], delegate: ProjectListAreaDropDelegate(
-            area: area,
-            areas: areaViewModel.areas,
-            draggedArea: $draggedArea,
-            draggedProject: $draggedProject,
-            expandedAreas: $expandedAreas,
-            areaBeingDragged: $areaBeingDragged,
-            isDraggingOver: $isDraggingOver,
-            moveAction: { fromIndex, toIndex in
-                reorderAreas(from: fromIndex, to: toIndex)
-            },
-            assignProjectAction: { project, area in
-                assignProjectToArea(project: project, area: area)
-            },
-            saveExpansionStatesAction: {
-                saveAreaExpansionStates()
-            }
-        ))
     }
     
     // Helper method to render a project row
