@@ -32,6 +32,12 @@ struct DragState {
 }
 
 /// Project drop delegate for efficient project-to-project reordering
+// Enum to represent drop position relative to an item
+enum DropPosition {
+    case above
+    case below
+}
+
 struct ProjectDropDelegate: DropDelegate {
     let project: Project
     var projects: [Project]
@@ -39,6 +45,7 @@ struct ProjectDropDelegate: DropDelegate {
     @Binding var isDraggingOver: UUID?
     @Binding var isHoveringOverNoAreaSection: Bool
     @Binding var isDraggingFromAreaToNoArea: Bool
+    @Binding var dropPositions: [UUID: DropPosition]
     var moveAction: (Int, Int) -> Void
     var removeFromAreaAction: (Project) -> Void
     var assignToAreaAction: (Project, Project) -> Void
@@ -53,7 +60,21 @@ struct ProjectDropDelegate: DropDelegate {
         
         // Store the drop target index in state but don't actually move yet
         withAnimation(nil) {
-            isDraggingOver = project.id // Just highlight the target
+            isDraggingOver = project.id // Highlight the target
+        }
+        
+        // Get the drag location and view bounds to calculate drop position (above or below)
+        let yPosition = info.location.y
+        // Use the top third to indicate above, bottom two-thirds to indicate below
+        // This gives users more control when targeting the first item
+        let rowHeight = 30.0 // Approximate row height in points
+        let dropPosition: DropPosition = (yPosition < (rowHeight / 3)) ? .above : .below
+        
+        // Store the drop position in our global state
+        if let projectId = project.id {
+            withAnimation(nil) {
+                dropPositions[projectId] = dropPosition
+            }
         }
         
         // Highlight target area if it's a different area
@@ -67,6 +88,10 @@ struct ProjectDropDelegate: DropDelegate {
     func dropExited(info: DropInfo) {
         withAnimation(nil) {
             isDraggingOver = nil
+            // Clear drop position when exiting
+            if let projectId = project.id {
+                dropPositions.removeValue(forKey: projectId)
+            }
         }
     }
     
@@ -273,6 +298,7 @@ struct ReorderableProjectList: View {
     @State private var expandedStateBeforeDrag: Bool = true
     @State private var isHoveringOverNoAreaSection: Bool = false
     @State private var isDraggingFromAreaToNoArea: Bool = false
+    @State private var dropPositions: [UUID: DropPosition] = [:]
     
     // Cache animations and transitions - using simpler animations to prevent layout issues
     private let expandTransition = AnyTransition.opacity
@@ -366,10 +392,19 @@ struct ReorderableProjectList: View {
             // Standalone projects first with optional border
             VStack(spacing: 6) {
                 ForEach(projectViewModel.projects.filter { $0.area == nil }, id: \.id) { project in
+                    // Show drop indicator ABOVE the project if needed
+                    if draggedProject != nil && isDraggingOver == project.id && isDraggingToTop(for: project) {
+                        Rectangle()
+                            .fill(AppColors.todayHighlight)
+                            .frame(height: 2)
+                            .padding(.horizontal, 10)
+                            .transition(.opacity)
+                    }
+                    
                     renderProjectRow(project: project)
                     
-                    // Add drop indicator line if this is where we're dragging
-                    if draggedProject != nil && isDraggingOver == project.id {
+                    // Show drop indicator BELOW the project if needed
+                    if draggedProject != nil && isDraggingOver == project.id && !isDraggingToTop(for: project) {
                         Rectangle()
                             .fill(AppColors.todayHighlight)
                             .frame(height: 2)
@@ -401,10 +436,18 @@ struct ReorderableProjectList: View {
                             // Just show/hide the projects instantly
                             VStack(spacing: 6) {
                                 ForEach(projectViewModel.projects.filter { $0.area?.id == areaId }, id: \.id) { project in
+                                    // Show drop indicator ABOVE the project if needed
+                                    if draggedProject != nil && isDraggingOver == project.id && isDraggingToTop(for: project) {
+                                        Rectangle()
+                                            .fill(AppColors.getColor(from: area.color ?? "blue"))
+                                            .frame(height: 2)
+                                            .padding(.horizontal, 10)
+                                    }
+                                    
                                     renderProjectRow(project: project)
                                     
-                                    // Add drop indicator line if this is where we're dragging
-                                    if draggedProject != nil && isDraggingOver == project.id {
+                                    // Show drop indicator BELOW the project if needed
+                                    if draggedProject != nil && isDraggingOver == project.id && !isDraggingToTop(for: project) {
                                         Rectangle()
                                             .fill(AppColors.getColor(from: area.color ?? "blue"))
                                             .frame(height: 2)
@@ -593,6 +636,7 @@ struct ReorderableProjectList: View {
             isDraggingOver: $isDraggingOver,
             isHoveringOverNoAreaSection: $isHoveringOverNoAreaSection,
             isDraggingFromAreaToNoArea: $isDraggingFromAreaToNoArea,
+            dropPositions: $dropPositions,
             moveAction: { fromIndex, toIndex in
                 reorderProjects(from: fromIndex, to: toIndex)
             },
@@ -695,6 +739,12 @@ struct ReorderableProjectList: View {
         }
     }
     
+    // Helper function to check if we're dragging to the top of an item
+    private func isDraggingToTop(for project: Project) -> Bool {
+        guard let projectId = project.id else { return false }
+        return dropPositions[projectId] == .above
+    }
+    
     private func assignProjectToArea(project: Project, area: Area?) {
         // Update the project's area reference
         project.area = area
@@ -709,6 +759,7 @@ struct ReorderableProjectList: View {
                 isDraggingOver = nil
                 isHoveringOverNoAreaSection = false
                 isDraggingFromAreaToNoArea = false
+                dropPositions.removeAll() // Clear all drop positions
             }
                 
             // Use a dispatch async to improve perceived performance
