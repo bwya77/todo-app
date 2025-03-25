@@ -269,17 +269,23 @@ struct ReorderableProjectList: View {
     /// Access to managed object context
     @Environment(\.managedObjectContext) private var viewContext
     
+    /// Whether the sidebar is currently being hovered
+    var isSidebarHovered: Bool = false
+
     /// Initialize with selections
     /// - Parameters:
     ///   - selectedViewType: Binding to the selected view type
     ///   - selectedProject: Binding to the selected project
     ///   - selectedArea: Binding to the selected area
+    ///   - isSidebarHovered: Whether the sidebar is currently being hovered
     init(selectedViewType: Binding<ViewType> = .constant(.project),
          selectedProject: Binding<Project?> = .constant(nil),
-         selectedArea: Binding<Area?> = .constant(nil)) {
+         selectedArea: Binding<Area?> = .constant(nil),
+         isSidebarHovered: Bool = false) {
         self._selectedViewType = selectedViewType
         self._selectedProject = selectedProject
         self._selectedArea = selectedArea
+        self.isSidebarHovered = isSidebarHovered
     }
     
     /// The view model for project reordering
@@ -503,6 +509,7 @@ struct ReorderableProjectList: View {
                 area: area,
                 isSelected: selectedViewType == .area && selectedArea?.id == area.id,
                 isExpanded: isExpanded,
+                isSidebarHovered: isSidebarHovered,
                 onSelect: {
                     // Navigate to the area view
                     withAnimation(nil) {

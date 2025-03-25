@@ -19,11 +19,16 @@ public struct AreaRowView: View {
     @State private var isHoveringOver: Bool = false
     @State private var isHoveringRow: Bool = false
     
+    // Receive sidebar hover state from parent
+    var isSidebarHovered: Bool = false
+    
     public init(area: Area, isSelected: Bool = false, isExpanded: Bool = true,
+         isSidebarHovered: Bool = false,
          onSelect: @escaping () -> Void = {}, onToggleExpand: @escaping () -> Void = {}) {
         self.area = area
         self.isSelected = isSelected
         self.isExpanded = isExpanded
+        self.isSidebarHovered = isSidebarHovered
         self.onSelect = onSelect
         self.onToggleExpand = onToggleExpand
     }
@@ -58,13 +63,14 @@ public struct AreaRowView: View {
                         .font(.system(size: 14)) // Match project task count size
                         .foregroundColor(.secondary)
                         .frame(width: 20, alignment: .trailing) // Ensure consistent width and alignment
-                        .opacity((isHoveringOver || isHoveringRow) ? 0 : 1)
+                        .opacity((isHoveringOver || isHoveringRow || isSidebarHovered) ? 0 : 1)
                 }
                 
                 // Show expand/collapse control based on state:
                 // - Always visible if area is expanded
                 // - Always visible if area has 0 tasks
-                // - Visible on hover otherwise
+                // - Visible when sidebar is hovered
+                // - Visible on this specific row hover
                 Button(action: {
                     onToggleExpand()
                 }) {
@@ -75,7 +81,7 @@ public struct AreaRowView: View {
                         .frame(width: 20, alignment: .trailing) // Consistent alignment with count
                 }
                 .buttonStyle(PlainButtonStyle())
-                .opacity(isExpanded || area.activeTaskCount == 0 || (isHoveringOver || isHoveringRow) ? 1 : 0)
+                .opacity(isExpanded || area.activeTaskCount == 0 || isSidebarHovered || (isHoveringOver || isHoveringRow) ? 1 : 0)
             }
             .frame(width: 20, alignment: .trailing) // Match project task count alignment
             .onHover { hovering in

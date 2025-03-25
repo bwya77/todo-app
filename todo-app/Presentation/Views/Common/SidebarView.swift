@@ -119,6 +119,9 @@ struct SidebarView: View {
     @State private var inboxTaskCount: Int = 0
     @State private var todayTaskCount: Int = 0
     
+    // State to track when mouse is hovering over the sidebar
+    @State private var isSidebarHovered: Bool = false
+    
     // For debouncing count updates
     private let debounceInterval: DispatchTimeInterval = .milliseconds(300)
     @State private var lastUpdateTime: Date = Date()
@@ -292,7 +295,8 @@ struct SidebarView: View {
                         ReorderableProjectList(
                             selectedViewType: $selectedViewType,
                             selectedProject: $selectedProject,
-                            selectedArea: $selectedArea
+                            selectedArea: $selectedArea,
+                            isSidebarHovered: isSidebarHovered
                         )
                         // Don't apply any global animation modifier here - animation is handled internally now
                         
@@ -351,7 +355,12 @@ struct SidebarView: View {
                 lastUpdateTime = now
             }
         }
-        // Note: Instead of using an overlay here, we'll post a notification to show the popup from ContentView
+        // Add hover detection to the entire sidebar
+        .onHover { isHovered in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isSidebarHovered = isHovered
+            }
+        }
     }
     
     // Show the list creation popup by posting a notification to ContentView

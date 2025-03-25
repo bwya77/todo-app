@@ -4,82 +4,105 @@ Date: March 25, 2025
 Developer: Senior macOS Developer
 
 ## Overview
-Enhanced the sidebar area icons to provide cleaner, more intuitive user experience based on state.
+Enhanced the sidebar area icons behavior to show expand/collapse icons when the mouse is anywhere in the sidebar, not just when hovering over a specific area.
 
 ## Requirements Implemented
-1. If the area is expanded, only show the collapse icon (not the task count)
-2. If an area has 0 outstanding project tasks, just show the Expand/Collapse icon (not the task count)
-3. Fixed alignment issues between area task counts and project task counts for consistent visual appearance
+1. When the mouse is anywhere in the sidebar, show the expand/collapse icons for all areas instead of task counts
+2. Maintain existing behavior: expanded areas always show collapse icon, areas with 0 tasks always show expand/collapse icon
+
+## Technical Approach
+1. Added local state tracking for sidebar hover in SidebarView
+2. Implemented a direct prop-passing approach to communicate the hover state to child components
+3. Added hover detection on the sidebar container with animation for smooth transitions
+
+## Files Added
+1. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Documentation/Features/UI/SidebarExpandCollapseEnhancement.md`
+   - Documented the feature, implementation, and benefits 
+
+2. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-appTests/SidebarAreaExpandableTests.swift`
+   - Created tests to verify the sidebar hover behavior works correctly
+   - Tested different states: hovered/not hovered, expanded/collapsed, with/without tasks
 
 ## Files Modified
 1. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Presentation/Components/Area/AreaRowView.swift`
-   - Changed the ZStack logic for task count and expand/collapse button
-   - Added accessibility labels for better testing and accessibility
+   - Added isSidebarHovered parameter to accept the sidebar hover state from parent
+   - Updated opacity logic for task counts and expand/collapse icons
+   - Maintained existing functionality for zero-task areas and expanded areas
 
-## Files Added
-1. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Documentation/Features/UI/SidebarAreaIconImprovements.md`
-   - Added detailed documentation about the new feature
-   - Included code samples and rationale for the changes
+2. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Presentation/Views/Common/SidebarView.swift`
+   - Added isSidebarHovered state variable
+   - Added hover detection to the main view
+   - Passed hover state to ReorderableProjectList
 
-2. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-appTests/SidebarAreaIconTests.swift`
-   - Created unit tests for the new feature
-   - Tests verify the three key behaviors:
-     - Expanded areas only show collapse icon
-     - Areas with 0 tasks only show expand/collapse icon
-     - Collapsed areas with tasks show count by default
-
-3. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-appTests/ViewInspectorExtensions.swift`
-   - Added testing infrastructure for UI components
+3. `/Users/bradley.wyatt/Git/GitHub/todo-app/todo-app/Presentation/Components/Project/ReorderableProjectList.swift`
+   - Added isSidebarHovered parameter 
+   - Updated renderAreaRow to pass hover state to AreaRowView
 
 ## Implementation Details
-The key implementation is in `AreaRowView.swift` where we added conditional logic and alignment fixes:
+The solution consists of three main parts:
 
+1. **Detecting hover in SidebarView:**
 ```swift
-// Task count / expand-collapse control with hover effect
-ZStack {
-    // Show active task count by default, only when we have tasks and area is not expanded
-    if area.activeTaskCount > 0 && !isExpanded {
-        Text("\(area.activeTaskCount)")
-            .font(.system(size: 14)) // Match project task count size
-            .foregroundColor(.secondary)
-            .frame(width: 20, alignment: .trailing) // Ensure consistent width and alignment
-            .opacity((isHoveringOver || isHoveringRow) ? 0 : 1)
+// In SidebarView, track the sidebar hover state
+@State private var isSidebarHovered: Bool = false
+
+// At the end of the body
+.onHover { isHovered in
+    withAnimation(.easeInOut(duration: 0.15)) {
+        isSidebarHovered = isHovered
     }
-    
-    // Show expand/collapse control based on state:
-    // - Always visible if area is expanded
-    // - Always visible if area has 0 tasks
-    // - Visible on hover otherwise
-    Button(action: {
-        onToggleExpand()
-    }) {
-        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-            .font(.system(size: 12))
-            .foregroundColor(.gray)
-            .accessibilityLabel(Text(isExpanded ? "Collapse Area" : "Expand Area"))
-            .frame(width: 20, alignment: .trailing) // Consistent alignment with count
-    }
-    .buttonStyle(PlainButtonStyle())
-    .opacity(isExpanded || area.activeTaskCount == 0 || (isHoveringOver || isHoveringRow) ? 1 : 0)
 }
-.frame(width: 20, alignment: .trailing) // Match project task count alignment
 ```
 
+2. **Passing the hover state through the component hierarchy:**
+```swift
+// In SidebarView, pass to ReorderableProjectList
+ReorderableProjectList(
+    selectedViewType: $selectedViewType,
+    selectedProject: $selectedProject,
+    selectedArea: $selectedArea,
+    isSidebarHovered: isSidebarHovered
+)
+
+// In ReorderableProjectList, pass to AreaRowView
+AreaRowView(
+    area: area,
+    isSelected: selectedViewType == .area && selectedArea?.id == area.id,
+    isExpanded: isExpanded,
+    isSidebarHovered: isSidebarHovered,
+    // ... other parameters
+)
+```
+
+3. **Using the hover state in AreaRowView:**
+```swift
+// In AreaRowView
+var isSidebarHovered: Bool = false
+
+// Show task count with conditional opacity
+if area.activeTaskCount > 0 && !isExpanded {
+    Text("\(area.activeTaskCount)")
+        // ...
+        .opacity((isHoveringOver || isHoveringRow || isSidebarHovered) ? 0 : 1)
+}
+
+// Show expand/collapse button with conditional opacity
+Button(action: { onToggleExpand() }) { ... }
+    .opacity(isExpanded || area.activeTaskCount == 0 || isSidebarHovered || (isHoveringOver || isHoveringRow) ? 1 : 0)
+```
+
+## User Experience Benefits
+1. **Improved Discoverability**: Users can more easily discover that areas are collapsible/expandable
+2. **Reduced Precision Requirements**: No need to hover precisely over each area
+3. **Consistent Visual Feedback**: Immediate visual feedback when the mouse enters the sidebar
+4. **Better Information Hierarchy**: Shows the most relevant interaction controls when the user is engaging with the sidebar
+
 ## Testing
-Added tests to verify all three behaviors. To run the tests:
-1. Open the project in Xcode
-2. Select the SidebarAreaIconTests test class
-3. Run the tests (Product > Test or Cmd+U)
+The implementation includes tests that verify:
+- Expand/collapse icons are visible when the sidebar is hovered
+- Task counts are visible when the sidebar is not hovered
+- For areas with zero tasks, expand icon is always visible
+- For expanded areas, collapse icon is always visible
 
-All tests should pass, confirming the feature works as expected.
-
-## Benefits
-1. **Reduced Visual Clutter**: By showing only the most relevant information in each state
-2. **Intuitive Interaction**: Users can clearly understand what actions are available based on context
-3. **Consistent Experience**: Follows UI patterns familiar to users of modern macOS applications
-4. **Better Information Hierarchy**: Prioritizes showing task counts only when meaningful
-
-## Future Considerations
-- Adding animation to smooth transitions between task count and expand/collapse icon
-- Handling very large task counts with condensed numbering (e.g., 99+)
-- Further accessibility improvements
+## Accessibility
+All expand/collapse buttons maintain their accessibility labels, ensuring proper screen reader support.
