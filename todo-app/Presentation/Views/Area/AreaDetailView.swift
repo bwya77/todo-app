@@ -130,35 +130,6 @@ struct AreaDetailView: View {
                         .foregroundColor(.secondary)
                     
                     Spacer()
-                    
-                    Menu {
-                        Button(action: {
-                            // Add the new project to this area
-                            showProjectCreationPopup()
-                        }) {
-                            Label("Add Project", systemImage: "plus")
-                        }
-                        
-                        Divider()
-                        
-                        Button(action: {
-                            // Edit area details
-                            showAreaEditPopup()
-                        }) {
-                            Label("Edit Area", systemImage: "pencil")
-                        }
-                        
-                        Button(role: .destructive, action: {
-                            // Delete area confirmation
-                            showDeleteAreaConfirmation()
-                        }) {
-                            Label("Delete Area", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                    }
                 }
                 
                 // Space for padding
@@ -198,87 +169,94 @@ struct AreaDetailView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 0)
             
-            // Projects in this area
-            ScrollView {
-                VStack(spacing: 16) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 16)], spacing: 16) {
-                        ForEach(projects) { project in
-                            ProjectCard(project: project)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 120)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.white)
-                                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-                                )
-                        }
-                        
-                        // Add Project card
-                        Button(action: {
-                            showProjectCreationPopup()
-                        }) {
-                            VStack {
-                                Image(systemName: "plus.circle")
-                                    .font(.largeTitle)
-                                    .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+            // Projects in this area - List View
+            List {
+                if projects.isEmpty {
+                    // Empty state if no projects
+                    Section {
+                        HStack {
+                            Spacer()
+                            
+                            VStack(spacing: 16) {
+                                Image(systemName: "square.grid.2x2")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(Color.gray.opacity(0.5))
                                 
-                                Text("Add Project")
+                                Text("No projects in this area")
                                     .font(.headline)
                                     .foregroundColor(.secondary)
+                                
+                                Text("Add a project to get started")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 120)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
-                                    .background(Color.white.cornerRadius(8))
-                            )
+                            
+                            Spacer()
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .padding(.vertical, 20)
+                        .listRowSeparator(.hidden)
                     }
-                    
-                    // Empty state if no projects
-                    if projects.isEmpty {
-                        VStack(spacing: 16) {
-                            Spacer()
-                                .frame(height: 20)
-                            
-                            Image(systemName: "square.grid.2x2")
-                                .font(.system(size: 48))
-                                .foregroundColor(Color.gray.opacity(0.5))
-                            
-                            Text("No projects in this area")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            
-                            Text("Add a project to get started")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Button(action: {
-                                showProjectCreationPopup()
-                            }) {
-                                Text("Add Project")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(AppColors.getColor(from: area.color ?? "gray").opacity(0.2))
-                                    .cornerRadius(8)
+                } else {
+                    // Projects section with a normal list style
+                    ForEach(projects) { project in
+                        Button(action: {
+                            // Single click action - Select the project
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("SelectProject"),
+                                object: nil,
+                                userInfo: ["project": project]
+                            )
+                        }) {
+                            HStack(spacing: 8) {
+                                // Project indicator
+                                Circle()
+                                    .fill(AppColors.getColor(from: project.color ?? "gray"))
+                                    .frame(width: 12, height: 12)
+                                
+                                // Project name
+                                Text(project.name ?? "Unnamed Project")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.primary) // Keep text color consistent
+                                
+                                // Active task count badge (only show if > 0)
+                                if project.activeTaskCount > 0 {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.secondary.opacity(0.15))
+                                            .frame(width: 28, height: 20)
+                                        
+                                        Text("\(project.activeTaskCount)")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                
+                                Spacer()
                             }
-                            .buttonStyle(.plain)
-                            
-                            Spacer()
-                                .frame(height: 20)
+                            .contentShape(Rectangle())
+                            .frame(height: 28) // Consistent height for all rows
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 32)
+                        .buttonStyle(.projectRow) // Use our custom button style
+                        .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
+                        .listRowSeparator(.hidden) // Hide separators
+                        .listRowBackground(Color.clear) // Clear background for custom hover effect
+                    }
+                    .onDelete { indexSet in
+                        // Handle delete (we'll just detach from the area)
+                        for index in indexSet {
+                            let project = projects[index]
+                            project.area = nil
+                            
+                            do {
+                                try viewContext.save()
+                            } catch {
+                                print("Error detaching project from area: \(error)")
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
             }
-            .background(Color.white)
+            .listStyle(.plain)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)

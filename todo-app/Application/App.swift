@@ -9,6 +9,7 @@
 
 import SwiftUI
 import AppKit
+import Combine
 
 @main
 struct TodoApp: App {
@@ -34,6 +35,9 @@ struct TodoApp: App {
                         DisplayOrderManager.repairAllTaskOrder()
                         DisplayOrderManager.repairAllProjectOrder()
                     }
+                    
+                    // Initialize the project navigation helper
+                    _ = ProjectNavigationHelper.shared
                 }
         }
         .windowToolbarStyle(.unifiedCompact)

@@ -8,8 +8,12 @@
 import Cocoa
 import SwiftUI
 import CoreData
+import Combine
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    // Project navigation publisher
+    let projectNavigationPublisher = PassthroughSubject<Project, Never>()
+    private var cancellables = Set<AnyCancellable>()
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize DisplayOrderManager to ensure proper ordering for tasks and projects
@@ -26,6 +30,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if context.hasChanges {
             try? context.save()
         }
+        
+        // Setup project navigation notification observer
+        setupProjectNavigationObserver()
     }
     
     /// Save task order changes to persistent storage
@@ -50,5 +57,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillHide(_ notification: Notification) {
         // App is being hidden
         PersistentOrder.saveAllContexts()
+    }
+    
+    // MARK: - Project Navigation
+    
+    /// Setup the observer for project navigation notifications
+    private func setupProjectNavigationObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleProjectNavigation),
+            name: NSNotification.Name("NavigateToProject"),
+            object: nil
+        )
+    }
+    
+    /// Handle project navigation from notification
+    @objc private func handleProjectNavigation(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let project = userInfo["project"] as? Project else {
+            return
+        }
+        
+        // Publish the project to navigate to
+        projectNavigationPublisher.send(project)
     }
 }

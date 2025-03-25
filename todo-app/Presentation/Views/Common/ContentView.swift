@@ -12,6 +12,9 @@ import AppKit
 import Combine
 // Import custom components for list creation popup
 
+// Get reference to AppDelegate
+let appDelegate = NSApp.delegate as? AppDelegate
+
 #if DEBUG
 import OSLog
 #endif
@@ -248,6 +251,17 @@ struct ContentView: View {
                     selectedProject = project
                     selectedViewType = .project
                 }
+            }
+            
+            // Subscribe to project navigation publisher from AppDelegate
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.projectNavigationPublisher
+                    .receive(on: RunLoop.main)
+                    .sink { project in
+                        self.selectedProject = project
+                        self.selectedViewType = .project
+                    }
+                    .store(in: &ProjectNavigationHelper.shared.cancellables)
             }
             
             #if DEBUG
