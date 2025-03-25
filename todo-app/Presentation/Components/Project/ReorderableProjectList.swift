@@ -494,64 +494,79 @@ struct ReorderableProjectList: View {
     @ViewBuilder
     private func renderAreaRow(area: Area) -> some View {
         HStack(spacing: 10) {
-            // Icon for the area type
+            // Area row main content (without caret)
+            HStack(spacing: 10) {
+                // Icon for the area type
+                if let areaId = area.id {
+                    let isExpanded = expandedAreas[areaId, default: true]
+                    Image(systemName: isExpanded ? "cube" : "shippingbox.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+                }
+                
+                Text(area.name ?? "Unnamed Area")
+                    .lineLimit(1)
+                    .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
+                    .font(.system(size: 14, weight: .bold))
+                    
+                Spacer()
+                
+                // Task count badge
+                if area.totalTaskCount > 0 {
+                    Text("\(area.totalTaskCount)")
+                        .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
+                        .font(.system(size: 14))
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Only change area selection on tap, don't toggle expansion
+                withAnimation(nil) {
+                    selectedViewType = .area
+                    selectedArea = area
+                }
+            }
+            
+            // Caret button with large clickable area
             if let areaId = area.id {
                 let isExpanded = expandedAreas[areaId, default: true]
-                Image(systemName: isExpanded ? "cube" : "shippingbox.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
-            }
-            
-            Text(area.name ?? "Unnamed Area")
-                .lineLimit(1)
-                .foregroundStyle(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .black)
-                .font(.system(size: 14, weight: .bold))
-                
-            Spacer()
-            
-            // Task count badge
-            if area.totalTaskCount > 0 {
-                Text("\(area.totalTaskCount)")
-                    .foregroundColor(selectedViewType == .area && selectedArea?.id == area.id ? AppColors.selectedTextColor : .secondary)
-                    .font(.system(size: 14))
-            }
-            
-            // Add caret icon to indicate expanded/collapsed state
-            if let areaId = area.id {
-                let isExpanded = expandedAreas[areaId, default: true]
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 5)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-            .fill(backgroundColorFor(area: area))
-        )
-        // Replaced the overlay with a group-level background
-        .onTapGesture {
-            if let areaId = area.id {
-                // Toggle expansion on tap with no animation
-                // This ensures nothing bounces or jiggles
-                expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
-                
-                // Save the updated expansion state
-                saveAreaExpansionStates()
-                
-                // Don't change the selection on expand/collapse
-                if selectedArea?.id != area.id {
-                    // Use withAnimation(nil) to disable animations for selection changes
-                    withAnimation(nil) {
-                        selectedViewType = .area
-                        selectedArea = area
+                Button(action: {
+                    // Toggle expansion on caret click with no animation
+                    expandedAreas[areaId] = !(expandedAreas[areaId, default: true])
+                    
+                    // Save the updated expansion state
+                    saveAreaExpansionStates()
+                }) {
+                    HStack {
+                        // Add some space for a larger hit area
+                        Spacer()
+                            .frame(width: 8)
+                            
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    .frame(width: 40, height: 30) // Larger hit area
+                    .contentShape(Rectangle()) // Make the whole area clickable
+                    .background(Color.clear)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.trailing, -15) // Move it closer to the edge
+                .onHover { hovering in
+                    if hovering {
+                        NSCursor.pointingHand.set()
+                    } else {
+                        NSCursor.arrow.set()
                     }
                 }
             }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+            .fill(backgroundColorFor(area: area))
+        )
         .environment(\.isEnabled, true) // Force enabled state to maintain appearance when app loses focus
         .onHover { isHovered in
             // Only update hover state if not currently dragging
