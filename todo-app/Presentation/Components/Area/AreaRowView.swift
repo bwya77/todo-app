@@ -52,24 +52,32 @@ public struct AreaRowView: View {
             
             // Task count / expand-collapse control with hover effect
             ZStack {
-                // Show active task count by default
-                Text("\(area.activeTaskCount)")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .opacity((isHoveringOver || isHoveringRow) ? 0 : 1)
+                // Show active task count by default, only when we have tasks and area is not expanded
+                if area.activeTaskCount > 0 && !isExpanded {
+                    Text("\(area.activeTaskCount)")
+                        .font(.system(size: 14)) // Match project task count size
+                        .foregroundColor(.secondary)
+                        .frame(width: 20, alignment: .trailing) // Ensure consistent width and alignment
+                        .opacity((isHoveringOver || isHoveringRow) ? 0 : 1)
+                }
                 
-                // Show expand/collapse control on hover
+                // Show expand/collapse control based on state:
+                // - Always visible if area is expanded
+                // - Always visible if area has 0 tasks
+                // - Visible on hover otherwise
                 Button(action: {
                     onToggleExpand()
                 }) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
+                        .accessibilityLabel(Text(isExpanded ? "Collapse Area" : "Expand Area"))
+                        .frame(width: 20, alignment: .trailing) // Consistent alignment with count
                 }
                 .buttonStyle(PlainButtonStyle())
-                .opacity((isHoveringOver || isHoveringRow) ? 1 : 0)
+                .opacity(isExpanded || area.activeTaskCount == 0 || (isHoveringOver || isHoveringRow) ? 1 : 0)
             }
-            .frame(width: 20)
+            .frame(width: 20, alignment: .trailing) // Match project task count alignment
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isHoveringOver = hovering
