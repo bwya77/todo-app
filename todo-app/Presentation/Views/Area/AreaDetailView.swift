@@ -40,22 +40,26 @@ struct AreaDetailView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Area header
+            // Area header with editable title and controls
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.getColor(from: area.color ?? "gray"))
-                            .frame(width: 32, height: 32)
-                        
-                        Image(systemName: "cube.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                    }
-                    
-                    // Area title with editing capability
-                    ZStack(alignment: .leading) {
-                        if isEditingTitle {
+                // Title section with simpler editing approach
+                ZStack(alignment: .leading) {
+                    if isEditingTitle {
+                        HStack(spacing: 10) {
+                            // Keep the area icon visible during editing
+                            ZStack {
+                                Circle()
+                                    .fill(AppColors.getColor(from: area.color ?? "gray"))
+                                    .frame(width: 20, height: 20)
+                                
+                                Image(systemName: "cube.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white)
+                            }
+                            // Add a unique ID to force recreation when area changes
+                            .id("area-indicator-edit-mode-\(area.id?.uuidString ?? UUID().uuidString)")
+                            
+                            // Text field for editing
                             NoSelectionTextField(text: $editedTitle, onCommit: saveAreaTitle, onStartEditing: { textField in
                                 // Start monitoring for clicks outside the text field
                                 self.clickMonitor.startMonitoring(view: textField) {
@@ -67,44 +71,58 @@ struct AreaDetailView: View {
                                 // Also start monitoring for clicks inside the field to correctly position cursor
                                 self.textFieldMonitor.startMonitoring(textField: textField)
                             })
-                            .font(.largeTitle)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 8)
-                        } else {
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                    } else {
+                        HStack(spacing: 10) {
+                            // Area icon
+                            ZStack {
+                                Circle()
+                                    .fill(AppColors.getColor(from: area.color ?? "gray"))
+                                    .frame(width: 20, height: 20)
+                                
+                                Image(systemName: "cube.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white)
+                            }
+                            // Add a unique ID to force recreation when area changes
+                            .id("area-indicator-\(area.id?.uuidString ?? UUID().uuidString)")
+                            
                             Text(area.name ?? "Unnamed Area")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .padding(.leading, 8)
-                                .contentShape(Rectangle())
-                                .help("Click to edit area title")
-                                .onHover { hovering in
-                                    if hovering {
-                                        NSCursor.iBeam.set()
-                                    } else {
-                                        NSCursor.arrow.set()
-                                    }
-                                }
-                                .background(
-                                    // Add a subtle highlight on hover to indicate it's clickable
-                                    Color.gray.opacity(0.0001) // Nearly invisible but catches clicks
-                                )
-                                .onTapGesture { location in
-                                    // Get and store the current mouse position directly for cursor positioning
-                                    if let windowRef = NSApp.keyWindow {
-                                        let screenPoint = NSEventMonitor.shared.getCurrentMousePosition()
-                                        let windowPoint = windowRef.convertPoint(fromScreen: screenPoint)
-                                        
-                                        // Store the click location for cursor positioning
-                                        CursorLocationTracker.lastClickLocation = windowPoint
-                                        
-                                        // Start editing title
-                                        startEditingTitle()
-                                    }
-                                }
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(Color.primary) // Make sure text color is normal
+                        }
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                        .help("Click to edit area title")
+                        .onHover { hovering in
+                            if hovering {
+                                NSCursor.iBeam.set()
+                            } else {
+                                NSCursor.arrow.set()
+                            }
+                        }
+                        .background(
+                            // Add a subtle highlight on hover to indicate it's clickable
+                            Color.gray.opacity(0.0001) // Nearly invisible but catches clicks
+                        )
+                        .onTapGesture { location in
+                            // Get and store the current mouse position directly for cursor positioning
+                            if let windowRef = NSApp.keyWindow {
+                                let screenPoint = NSEventMonitor.shared.getCurrentMousePosition()
+                                let windowPoint = windowRef.convertPoint(fromScreen: screenPoint)
+                                
+                                // Store the click location for cursor positioning
+                                CursorLocationTracker.lastClickLocation = windowPoint
+                                
+                                // Start editing title
+                                startEditingTitle()
+                            }
                         }
                     }
                 }
-                .padding(.bottom, 4)
                 
                 HStack {
                     Text("\(projects.count) Projects")
@@ -142,55 +160,128 @@ struct AreaDetailView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                
+                // Space for padding
+                Spacer()
+                    .frame(height: 4)
             }
-            .padding(.horizontal)
-            .padding(.top, 16)
-            .padding(.bottom, 16)
-            .background(
-                Color(NSColor.windowBackgroundColor)
-                    .opacity(0.5)
-            )
+            .padding(.horizontal, 16)
+            .padding(.top, 28)
+            .padding(.bottom, 8)
+            .background(Color.white)
+            
+            // Area Notes - Using the same pattern as ProjectNotesEditor
+            VStack(alignment: .leading) {
+                ProjectNotesEditor(
+                    text: Binding(
+                        get: { self.area.notes ?? "" },
+                        set: { newValue in
+                            self.area.notes = newValue
+                            do {
+                                try self.viewContext.save()
+                            } catch {
+                                print("Error saving area notes: \(error)")
+                            }
+                        }
+                    ),
+                    placeholder: "Notes", 
+                    font: .system(size: 14, weight: .regular)
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            // Force complete recreation of text editor when area changes
+            .id("area-notes-editor-\(self.area.id?.uuidString ?? UUID().uuidString)")
+            
+            // Divider after title and notes
+            CustomDivider()
+                .padding(.horizontal, 16)
+                .padding(.bottom, 0)
             
             // Projects in this area
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 16)], spacing: 16) {
-                    ForEach(projects) { project in
-                        ProjectCard(project: project)
+                VStack(spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 16)], spacing: 16) {
+                        ForEach(projects) { project in
+                            ProjectCard(project: project)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 120)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.white)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                )
+                        }
+                        
+                        // Add Project card
+                        Button(action: {
+                            showProjectCreationPopup()
+                        }) {
+                            VStack {
+                                Image(systemName: "plus.circle")
+                                    .font(.largeTitle)
+                                    .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+                                
+                                Text("Add Project")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                            }
                             .frame(maxWidth: .infinity)
                             .frame(height: 120)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white)
-                                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                    .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
+                                    .background(Color.white.cornerRadius(8))
                             )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
-                    // Add Project card
-                    Button(action: {
-                        showProjectCreationPopup()
-                    }) {
-                        VStack {
-                            Image(systemName: "plus.circle")
-                                .font(.largeTitle)
-                                .foregroundColor(AppColors.getColor(from: area.color ?? "gray"))
+                    // Empty state if no projects
+                    if projects.isEmpty {
+                        VStack(spacing: 16) {
+                            Spacer()
+                                .frame(height: 20)
                             
-                            Text("Add Project")
+                            Image(systemName: "square.grid.2x2")
+                                .font(.system(size: 48))
+                                .foregroundColor(Color.gray.opacity(0.5))
+                            
+                            Text("No projects in this area")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
+                            
+                            Text("Add a project to get started")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Button(action: {
+                                showProjectCreationPopup()
+                            }) {
+                                Text("Add Project")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(AppColors.getColor(from: area.color ?? "gray").opacity(0.2))
+                                    .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Spacer()
+                                .frame(height: 20)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 120)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
-                                .background(Color.white.cornerRadius(8))
-                        )
+                        .padding(.vertical, 32)
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
-                .padding()
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
             }
+            .background(Color.white)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
         // Add handlers for keyboard events and blur events
         .onSubmit(of: .text) {
             if isEditingTitle {
@@ -355,84 +446,6 @@ struct AreaDetailView: View {
             }
             
             taskViewModel.deleteArea(area)
-        }
-    }
-}
-
-// Project card for the grid view
-struct ProjectCard: View {
-    @ObservedObject var project: Project
-    @Environment(\.managedObjectContext) private var viewContext
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                // Project color and completion indicator
-                ZStack {
-                    Circle()
-                        .fill(AppColors.getColor(from: project.color ?? "gray"))
-                        .frame(width: 24, height: 24)
-                    
-                    if project.activeTaskCount == 0 && project.completedTaskCount > 0 {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
-                    }
-                }
-                
-                Text(project.name ?? "Unnamed Project")
-                    .font(.headline)
-                    .lineLimit(1)
-                
-                Spacer()
-            }
-            
-            Spacer()
-            
-            HStack {
-                if project.activeTaskCount > 0 {
-                    Text("\(project.activeTaskCount) active tasks")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else if project.completedTaskCount > 0 {
-                    Text("Completed")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                } else {
-                    Text("No tasks")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                // Progress indicator
-                if project.totalTaskCount > 0 {
-                    ZStack {
-                        Circle()
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 2)
-                            .frame(width: 16, height: 16)
-                        
-                        Circle()
-                            .trim(from: 0, to: CGFloat(project.completedTaskCount) / CGFloat(project.totalTaskCount))
-                            .stroke(AppColors.getColor(from: project.color ?? "gray"), lineWidth: 2)
-                            .frame(width: 16, height: 16)
-                            .rotationEffect(.degrees(-90))
-                    }
-                }
-            }
-        }
-        .padding(12)
-        .background(Color.white)
-        .cornerRadius(8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // Navigate to the project when tapped
-            NotificationCenter.default.post(
-                name: NSNotification.Name("SelectProject"),
-                object: nil,
-                userInfo: ["project": project]
-            )
         }
     }
 }
