@@ -9,6 +9,14 @@ import SwiftUI
 import CoreData
 
 struct AreaDetailView: View {
+    // Keep reference to monitors
+    private let clickMonitor = GlobalClickMonitor.shared
+    private let textFieldMonitor = TextFieldMonitor.shared
+    private let mouseMonitor = NSEventMonitor.shared
+    
+    // State for editing area title
+    @State private var isEditingTitle: Bool = false
+    @State private var editedTitle: String = ""
     @ObservedObject var area: Area
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var taskViewModel: TaskViewModel
@@ -19,6 +27,7 @@ struct AreaDetailView: View {
     init(area: Area, context: NSManagedObjectContext) {
         self.area = area
         self._taskViewModel = StateObject(wrappedValue: TaskViewModel(context: context))
+        self._editedTitle = State(initialValue: area.name ?? "Unnamed Area")
         
         // Initialize the fetch request to get projects for this area
         let request: NSFetchRequest<Project> = Project.fetchRequest()
@@ -44,10 +53,56 @@ struct AreaDetailView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text(area.name ?? "Unnamed Area")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .padding(.leading, 8)
+                    // Area title with editing capability
+                    ZStack(alignment: .leading) {
+                        if isEditingTitle {
+                            NoSelectionTextField(text: $editedTitle, onCommit: saveAreaTitle, onStartEditing: { textField in
+                                // Start monitoring for clicks outside the text field
+                                self.clickMonitor.startMonitoring(view: textField) {
+                                    if self.isEditingTitle {
+                                        self.saveAreaTitle()
+                                    }
+                                }
+                                
+                                // Also start monitoring for clicks inside the field to correctly position cursor
+                                self.textFieldMonitor.startMonitoring(textField: textField)
+                            })
+                            .font(.largeTitle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 8)
+                        } else {
+                            Text(area.name ?? "Unnamed Area")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .padding(.leading, 8)
+                                .contentShape(Rectangle())
+                                .help("Click to edit area title")
+                                .onHover { hovering in
+                                    if hovering {
+                                        NSCursor.iBeam.set()
+                                    } else {
+                                        NSCursor.arrow.set()
+                                    }
+                                }
+                                .background(
+                                    // Add a subtle highlight on hover to indicate it's clickable
+                                    Color.gray.opacity(0.0001) // Nearly invisible but catches clicks
+                                )
+                                .onTapGesture { location in
+                                    // Get and store the current mouse position directly for cursor positioning
+                                    if let windowRef = NSApp.keyWindow {
+                                        let screenPoint = NSEventMonitor.shared.getCurrentMousePosition()
+                                        let windowPoint = windowRef.convertPoint(fromScreen: screenPoint)
+                                        
+                                        // Store the click location for cursor positioning
+                                        CursorLocationTracker.lastClickLocation = windowPoint
+                                        
+                                        // Start editing title
+                                        startEditingTitle()
+                                    }
+                                }
+                        }
+                    }
                 }
                 .padding(.bottom, 4)
                 
@@ -136,6 +191,63 @@ struct AreaDetailView: View {
                 .padding()
             }
         }
+        // Add handlers for keyboard events and blur events
+        .onSubmit(of: .text) {
+            if isEditingTitle {
+                saveAreaTitle()
+            }
+        }
+        // Force a unique ID for the view to properly re-render when the area changes
+        .id("area-detail-view-\(area.id?.uuidString ?? UUID().uuidString)")
+        // Add escape key handler for the text field
+        .onExitCommand {
+            if isEditingTitle {
+                // Cancel edit and revert to original title
+                isEditingTitle = false
+                clickMonitor.stopMonitoring()
+                textFieldMonitor.stopMonitoring()
+            }
+        }
+    }
+    
+    // MARK: - Title Editing Methods
+    
+    private func startEditingTitle() {
+        // Set up the editing state
+        editedTitle = area.name ?? "Unnamed Area"
+        
+        // Set editing to true
+        isEditingTitle = true
+    }
+    
+    private func saveAreaTitle() {
+        guard isEditingTitle else { return }
+        
+        // Don't save or stop editing if emoji picker might be active
+        if clickMonitor.isEmojiPickerActive {
+            // We don't want to save while emoji picker is active
+            return
+        }
+        
+        finalizeSaveAreaTitle()
+    }
+    
+    private func finalizeSaveAreaTitle() {
+        guard isEditingTitle else { return }
+        
+        // Mark as not editing
+        isEditingTitle = false
+        
+        // Stop all monitoring
+        clickMonitor.stopMonitoring()
+        textFieldMonitor.stopMonitoring()
+        
+        // Trim whitespace and ensure we have a valid title
+        let trimmedTitle = editedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedTitle.isEmpty, trimmedTitle != area.name {
+            // Update the area name using the TaskViewModel
+            taskViewModel.updateArea(area, name: trimmedTitle)
+        }
     }
     
     // Shows a popup to create a new project in this area
@@ -216,11 +328,8 @@ struct AreaDetailView: View {
             let color = AppColors.colorMap.keys.sorted()[colorPopup.indexOfSelectedItem]
             
             if !name.isEmpty {
-                // Update the area
-                area.name = name
-                area.color = color
-                
-                try? viewContext.save()
+                // Update the area using the TaskViewModel
+                taskViewModel.updateArea(area, name: name, color: color)
             }
         }
     }

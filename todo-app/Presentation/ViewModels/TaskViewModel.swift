@@ -166,6 +166,22 @@ class TaskViewModel: ObservableObject {
         saveContext()
     }
     
+    /// Updates an area's properties
+    /// - Parameters:
+    ///   - area: The area to update
+    ///   - name: New name for the area (optional)
+    ///   - color: New color for the area (optional)
+    func updateArea(_ area: Area, name: String? = nil, color: String? = nil) {
+        if let name = name {
+            area.name = name
+        }
+        if let color = color {
+            area.color = color
+        }
+        
+        saveContext()
+    }
+    
     func deleteProject(_ project: Project) {
         viewContext.delete(project)
         saveContext()
