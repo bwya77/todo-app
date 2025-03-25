@@ -44,22 +44,29 @@ public struct ProjectCompletionIndicator: View {
                 )
                 .frame(width: size, height: size)
             
-            // Progress pie
-            Canvas { context, size in
-                // Define the center and radius of the circle
-                let center = CGPoint(x: size.width/2, y: size.height/2)
-                let radius = min(size.width, size.height) / 2
+            if animator.currentProgress > 0 {
+                // Inner circle that fills based on completion percentage
+                Circle()
+                    .stroke(AppColors.getColor(from: project.color), lineWidth: 1)
+                    .frame(width: size * 0.6, height: size * 0.6)
                 
-                // Create a path for the pie slice
-                var path = Path()
-                path.move(to: center)
-                path.addArc(center: center, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(-90) + .degrees(360 * animator.currentProgress), clockwise: false)
-                path.closeSubpath()
-                
-                // Fill the path
-                context.fill(path, with: .color(AppColors.getColor(from: project.color)))
+                // Progress circle inside the inner circle
+                Canvas { context, canvasSize in
+                    // Define the center and radius of the inner circle
+                    let center = CGPoint(x: canvasSize.width/2, y: canvasSize.height/2)
+                    let radius = min(canvasSize.width, canvasSize.height) / 2
+                    
+                    // Create a path for the pie slice
+                    var path = Path()
+                    path.move(to: center)
+                    path.addArc(center: center, radius: radius, startAngle: .degrees(-90), endAngle: .degrees(-90) + .degrees(360 * animator.currentProgress), clockwise: false)
+                    path.closeSubpath()
+                    
+                    // Fill the path
+                    context.fill(path, with: .color(AppColors.getColor(from: project.color)))
+                }
+                .frame(width: size * 0.56, height: size * 0.56) // Slightly smaller than the inner circle outline
             }
-            .frame(width: size - 2, height: size - 2)
         }
         // Use a unique ID based on the project ID to force recreation when project changes
         .id("progress-\(project.id?.uuidString ?? UUID().uuidString)")
