@@ -58,26 +58,22 @@ struct ProjectDropDelegate: DropDelegate {
         guard let fromIndex = projects.firstIndex(where: { $0.id == draggedProject.id }),
               let toIndex = projects.firstIndex(where: { $0.id == project.id }) else { return }
         
-        // Store the drop target index in state but don't actually move yet
-        withAnimation(nil) {
-            isDraggingOver = project.id // Highlight the target
-        }
-        
         // Get the drag location and view bounds to calculate drop position (above or below)
         let yPosition = info.location.y
-        // Use the top third to indicate above, bottom two-thirds to indicate below
-        // This gives users more control when targeting the first item
         let rowHeight = 30.0 // Approximate row height in points
         let dropPosition: DropPosition = (yPosition < (rowHeight / 3)) ? .above : .below
         
-        // Store the drop position in our global state
+        // Set the target ID and drop position - this will be used solely for line indicator
+        // and not for background color changes
         if let projectId = project.id {
             withAnimation(nil) {
-                dropPositions[projectId] = dropPosition
+                isDraggingOver = projectId // Set the project ID for the line indicator
+                dropPositions[projectId] = dropPosition // Store the position for above/below logic
             }
         }
         
-        // Highlight target area if it's a different area
+        // Only highlight target area with outline if it's a different area
+        // This doesn't interfere with the line indicators
         if draggedProject.area != project.area, let projectAreaId = project.area?.id {
             withAnimation(nil) {
                 isDraggingOver = projectAreaId
@@ -122,12 +118,18 @@ struct ProjectDropDelegate: DropDelegate {
             assignToAreaAction(draggedProject, project)
         }
         
-        // Reset all drag state
+        // Reset all drag and hover state
         withAnimation(nil) {
+            // Clear all drag state
             isDraggingOver = nil
             isHoveringOverNoAreaSection = false
             isDraggingFromAreaToNoArea = false
             self.draggedProject = nil
+            
+            // Also clear any lingering drop positions to avoid visual artifacts
+            if let projectId = project.id {
+                dropPositions.removeValue(forKey: projectId)
+            }
         }
         
         return true
@@ -178,26 +180,28 @@ struct ProjectListAreaDropDelegate: DropDelegate {
     }
     
     func performDrop(info: DropInfo) -> Bool {
-        // Handle area drop
-        if let areaId = areaBeingDragged, let wasExpanded = expandedAreas[areaId] {
-            // Re-expand the area that was being dragged
-            // The animation is now controlled in the view hierarchy
-            expandedAreas[areaId] = wasExpanded
-            areaBeingDragged = nil
-            draggedArea = nil
+        // Use withAnimation(nil) to avoid layout jitter during state changes
+        withAnimation(nil) {
+            // Handle area drop
+            if let areaId = areaBeingDragged, let wasExpanded = expandedAreas[areaId] {
+                // Re-expand the area that was being dragged
+                expandedAreas[areaId] = wasExpanded
+                areaBeingDragged = nil
+                draggedArea = nil
+                
+                // Save the expansion state after restoring it
+                saveExpansionStatesAction()
+            }
             
-            // Save the expansion state after restoring it
-            saveExpansionStatesAction()
+            // Handle project drop into area
+            if let project = draggedProject {
+                assignProjectAction(project, area)
+                draggedProject = nil
+            }
+            
+            // Clear all drag-related states
+            isDraggingOver = nil
         }
-        
-        // Handle project drop into area
-        if let project = draggedProject {
-            assignProjectAction(project, area)
-            draggedProject = nil
-        }
-        
-        // Clear the dragging over state
-        isDraggingOver = nil
         
         return true
     }
@@ -238,10 +242,13 @@ struct EmptySpaceDropDelegate: DropDelegate {
         // If dropping a project into empty space, remove it from its area
         if let project = draggedProject, project.area != nil {
             removeFromAreaAction(project)
-            draggedProject = nil
-            isDraggingOver = nil
-            isHoveringOverNoAreaSection = false
-            isDraggingFromAreaToNoArea = false
+            // Clear all states consistently
+            withAnimation(nil) {
+                draggedProject = nil
+                isDraggingOver = nil
+                isHoveringOverNoAreaSection = false
+                isDraggingFromAreaToNoArea = false
+            }
             return true
         }
         return false
@@ -306,7 +313,7 @@ struct ReorderableProjectList: View {
     private let dragAnimation = Animation.easeInOut(duration: 0.2)
     private func backgroundColorFor(project: Project) -> Color {
         let isSelected = selectedViewType == .project && selectedProject?.id == project.id
-        let isHovered = hoveredProject?.id == project.id
+        let isHovered = hoveredProject?.id == project.id && draggedProject == nil
         let emptySpaceUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")
         let isDraggingToEmptySpace = isDraggingOver == emptySpaceUUID && draggedProject?.id == project.id
         
@@ -314,7 +321,7 @@ struct ReorderableProjectList: View {
             // Selected state - use the lighter shade of project color
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.7)
         } else if isHovered || isDraggingToEmptySpace {
-            // Hover state - use a very light shade of project color
+            // Hover state - use a very light shade of project color, but only if not dragging
             return AppColors.lightenColor(AppColors.getColor(from: project.color), by: 0.9)
         } else {
             // Normal state - transparent
@@ -325,7 +332,7 @@ struct ReorderableProjectList: View {
     // Helper function to determine the background color for an area
     private func backgroundColorFor(area: Area) -> Color {
         let isSelected = selectedViewType == .area && selectedArea?.id == area.id
-        let isHovered = hoveredArea?.id == area.id
+        let isHovered = hoveredArea?.id == area.id && draggedProject == nil && draggedArea == nil
         let isDraggingOnto = isDraggingOver == area.id
         
         if isSelected {
@@ -335,7 +342,7 @@ struct ReorderableProjectList: View {
             // Dragging over state - highlight more strongly to indicate drop target
             return AppColors.lightenColor(AppColors.getColor(from: area.color), by: 0.5)
         } else if isHovered {
-            // Hover state - use a very light shade of area color
+            // Hover state - use a very light shade of area color, but only if not dragging
             return AppColors.lightenColor(AppColors.getColor(from: area.color), by: 0.9)
         } else {
             // Normal state - transparent
@@ -398,7 +405,7 @@ struct ReorderableProjectList: View {
                             .fill(AppColors.todayHighlight)
                             .frame(height: 2)
                             .padding(.horizontal, 10)
-                            .transition(.opacity)
+                            .transition(.identity) // Use identity transition to avoid animation artifacts
                     }
                     
                     renderProjectRow(project: project)
@@ -409,7 +416,7 @@ struct ReorderableProjectList: View {
                             .fill(AppColors.todayHighlight)
                             .frame(height: 2)
                             .padding(.horizontal, 10)
-                            .transition(.opacity)
+                            .transition(.identity) // Use identity transition to avoid animation artifacts
                     }
                 }
             }
@@ -442,6 +449,7 @@ struct ReorderableProjectList: View {
                                             .fill(AppColors.getColor(from: area.color ?? "blue"))
                                             .frame(height: 2)
                                             .padding(.horizontal, 10)
+                                            .transition(.identity) // Use identity transition to avoid animation artifacts
                                     }
                                     
                                     renderProjectRow(project: project)
@@ -452,6 +460,7 @@ struct ReorderableProjectList: View {
                                             .fill(AppColors.getColor(from: area.color ?? "blue"))
                                             .frame(height: 2)
                                             .padding(.horizontal, 10)
+                                            .transition(.identity) // Use identity transition to avoid animation artifacts
                                     }
                                 }
                             }
@@ -545,12 +554,15 @@ struct ReorderableProjectList: View {
         }
         .environment(\.isEnabled, true) // Force enabled state to maintain appearance when app loses focus
         .onHover { isHovered in
-            hoveredArea = isHovered ? area : nil
-            
-            if isHovered && !(selectedViewType == .area && selectedArea?.id == area.id) {
-                NSCursor.pointingHand.set()
-            } else {
-                NSCursor.arrow.set()
+            // Only update hover state if not currently dragging
+            if draggedProject == nil && draggedArea == nil {
+                hoveredArea = isHovered ? area : nil
+                
+                if isHovered && !(selectedViewType == .area && selectedArea?.id == area.id) {
+                    NSCursor.pointingHand.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
             }
         }
         .onDrag {
@@ -615,12 +627,15 @@ struct ReorderableProjectList: View {
             selectedProject = project
         }
         .onHover { isHovered in
-            hoveredProject = isHovered ? project : nil
-            
-            if isHovered && !(selectedViewType == .project && selectedProject?.id == project.id) {
-                NSCursor.pointingHand.set()
-            } else {
-                NSCursor.arrow.set()
+            // Only update hover state if not currently dragging
+            if draggedProject == nil && draggedArea == nil {
+                hoveredProject = isHovered ? project : nil
+                
+                if isHovered && !(selectedViewType == .project && selectedProject?.id == project.id) {
+                    NSCursor.pointingHand.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
             }
         }
         .onDrag {
@@ -659,6 +674,13 @@ struct ReorderableProjectList: View {
             if project == nil {
                 self.isHoveringOverNoAreaSection = false
                 self.isDraggingFromAreaToNoArea = false
+                self.dropPositions.removeAll() // Clear drop positions when drag ends
+            }
+            
+            // Clear hover states when dragging begins
+            if project != nil {
+                self.hoveredProject = nil
+                self.hoveredArea = nil
             }
         }
     }
@@ -736,12 +758,18 @@ struct ReorderableProjectList: View {
             } else {
                 self.areaBeingDragged = nil
             }
+            
+            // Clear hover states when dragging begins
+            if area != nil {
+                self.hoveredProject = nil
+                self.hoveredArea = nil
+            }
         }
     }
     
     // Helper function to check if we're dragging to the top of an item
     private func isDraggingToTop(for project: Project) -> Bool {
-        guard let projectId = project.id else { return false }
+        guard let projectId = project.id, draggedProject != nil else { return false }
         return dropPositions[projectId] == .above
     }
     
@@ -755,11 +783,15 @@ struct ReorderableProjectList: View {
             
             // Use batch updates to avoid multiple refreshes
             withAnimation(nil) {
+                // Reset all drag and hover states
                 draggedProject = nil
+                draggedArea = nil
                 isDraggingOver = nil
                 isHoveringOverNoAreaSection = false
                 isDraggingFromAreaToNoArea = false
                 dropPositions.removeAll() // Clear all drop positions
+                hoveredProject = nil // Clear any hover states
+                hoveredArea = nil // Clear any hover states
             }
                 
             // Use a dispatch async to improve perceived performance
