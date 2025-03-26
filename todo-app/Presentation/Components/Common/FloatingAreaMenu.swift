@@ -74,7 +74,7 @@ struct FloatingAreaMenu: View {
                     .fill(Color.white)
                     .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 2)
             )
-            .offset(x: -90, y: 0) // Adjust menu position to be closer to ellipsis
+            .offset(x: -170, y: 20) // Position menu closer to the ellipsis
             .position(x: position.x, y: position.y)
             .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .top)))
             .zIndex(1000)
