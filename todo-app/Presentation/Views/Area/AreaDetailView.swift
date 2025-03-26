@@ -101,6 +101,13 @@ struct AreaDetailView: View {
                                     Text(area.name ?? "Unnamed Area")
                                         .font(.system(size: 24, weight: .bold))
                                         .foregroundStyle(Color.primary)
+                                        .onHover { hovering in
+                                            if hovering {
+                                                NSCursor.iBeam.set()
+                                            } else {
+                                                NSCursor.arrow.set()
+                                            }
+                                        }
                                     
                                     // Modern floating menu button with ellipsis icon
                                     Button(action: {
@@ -145,13 +152,8 @@ struct AreaDetailView: View {
                         .padding(.vertical, 8)
                         .contentShape(Rectangle())
                         .help("Click to edit area title")
-                        .onHover { hovering in
-                            if hovering {
-                                NSCursor.iBeam.set()
-                            } else {
-                                NSCursor.arrow.set()
-                            }
-                        }
+                        // Keep the hover effect for indication but don't change cursor here
+                        .onHover { _ in /* Do nothing for cursor here */ }
                         .background(
                             // Add a subtle highlight on hover to indicate it's clickable
                             Color.gray.opacity(0.0001) // Nearly invisible but catches clicks
