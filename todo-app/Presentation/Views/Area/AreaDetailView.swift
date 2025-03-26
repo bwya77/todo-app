@@ -21,6 +21,10 @@ struct AreaDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @StateObject private var taskViewModel: TaskViewModel
     
+    // State for floating menu
+    @State private var showingFloatingMenu: Bool = false
+    @State private var menuPosition: CGPoint = .zero
+    
     // FetchRequest for projects in this area
     @FetchRequest private var projects: FetchedResults<Project>
     
@@ -39,6 +43,7 @@ struct AreaDetailView: View {
     }
     
     var body: some View {
+        ZStack {
         VStack(alignment: .leading, spacing: 0) {
             // Area header with editable title and controls
             VStack(alignment: .leading, spacing: 8) {
@@ -90,38 +95,49 @@ struct AreaDetailView: View {
                             // Add a unique ID to force recreation when area changes
                             .id("area-indicator-\(area.id?.uuidString ?? UUID().uuidString)")
                             
-                            // Title and menu dots in a single HStack
-                            HStack(spacing: 4) {
-                                Text(area.name ?? "Unnamed Area")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundStyle(Color.primary)
-                                
-                                // Three dots menu right next to the text
-                                Menu {
-                                    Button(action: showProjectCreationPopup) {
-                                        Label("New Project", systemImage: "plus")
-                                    }
+                                // Title and menu dots in a single HStack
+                                HStack(spacing: 4) {
+                                    Text(area.name ?? "Unnamed Area")
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundStyle(Color.primary)
                                     
-                                    Button(action: showAreaEditPopup) {
-                                        Label("Edit Area", systemImage: "pencil")
+                                    // Modern floating menu button with ellipsis icon
+                                    Button(action: {
+                                        let point = NSEvent.mouseLocation
+                                        
+                                        // Calculate position for the floating menu
+                                        if let window = NSApp.keyWindow {
+                                            // Get window position in screen coordinates
+                                            let windowFrame = window.frame
+                                            
+                                            // Position menu right next to the ellipses button
+                                            self.menuPosition = CGPoint(
+                                                x: point.x - windowFrame.minX + 4, 
+                                                y: windowFrame.height - (point.y - windowFrame.minY) - 10
+                                            )
+                                            
+                                            // Show the menu
+                                            self.showingFloatingMenu = true
+                                            
+                                            // Start monitoring clicks outside the menu
+                                            FloatingMenuEventMonitor.shared.startMonitoring()
+                                        }
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.gray)
+                                            .padding(6)
+                                            .contentShape(Rectangle())
                                     }
-                                    
-                                    Divider()
-                                    
-                                    Button(action: showDeleteAreaConfirmation) {
-                                        Label("Delete Area", systemImage: "trash")
-                                            .foregroundColor(.red)
+                                    .buttonStyle(BorderlessButtonStyle())
+                                    .onHover { hovering in
+                                        if hovering {
+                                            NSCursor.pointingHand.set()
+                                        } else {
+                                            NSCursor.arrow.set()
+                                        }
                                     }
-                                } label: {
-                                    Text("•••")
-                                        .font(.system(size: 12, weight: .heavy))
-                                        .foregroundColor(.gray)
-                                        .offset(y: -1)
                                 }
-                                .menuIndicator(.hidden)
-                                .buttonStyle(BorderlessButtonStyle())
-                                .onHover { _ in NSCursor.arrow.set() }
-                            }
                             
                             Spacer()
                         }
@@ -302,6 +318,35 @@ struct AreaDetailView: View {
                 textFieldMonitor.stopMonitoring()
             }
         }
+        
+        // Custom floating menu overlay
+        FloatingAreaMenu(
+            items: [
+                FloatingMenuItem(
+                    title: "New Project",
+                    icon: "plus",
+                    action: showProjectCreationPopup
+                ),
+                FloatingMenuItem(
+                    title: "Edit Area",
+                    icon: "pencil",
+                    action: showAreaEditPopup
+                ),
+                FloatingMenuItem(
+                    title: "Delete Area",
+                    icon: "trash",
+                    color: .red,
+                    action: showDeleteAreaConfirmation
+                )
+            ],
+            isPresented: $showingFloatingMenu,
+            position: menuPosition
+        )
+    }
+    .onDisappear {
+        // Clean up when the view disappears
+        FloatingMenuEventMonitor.shared.stopMonitoring()
+    }
     }
     
     // MARK: - Title Editing Methods

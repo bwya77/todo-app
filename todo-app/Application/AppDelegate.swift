@@ -81,4 +81,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Publish the project to navigate to
         projectNavigationPublisher.send(project)
     }
+    
+    // MARK: - Area Menu Actions
+    
+    /// Handle the New Project action from area menu
+    @objc func areaNewProjectAction(_ sender: NSMenuItem) {
+        guard let area = sender.representedObject as? Area else { return }
+        
+        // Post notification to show project creation popup
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowProjectCreationPopup"),
+            object: nil,
+            userInfo: ["area": area]
+        )
+    }
+    
+    /// Handle the Edit Area action from area menu
+    @objc func areaEditAction(_ sender: NSMenuItem) {
+        guard let area = sender.representedObject as? Area else { return }
+        
+        // Post notification to show area edit popup
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowAreaEditPopup"),
+            object: nil,
+            userInfo: ["area": area]
+        )
+    }
+    
+    /// Handle the Delete Area action from area menu
+    @objc func areaDeleteAction(_ sender: NSMenuItem) {
+        guard let area = sender.representedObject as? Area else { return }
+        
+        // Post notification to show delete area confirmation
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowDeleteAreaConfirmation"),
+            object: nil,
+            userInfo: ["area": area]
+        )
+    }
 }

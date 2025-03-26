@@ -253,6 +253,25 @@ struct ContentView: View {
                 }
             }
             
+            // Listen for area-related notifications
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowProjectCreationPopup"), object: nil, queue: .main) { notification in
+                if let area = notification.userInfo?["area"] as? Area {
+                    showProjectCreationPopup(for: area)
+                }
+            }
+            
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowAreaEditPopup"), object: nil, queue: .main) { notification in
+                if let area = notification.userInfo?["area"] as? Area {
+                    showAreaEditPopup(for: area)
+                }
+            }
+            
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowDeleteAreaConfirmation"), object: nil, queue: .main) { notification in
+                if let area = notification.userInfo?["area"] as? Area {
+                    showDeleteAreaConfirmation(for: area)
+                }
+            }
+            
             // Subscribe to project navigation publisher from AppDelegate
             if let appDelegate = NSApp.delegate as? AppDelegate {
                 appDelegate.projectNavigationPublisher
@@ -381,6 +400,116 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showingListCreationPopup = false
             }
+        }
+    }
+    
+    // Show a project creation popup for the specified area
+    private func showProjectCreationPopup(for area: Area) {
+        let alert = NSAlert()
+        alert.messageText = "Create New Project"
+        alert.informativeText = "Enter a name for your project in the '\(area.name ?? "Unnamed Area")' area"
+        
+        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        nameField.placeholderString = "Project Name"
+        
+        let colorPopup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        for color in AppColors.colorMap.keys.sorted() {
+            colorPopup.addItem(withTitle: color.capitalized)
+        }
+        
+        let accessoryView = NSStackView(frame: NSRect(x: 0, y: 0, width: 300, height: 54))
+        accessoryView.orientation = .vertical
+        accessoryView.spacing = 8
+        accessoryView.addArrangedSubview(nameField)
+        accessoryView.addArrangedSubview(colorPopup)
+        
+        alert.accessoryView = accessoryView
+        
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Cancel")
+        
+        nameField.becomeFirstResponder()
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            let name = nameField.stringValue
+            let color = AppColors.colorMap.keys.sorted()[colorPopup.indexOfSelectedItem]
+            
+            if !name.isEmpty {
+                // Create the project and assign it to this area
+                let taskViewModel = TaskViewModel(context: viewContext)
+                taskViewModel.addProject(name: name, color: color, area: area)
+            }
+        }
+    }
+    
+    // Shows a popup to edit area details
+    private func showAreaEditPopup(for area: Area) {
+        let alert = NSAlert()
+        alert.messageText = "Edit Area"
+        alert.informativeText = "Update area details"
+        
+        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        nameField.stringValue = area.name ?? ""
+        nameField.placeholderString = "Area Name"
+        
+        let colorPopup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        for (index, color) in AppColors.colorMap.keys.sorted().enumerated() {
+            colorPopup.addItem(withTitle: color.capitalized)
+            if color == area.color {
+                colorPopup.selectItem(at: index)
+            }
+        }
+        
+        let accessoryView = NSStackView(frame: NSRect(x: 0, y: 0, width: 300, height: 54))
+        accessoryView.orientation = .vertical
+        accessoryView.spacing = 8
+        accessoryView.addArrangedSubview(nameField)
+        accessoryView.addArrangedSubview(colorPopup)
+        
+        alert.accessoryView = accessoryView
+        
+        alert.addButton(withTitle: "Update")
+        alert.addButton(withTitle: "Cancel")
+        
+        nameField.becomeFirstResponder()
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            let name = nameField.stringValue
+            let color = AppColors.colorMap.keys.sorted()[colorPopup.indexOfSelectedItem]
+            
+            if !name.isEmpty {
+                // Update the area
+                let taskViewModel = TaskViewModel(context: viewContext)
+                taskViewModel.updateArea(area, name: name, color: color)
+            }
+        }
+    }
+    
+    // Shows a confirmation dialog to delete the area
+    private func showDeleteAreaConfirmation(for area: Area) {
+        let alert = NSAlert()
+        alert.messageText = "Delete Area"
+        alert.informativeText = "Are you sure you want to delete this area?\nThis will delete all projects associated with this area and their tasks."
+        alert.alertStyle = .warning
+        
+        alert.addButton(withTitle: "Delete")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            // If the area being deleted is currently selected, reset selection
+            if selectedViewType == .area && selectedArea?.id == area.id {
+                selectedViewType = .inbox
+                selectedArea = nil
+            }
+            
+            let taskViewModel = TaskViewModel(context: viewContext)
+            taskViewModel.deleteArea(area)
         }
     }
     

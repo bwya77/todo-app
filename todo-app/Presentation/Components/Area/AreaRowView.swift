@@ -49,6 +49,8 @@ public struct AreaRowView: View {
                     .font(.system(size: 14, weight: .bold))
                 
                 Spacer()
+                
+                // Remove the custom menu from the sidebar - it should only be in the detail view
             }
             .contentShape(Rectangle())
             .onTapGesture {
