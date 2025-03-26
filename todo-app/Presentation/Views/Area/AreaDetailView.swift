@@ -124,13 +124,7 @@ struct AreaDetailView: View {
                     }
                 }
                 
-                HStack {
-                    Text("\(projects.count) Projects")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                }
+                // Project count removed as requested
                 
                 // Space for padding
                 Spacer()
