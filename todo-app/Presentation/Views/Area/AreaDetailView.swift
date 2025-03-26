@@ -45,7 +45,7 @@ struct AreaDetailView: View {
                 // Title section with simpler editing approach
                 ZStack(alignment: .leading) {
                     if isEditingTitle {
-                        HStack(spacing: 10) {
+                        HStack(alignment: .center, spacing: 10) {
                             // Keep the area icon visible during editing
                             ZStack {
                                 Circle()
@@ -76,7 +76,7 @@ struct AreaDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
                     } else {
-                        HStack(spacing: 10) {
+                        HStack(alignment: .center, spacing: 10) {
                             // Area icon
                             ZStack {
                                 Circle()
@@ -90,9 +90,40 @@ struct AreaDetailView: View {
                             // Add a unique ID to force recreation when area changes
                             .id("area-indicator-\(area.id?.uuidString ?? UUID().uuidString)")
                             
-                            Text(area.name ?? "Unnamed Area")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundStyle(Color.primary) // Make sure text color is normal
+                            // Title and menu dots in a single HStack
+                            HStack(spacing: 4) {
+                                Text(area.name ?? "Unnamed Area")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundStyle(Color.primary)
+                                
+                                // Three dots menu right next to the text
+                                Menu {
+                                    Button(action: showProjectCreationPopup) {
+                                        Label("New Project", systemImage: "plus")
+                                    }
+                                    
+                                    Button(action: showAreaEditPopup) {
+                                        Label("Edit Area", systemImage: "pencil")
+                                    }
+                                    
+                                    Divider()
+                                    
+                                    Button(action: showDeleteAreaConfirmation) {
+                                        Label("Delete Area", systemImage: "trash")
+                                            .foregroundColor(.red)
+                                    }
+                                } label: {
+                                    Text("•••")
+                                        .font(.system(size: 12, weight: .heavy))
+                                        .foregroundColor(.gray)
+                                        .offset(y: -1)
+                                }
+                                .menuIndicator(.hidden)
+                                .buttonStyle(BorderlessButtonStyle())
+                                .onHover { _ in NSCursor.arrow.set() }
+                            }
+                            
+                            Spacer()
                         }
                         .padding(.vertical, 8)
                         .contentShape(Rectangle())
