@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import Combine
 
 struct AreaDetailView: View {
     // Keep reference to monitors
@@ -249,10 +250,14 @@ struct AreaDetailView: View {
                             )
                         }) {
                             HStack(spacing: 8) {
-                                // Project indicator
-                                Circle()
-                                    .fill(AppColors.getColor(from: project.color ?? "gray"))
-                                    .frame(width: 12, height: 12)
+                                // Project status indicator with completion status
+                                ProjectCompletionIndicator(
+                                    project: project,
+                                    isSelected: false,
+                                    size: 12,
+                                    viewContext: viewContext
+                                )
+                                .id("project-row-indicator-\(project.id?.uuidString ?? UUID().uuidString)")
                                 
                                 // Project name
                                 Text(project.name ?? "Unnamed Project")
