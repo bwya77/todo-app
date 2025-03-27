@@ -16,6 +16,7 @@ struct TodayDetailView: View {
     // UI states
     @State private var activeTask: Item?
     @State private var taskUpdateCounter: Int = 0
+    @State private var dropTargetId: UUID?
     
     // Task lists using optimized fetch requests
     @FetchRequest private var todayTasks: FetchedResults<Item>
@@ -77,7 +78,8 @@ struct TodayDetailView: View {
                                     taskViewModel.deleteTask(task)
                                     taskUpdateCounter += 1
                                 }
-                            }
+                            },
+                            dropTargetId: $dropTargetId
                         )
                     }
                     .padding(.horizontal, 16)

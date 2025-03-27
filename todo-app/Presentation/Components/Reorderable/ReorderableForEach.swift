@@ -18,12 +18,14 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
     public init(
         _ items: [Item],
         active: Binding<Item?>,
+        dropTarget: Binding<UUID?>,
         @ViewBuilder content: @escaping (Item) -> Content,
         @ViewBuilder preview: @escaping (Item) -> Preview,
         moveAction: @escaping (IndexSet, Int) -> Void
     ) {
         self.items = items
         self._active = active
+        self._dropTargetId = dropTarget
         self.content = content
         self.preview = preview
         self.moveAction = moveAction
@@ -33,11 +35,13 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
     public init(
         _ items: [Item],
         active: Binding<Item?>,
+        dropTarget: Binding<UUID?>,
         @ViewBuilder content: @escaping (Item) -> Content,
         moveAction: @escaping (IndexSet, Int) -> Void
     ) where Preview == EmptyView {
         self.items = items
         self._active = active
+        self._dropTargetId = dropTarget
         self.content = content
         self.preview = nil
         self.moveAction = moveAction
@@ -50,6 +54,9 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
 
     @State
     private var hasChangedLocation = false
+    
+    @Binding
+    private var dropTargetId: UUID?
     
     private let items: [Item]
     private let content: (Item) -> Content
@@ -85,13 +92,23 @@ public struct ReorderableForEach<Item: Reorderable, Content: View, Preview: View
             .scaleEffect(active == item && hasChangedLocation ? 1.02 : 1)
             .contentShape(Rectangle()) // Make entire area draggable
             .border(Color.accentColor.opacity(active == item && hasChangedLocation ? 0.3 : 0), width: 1)
+            // Show a drop indicator line at the bottom when this is the drop target
+            .overlay(alignment: .bottom) {
+                if let itemId = item.id as? UUID, itemId == dropTargetId {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(height: 2)
+                        .padding(.horizontal, 4)
+                }
+            }
             .onDrop(
                 of: [.text],
                 delegate: ReorderableDragRelocateDelegate(
                     item: item,
                     items: items,
                     active: $active,
-                    hasChangedLocation: $hasChangedLocation
+                    hasChangedLocation: $hasChangedLocation,
+                    dropTargetId: $dropTargetId
                 ) { from, to in
                     // Use a simple animation for better performance
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -115,8 +132,11 @@ public extension View {
     
     /// Adds necessary drop support for handling drag operations outside the list
     func reorderableForEachContainer<Item: Reorderable>(
-        active: Binding<Item?>
+        active: Binding<Item?>,
+        dropTarget: Binding<UUID?>? = nil
     ) -> some View {
-        onDrop(of: [.text], delegate: ReorderableDropOutsideDelegate(active: active))
+        // If a dropTarget binding is provided, use it; otherwise, use a dummy binding
+        let targetBinding = dropTarget ?? Binding<UUID?>(get: { nil }, set: { _ in })
+        return onDrop(of: [.text], delegate: ReorderableDropOutsideDelegate(active: active, dropTargetId: targetBinding))
     }
 }

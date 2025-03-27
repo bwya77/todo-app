@@ -18,6 +18,7 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
     
     @Binding var active: Item?
     @Binding var hasChangedLocation: Bool
+    @Binding var dropTargetId: UUID?
 
     var moveAction: (IndexSet, Int) -> Void
     
@@ -30,6 +31,15 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
         guard item != active, let current = active else { 
             print("⚠️ Cannot reorder: active and target are the same or active is nil")
             return 
+        }
+        
+        // Clear any previous drop target and set the current one
+        // Set the ID as the drop target ID - centralizing to ensure only one line appears
+        if let itemId = item.id as? UUID {
+            DispatchQueue.main.async {
+                // Use async to break potential binding cycles
+                self.dropTargetId = itemId
+            }
         }
         
         // Find the item indices
@@ -72,7 +82,12 @@ struct ReorderableDragRelocateDelegate<Item: Reorderable>: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         print("✅ Drop completed")
         hasChangedLocation = false
-        active = nil
+        
+        // Clear drop target and active state
+        DispatchQueue.main.async {
+            self.dropTargetId = nil
+            self.active = nil
+        }
         return true
     }
 }
@@ -85,6 +100,9 @@ struct ReorderableDropOutsideDelegate<Item: Reorderable>: DropDelegate {
     @Binding
     var active: Item?
     
+    @Binding
+    var dropTargetId: UUID?
+    
     // MARK: - DropDelegate Methods
     
     /// Called periodically while a drag operation continues over a drop area
@@ -95,7 +113,12 @@ struct ReorderableDropOutsideDelegate<Item: Reorderable>: DropDelegate {
     /// Called when a drag operation is completed within this drop area
     func performDrop(info: DropInfo) -> Bool {
         print("🔄 Drop outside completed")
-        active = nil
+        
+        // Clear drop target and active
+        DispatchQueue.main.async {
+            self.dropTargetId = nil
+            self.active = nil
+        }
         return true
     }
 }

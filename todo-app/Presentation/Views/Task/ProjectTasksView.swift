@@ -61,6 +61,9 @@ struct ProjectTasksView: View {
     // Tracking which headers are expanded (by default all are expanded)
     @State private var expandedHeaders: Set<UUID> = Set()
     
+    // Track a single global drop target
+    @State private var dropTargetId: UUID?
+    
     init(project: Project, onToggleComplete: @escaping (Item) -> Void) {
         self.project = project
         self.onToggleComplete = onToggleComplete
@@ -80,89 +83,136 @@ struct ProjectTasksView: View {
         self._headers = FetchRequest(fetchRequest: ProjectHeadersRequest.headersRequest(for: project))
     }
     
+    // MARK: - Main View Structure
+    
     var body: some View {
+        mainContentView
+    }
+    
+    // MARK: - Content Views
+    
+    private var mainContentView: some View {
         VStack(spacing: 0) {
             // Empty state
             if unheaderedTasks.isEmpty && headers.isEmpty && loggedTasks.isEmpty {
                 emptyStateView
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        // Add header button
-                        AddHeaderButton(project: project)
-                            .padding(.bottom, 4)
-                        
-                        // Tasks without headers - wrapped in a VStack for drop area
-                        VStack {
-                            if !unheaderedTasks.isEmpty {
-                                ReorderableForEach(Array(unheaderedTasks), active: $activeTask) { task in
-                                    TaskRow(task: task, onToggleComplete: onToggleComplete)
-                                        .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
-                                        .contentShape(Rectangle())
-                                        .padding(.vertical, 2)
-                                        .background(Color.white)
-                                        .scaleEffect(activeTask == task ? 1.03 : 1.0)
-                                        .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
-                                        .zIndex(activeTask == task ? 1 : 0)
-                                        .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
-                                } moveAction: { fromOffsets, toOffset in
-                                    reorderUnheaderedTasks(from: fromOffsets.first ?? 0, to: toOffset)
-                                }
-                                .reorderableForEachContainer(active: $activeTask)
-                            } else {
-                                // Empty placeholder for dropping tasks
-                                Rectangle()
-                                    .fill(Color.clear)
-                                    .frame(height: 40)
-                                    .contentShape(Rectangle())
-                            }
-                        }
-                        // Make the entire unheadered section a drop target
-                        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
-                            return handleUnheaderedTaskDrop(providers: providers)
-                        }
-                        
-                        // Headers with tasks
-                        if !headers.isEmpty {
-                            headersList
-                        }
-                        
-                        // Logged tasks section
-                        if !loggedTasks.isEmpty {
-                            CompletedTasksToggle(isExpanded: $showLoggedItems, itemCount: loggedTasks.count)
-                                .padding(.horizontal, 4)
-                                .padding(.top, 8)
-                                
-                            if showLoggedItems {
-                                ForEach(loggedTasks) { task in
-                                    TaskRow(task: task, onToggleComplete: onToggleComplete)
-                                        .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)")
-                                        .opacity(0.7)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .animation(nil, value: taskUpdateCounter)
-                    .animation(.easeInOut(duration: 0.3), value: showLoggedItems)
-                }
-                .background(Color.white)
+                taskListView
             }
         }
-        .onAppear {
-            // Reset pending tasks state
-            pendingLoggedTaskIds.removeAll()
-            
-            // Verify logged items are collapsed by default
-            showLoggedItems = false
-            
-            // Set all headers as expanded by default
-            expandedHeaders.removeAll()
-            for header in headers {
-                if let id = header.id {
-                    expandedHeaders.insert(id)
+        .onAppear(perform: setupOnAppear)
+    }
+    
+    private var taskListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                // Add header button
+                AddHeaderButton(project: project)
+                    .padding(.bottom, 4)
+                    // Hide the plus sign
+                    .opacity(activeTask != nil ? 0 : 1)
+                
+                // Tasks without headers section
+                unheaderedTasksSection
+                
+                // Headers with tasks
+                if !headers.isEmpty {
+                    headersList
                 }
+                
+                // Logged tasks section
+                loggedTasksSection
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .animation(nil, value: taskUpdateCounter)
+            .animation(.easeInOut(duration: 0.3), value: showLoggedItems)
+        }
+        .background(Color.white)
+    }
+    
+    // Unheadered tasks section
+    private var unheaderedTasksSection: some View {
+        VStack {
+            if !unheaderedTasks.isEmpty {
+                unheaderedTasksList
+            } else {
+                // Empty placeholder for dropping tasks
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 40)
+                    .contentShape(Rectangle())
+            }
+        }
+        // Make the entire unheadered section a drop target
+        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+            // Set this as the drop target 
+            if activeTask != nil {
+                self.dropTargetId = nil // This is unheadered section - use nil for dropTargetId 
+            }
+            return handleUnheaderedTaskDrop(providers: providers)
+        }
+    }
+    
+    // MARK: - Unheadered Tasks List
+
+    private var unheaderedTasksList: some View {
+        ReorderableForEach(
+            Array(unheaderedTasks),
+            active: $activeTask,
+            dropTarget: $dropTargetId,
+            content: { task in
+                TaskRow(task: task, onToggleComplete: onToggleComplete)
+                    .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
+                    .contentShape(Rectangle())
+                    .padding(.vertical, 2)
+                    .background(Color.white)
+                    .scaleEffect(activeTask == task ? 1.03 : 1.0)
+                    .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
+                    .zIndex(activeTask == task ? 1 : 0)
+                    .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
+            },
+            moveAction: { fromOffsets, toOffset in
+                reorderUnheaderedTasks(from: fromOffsets.first ?? 0, to: toOffset)
+            }
+        )
+        .reorderableForEachContainer(active: $activeTask, dropTarget: $dropTargetId)
+    }
+    
+    // Logged tasks section
+    private var loggedTasksSection: some View {
+        Group {
+            if !loggedTasks.isEmpty {
+                VStack(spacing: 0) {
+                    CompletedTasksToggle(isExpanded: $showLoggedItems, itemCount: loggedTasks.count)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 8)
+                        
+                    if showLoggedItems {
+                        ForEach(loggedTasks) { task in
+                            TaskRow(task: task, onToggleComplete: onToggleComplete)
+                                .id("logged-task-\(task.id?.uuidString ?? UUID().uuidString)")
+                                .opacity(0.7)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Setup the view when it appears
+    private func setupOnAppear() {
+        // Reset pending tasks state
+        pendingLoggedTaskIds.removeAll()
+        
+        // Verify logged items are collapsed by default
+        showLoggedItems = false
+        
+        // Set all headers as expanded by default
+        expandedHeaders.removeAll()
+        for header in headers {
+            if let id = header.id {
+                expandedHeaders.insert(id)
             }
         }
     }
@@ -173,14 +223,15 @@ struct ProjectTasksView: View {
             ForEach(Array(headers), id: \.id) { header in
                 VStack(spacing: 0) {
                     // Use the updated ProjectHeaderView with activeTask binding
-                    ProjectHeaderView(header: header, expandedHeaders: $expandedHeaders, activeTask: $activeTask)
+                    ProjectHeaderView(header: header, expandedHeaders: $expandedHeaders, activeTask: $activeTask, dropTargetId: $dropTargetId)
                     
                     // Tasks under this header with expanded/collapsed support
                     HeaderTasksView(
                         header: header, 
                         onToggleComplete: onToggleComplete, 
                         activeTask: $activeTask,
-                        expandedHeaders: $expandedHeaders
+                        expandedHeaders: $expandedHeaders,
+                        dropTargetId: $dropTargetId
                     )
                 }
             }
@@ -281,6 +332,9 @@ struct ProjectTasksView: View {
     // Handle drop of a task onto the unheadered tasks section
     private func handleUnheaderedTaskDrop(providers: [NSItemProvider]) -> Bool {
         guard let activeTask = activeTask else { return false }
+        
+        // Clear drop target on drop
+        dropTargetId = nil
         
         // Safety check - if the task already has no header, just update order
         if activeTask.header == nil {

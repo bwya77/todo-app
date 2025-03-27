@@ -33,6 +33,9 @@ struct ReorderableTaskListView: View {
     
     @State private var expandedGroups: Set<String> = ["Default"]
     
+    // For tracking drop target
+    @State private var dropTargetId: UUID?
+    
     // MARK: - Initialization
     
     init(viewType: ViewType, selectedProject: Project?, context: NSManagedObjectContext) {
@@ -99,6 +102,7 @@ struct ReorderableTaskListView: View {
                         viewModel: viewModel,
                         expandedGroups: $expandedGroups,
                         activeTask: $activeTask,
+                        dropTargetId: $dropTargetId,
                         viewType: viewType
                     )
                 }

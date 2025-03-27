@@ -22,13 +22,30 @@ struct UnifiedTaskListView: View {
     let onToggleComplete: (Item) -> Void
     let onDeleteTask: ((Item) -> Void)?
     
+    // For tracking drop target
+    @Binding var dropTargetId: UUID?
+    
     // For improved animations
     @State private var isDragging = false
+    
+    // Initialize with optional dropTargetId - for backwards compatibility
+    init(viewType: ViewType, title: String, tasks: [Item], project: Project?, activeTask: Binding<Item?>, onToggleComplete: @escaping (Item) -> Void, onDeleteTask: ((Item) -> Void)? = nil, dropTargetId: Binding<UUID?>? = nil) {
+        self.viewType = viewType
+        self.title = title
+        self.tasks = tasks
+        self.project = project
+        self._activeTask = activeTask
+        self.onToggleComplete = onToggleComplete
+        self.onDeleteTask = onDeleteTask
+        
+        // Use provided binding or create a dummy one that's never used
+        self._dropTargetId = dropTargetId ?? Binding<UUID?>.constant(nil)
+    }
     
     var body: some View {
         LazyVStack(spacing: 0) {
             // Use ReorderableForEach with consistent behavior
-            ReorderableForEach(tasks, active: $activeTask) { task in
+            ReorderableForEach(tasks, active: $activeTask, dropTarget: $dropTargetId) { task in
                 TaskRow(task: task, onToggleComplete: onToggleComplete, viewType: viewType)
                     .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
                     .contentShape(Rectangle())
@@ -60,7 +77,7 @@ struct UnifiedTaskListView: View {
                 }
             }
         }
-        .reorderableForEachContainer(active: $activeTask)
+        .reorderableForEachContainer(active: $activeTask, dropTarget: $dropTargetId)
     }
     
     // Consistent reordering logic for all task views

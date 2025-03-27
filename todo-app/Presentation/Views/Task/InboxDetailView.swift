@@ -16,6 +16,7 @@ struct InboxDetailView: View {
     // UI states
     @State private var activeTask: Item?
     @State private var taskUpdateCounter: Int = 0
+    @State private var dropTargetId: UUID?
     
     // Task list using optimized fetch request
     @FetchRequest private var inboxTasks: FetchedResults<Item>
@@ -83,7 +84,8 @@ struct InboxDetailView: View {
                                     taskViewModel.deleteTask(task)
                                     taskUpdateCounter += 1
                                 }
-                            }
+                            },
+                            dropTargetId: $dropTargetId
                         )
                     }
                     .padding(.horizontal, 16)

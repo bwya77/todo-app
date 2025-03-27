@@ -14,6 +14,7 @@ struct ReorderableTaskContentView: View {
     @ObservedObject var viewModel: EnhancedTaskViewModel
     @Binding var expandedGroups: Set<String>
     @Binding var activeTask: Item?
+    @Binding var dropTargetId: UUID?
     
     let viewType: ViewType
     
@@ -29,6 +30,7 @@ struct ReorderableTaskContentView: View {
                         tasks: viewModel.tasksForSection(section),
                         expandedGroups: $expandedGroups,
                         activeTask: $activeTask,
+                        dropTargetId: $dropTargetId,
                         onToggleComplete: { task in
                             viewModel.toggleTaskCompletion(task)
                         },
@@ -56,6 +58,6 @@ struct ReorderableTaskContentView: View {
         }
         .background(Color.white)
         // Add the reorderable container modifier to the scroll view
-        .reorderableForEachContainer(active: $activeTask)
+        .reorderableForEachContainer(active: $activeTask, dropTarget: $dropTargetId)
     }
 }

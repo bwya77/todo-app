@@ -24,7 +24,7 @@ struct MigrationPolicyRegistry {
     static func mappingModelForSourceModel(_ sourceModel: NSManagedObjectModel, destinationModel: NSManagedObjectModel) -> NSMappingModel? {
         // Try custom mapping model first
         do {
-            if let customMapping = try? NSMappingModel(from: [Bundle.main], forSourceModel: sourceModel, destinationModel: destinationModel) {
+            if let customMapping = try NSMappingModel(from: [Bundle.main], forSourceModel: sourceModel, destinationModel: destinationModel) {
                 return customMapping
             }
             
@@ -51,14 +51,14 @@ extension NSEntityMigrationPolicy {
         
         // Get existing policies if any
         if let existingMapping = self.perform(NSSelectorFromString("entityMigrationPolicyClassNameMapping"))?.takeUnretainedValue() as? [String: AnyClass] {
-            for (key, policyClass) in existingMapping {
-                mutablePolicies[key] = policyClass
+            for (key, existingPolicyClass) in existingMapping {
+                mutablePolicies[key] = existingPolicyClass
             }
         }
         
         // Add new policies
-        for (key, policyClass) in policies {
-            mutablePolicies[key] = policyClass
+        for (key, newPolicyClass) in policies {
+            mutablePolicies[key] = newPolicyClass
         }
         
         // Set the updated mapping

@@ -17,17 +17,21 @@ struct HeaderTasksView: View {
     @Binding var activeTask: Item?
     @Binding var expandedHeaders: Set<UUID>
     
+    // Global drop target ID binding
+    @Binding var dropTargetId: UUID?
+    
     // Check if this header is expanded
     private var isExpanded: Bool {
         guard let headerId = header.id else { return true }
         return expandedHeaders.contains(headerId)
     }
     
-    init(header: ProjectHeader, onToggleComplete: @escaping (Item) -> Void, activeTask: Binding<Item?>, expandedHeaders: Binding<Set<UUID>>) {
+    init(header: ProjectHeader, onToggleComplete: @escaping (Item) -> Void, activeTask: Binding<Item?>, expandedHeaders: Binding<Set<UUID>>, dropTargetId: Binding<UUID?>) {
         self.header = header
         self.onToggleComplete = onToggleComplete
         self._activeTask = activeTask
         self._expandedHeaders = expandedHeaders
+        self._dropTargetId = dropTargetId
         
         // Initialize fetch request for tasks in this header
         self._tasks = FetchRequest(fetchRequest: ProjectHeadersRequest.tasksForHeaderRequest(header: header))
@@ -38,7 +42,7 @@ struct HeaderTasksView: View {
             // Only show tasks if the header is expanded
             if isExpanded {
                 if !tasks.isEmpty {
-                    ReorderableForEach(Array(tasks), active: $activeTask) { task in
+                    ReorderableForEach(Array(tasks), active: $activeTask, dropTarget: $dropTargetId) { task in
                         TaskRow(task: task, onToggleComplete: onToggleComplete)
                             .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
                             .contentShape(Rectangle())
@@ -52,7 +56,7 @@ struct HeaderTasksView: View {
                         let fromIndex = fromOffsets.first ?? 0
                         reorderTasks(from: fromIndex, to: toOffset)
                     }
-                    .reorderableForEachContainer(active: $activeTask)
+                    .reorderableForEachContainer(active: $activeTask, dropTarget: $dropTargetId)
                     .padding(.leading, 8) // Indent tasks under header
                 } else {
                     // Empty placeholder to accept drops when no tasks exist
@@ -94,9 +98,19 @@ struct HeaderTasksView: View {
         PersistentOrder.save(context: viewContext)
     }
     
+    // Helper function to set the global drop target ID
+    private func setDropTarget(_ id: UUID?) {
+        DispatchQueue.main.async {
+            self.dropTargetId = id
+        }
+    }
+    
     // Handle task drop from anywhere onto this header
     private func handleTaskDrop(providers: [NSItemProvider]) -> Bool {
         guard let activeTask = activeTask else { return false }
+        
+        // Clear drop target on drop
+        setDropTarget(nil)
         
         // Safety check - if the task is already in this header, just update order
         if activeTask.header == header {

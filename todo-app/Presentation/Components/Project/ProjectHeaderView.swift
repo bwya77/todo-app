@@ -13,6 +13,7 @@ struct ProjectHeaderView: View {
     @ObservedObject var header: ProjectHeader
     @Binding var expandedHeaders: Set<UUID>
     @Binding var activeTask: Item?
+    @Binding var dropTargetId: UUID?
     
     // Computed property to get active task count
     private var activeTaskCount: Int {
@@ -30,6 +31,7 @@ struct ProjectHeaderView: View {
     @State private var isHovered = false
     @State private var isDragTarget = false
     
+    // Modify the body to display the indicator based on global dropTargetId
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -73,15 +75,29 @@ struct ProjectHeaderView: View {
             }
             .contentShape(Rectangle())
             .onDrop(of: [.text], isTargeted: $isDragTarget) { providers, _ in
+                // If this is a valid drop target, update the global drop target ID
+                if isDragTarget, let headerId = header.id {
+                    // Set this header as the global drop target
+                    dropTargetId = headerId
+                }
                 return handleTaskDrop(providers: providers)
             }
             
-            // Grey divider line added underneath the header
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(height: 1)
-                .padding(.top, 2)
-                .padding(.bottom, 2)
+            // Blue indicator line or standard divider
+            if let headerId = header.id, headerId == dropTargetId, activeTask != nil {
+                // Show blue indicator line when this is the target
+                Rectangle()
+                    .fill(Color.accentColor)
+                    .frame(height: 2)
+                    .padding(.horizontal, 4)
+            } else {
+                // Use standard gray divider
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 1)
+                    .padding(.top, 2)
+                    .padding(.bottom, 2)
+            }
         }
     }
     

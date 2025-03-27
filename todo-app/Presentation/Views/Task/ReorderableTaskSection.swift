@@ -18,6 +18,7 @@ struct ReorderableTaskSection: View {
     
     @Binding var expandedGroups: Set<String>
     @Binding var activeTask: Item?
+    @Binding var dropTargetId: UUID?
     
     let onToggleComplete: (Item) -> Void
     let onDeleteTask: (Item) -> Void
@@ -28,6 +29,19 @@ struct ReorderableTaskSection: View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Project.name, ascending: true)])
     private var projects: FetchedResults<Project>
+    
+    init(section: Int, title: String, tasks: [Item], expandedGroups: Binding<Set<String>>, activeTask: Binding<Item?>, dropTargetId: Binding<UUID?>, onToggleComplete: @escaping (Item) -> Void, onDeleteTask: @escaping (Item) -> Void, onMoveTask: @escaping (IndexSet, Int, Int) -> Void, viewType: ViewType) {
+        self.section = section
+        self.title = title
+        self.tasks = tasks
+        self._expandedGroups = expandedGroups
+        self._activeTask = activeTask
+        self._dropTargetId = dropTargetId
+        self.onToggleComplete = onToggleComplete
+        self.onDeleteTask = onDeleteTask
+        self.onMoveTask = onMoveTask
+        self.viewType = viewType
+    }
     
     // MARK: - View Body
     
@@ -85,13 +99,14 @@ struct ReorderableTaskSection: View {
             if expandedGroups.contains(title) {
                 // Use the unified task list for consistent behavior across all views
                 UnifiedTaskListView(
-                    viewType: viewType,
-                    title: title,
-                    tasks: tasks,
-                    project: getProjectForGroupName(title),
-                    activeTask: $activeTask,
-                    onToggleComplete: onToggleComplete,
-                    onDeleteTask: onDeleteTask
+                viewType: viewType,
+                title: title,
+                tasks: tasks,
+                project: getProjectForGroupName(title),
+                activeTask: $activeTask,
+                onToggleComplete: onToggleComplete,
+                onDeleteTask: onDeleteTask,
+                dropTargetId: $dropTargetId
                 )
             }
         }
