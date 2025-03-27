@@ -41,35 +41,6 @@ private struct CompletedTasksToggle: View {
     }
 }
 
-// Simple inline header component to avoid using the separate file
-private struct SimpleHeaderView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @ObservedObject var header: ProjectHeader
-    // onDelete parameter removed since delete button is no longer used
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(header.title ?? "Untitled Header")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(AppColors.getColor(from: header.project?.color ?? "gray"))
-                    .padding(8)
-                
-                Spacer()
-                // Trash icon removed as requested
-            }
-            // Background color removed as requested
-            
-            // Grey divider line added underneath the header
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(height: 1)
-                .padding(.top, 2)
-                .padding(.bottom, 4)
-        }
-    }
-}
-
 struct ProjectTasksView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var project: Project
@@ -86,6 +57,9 @@ struct ProjectTasksView: View {
     @State private var taskUpdateCounter: Int = 0
     @State private var activeTask: Item?
     @State private var activeHeader: ProjectHeader?
+    
+    // Tracking which headers are expanded (by default all are expanded)
+    @State private var expandedHeaders: Set<UUID> = Set()
     
     init(project: Project, onToggleComplete: @escaping (Item) -> Void) {
         self.project = project
@@ -170,6 +144,14 @@ struct ProjectTasksView: View {
             
             // Verify logged items are collapsed by default
             showLoggedItems = false
+            
+            // Set all headers as expanded by default
+            expandedHeaders.removeAll()
+            for header in headers {
+                if let id = header.id {
+                    expandedHeaders.insert(id)
+                }
+            }
         }
     }
     
@@ -178,32 +160,38 @@ struct ProjectTasksView: View {
         VStack(spacing: 8) {
             ForEach(Array(headers), id: \.id) { header in
                 VStack(spacing: 0) {
-                    SimpleHeaderView(header: header)
+                    // Use the updated ProjectHeaderView
+                    ProjectHeaderView(header: header, expandedHeaders: $expandedHeaders)
                     
-                    // Tasks under this header
-                    HeaderTasksView(header: header, onToggleComplete: onToggleComplete, activeTask: $activeTask)
-                        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
-                            guard let activeTask = activeTask else { return false }
+                    // Tasks under this header with expanded/collapsed support
+                    HeaderTasksView(
+                        header: header, 
+                        onToggleComplete: onToggleComplete, 
+                        activeTask: $activeTask,
+                        expandedHeaders: $expandedHeaders
+                    )
+                    .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+                        guard let activeTask = activeTask else { return false }
+                        
+                        // Move the active task to this header
+                        activeTask.header = header
+                        
+                        // Update display order to be at the end of the header's tasks
+                        let tasks = header.tasks()
+                        activeTask.displayOrder = tasks.isEmpty ? 0 : (tasks.map { $0.displayOrder }.max() ?? 0) + 10
+                        
+                        // Save changes
+                        do {
+                            try viewContext.save()
                             
-                            // Move the active task to this header
-                            activeTask.header = header
-                            
-                            // Update display order to be at the end of the header's tasks
-                            let tasks = header.tasks()
-                            activeTask.displayOrder = tasks.isEmpty ? 0 : (tasks.map { $0.displayOrder }.max() ?? 0) + 10
-                            
-                            // Save changes
-                            do {
-                                try viewContext.save()
-                                
-                                // Reset active task
-                                self.activeTask = nil
-                                return true
-                            } catch {
-                                print("Error moving task to header: \(error)")
-                                return false
-                            }
+                            // Reset active task
+                            self.activeTask = nil
+                            return true
+                        } catch {
+                            print("Error moving task to header: \(error)")
+                            return false
                         }
+                    }
                 }
             }
         }

@@ -15,11 +15,19 @@ struct HeaderTasksView: View {
     
     @FetchRequest private var tasks: FetchedResults<Item>
     @Binding var activeTask: Item?
+    @Binding var expandedHeaders: Set<UUID>
     
-    init(header: ProjectHeader, onToggleComplete: @escaping (Item) -> Void, activeTask: Binding<Item?>) {
+    // Check if this header is expanded
+    private var isExpanded: Bool {
+        guard let headerId = header.id else { return true }
+        return expandedHeaders.contains(headerId)
+    }
+    
+    init(header: ProjectHeader, onToggleComplete: @escaping (Item) -> Void, activeTask: Binding<Item?>, expandedHeaders: Binding<Set<UUID>>) {
         self.header = header
         self.onToggleComplete = onToggleComplete
         self._activeTask = activeTask
+        self._expandedHeaders = expandedHeaders
         
         // Initialize fetch request for tasks in this header
         self._tasks = FetchRequest(fetchRequest: ProjectHeadersRequest.tasksForHeaderRequest(header: header))
@@ -27,26 +35,29 @@ struct HeaderTasksView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if !tasks.isEmpty {
-                ReorderableForEach(Array(tasks), active: $activeTask) { task in
-                    TaskRow(task: task, onToggleComplete: onToggleComplete)
-                        .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
-                        .contentShape(Rectangle())
-                        .padding(.vertical, 2)
-                        .background(Color.white)
-                        .scaleEffect(activeTask == task ? 1.03 : 1.0)
-                        .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
-                        .zIndex(activeTask == task ? 1 : 0)
-                        .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
-                } moveAction: { fromOffsets, toOffset in
-                    let fromIndex = fromOffsets.first ?? 0
-                    reorderTasks(from: fromIndex, to: toOffset)
+            // Only show tasks if the header is expanded
+            if isExpanded {
+                if !tasks.isEmpty {
+                    ReorderableForEach(Array(tasks), active: $activeTask) { task in
+                        TaskRow(task: task, onToggleComplete: onToggleComplete)
+                            .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
+                            .contentShape(Rectangle())
+                            .padding(.vertical, 2)
+                            .background(Color.white)
+                            .scaleEffect(activeTask == task ? 1.03 : 1.0)
+                            .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
+                            .zIndex(activeTask == task ? 1 : 0)
+                            .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
+                    } moveAction: { fromOffsets, toOffset in
+                        let fromIndex = fromOffsets.first ?? 0
+                        reorderTasks(from: fromIndex, to: toOffset)
+                    }
+                    .reorderableForEachContainer(active: $activeTask)
+                    .padding(.leading, 8) // Indent tasks under header
+                } else {
+                    // Empty state - placeholder text removed as requested
+                    EmptyView()
                 }
-                .reorderableForEachContainer(active: $activeTask)
-                .padding(.leading, 8) // Indent tasks under header
-            } else {
-                // Empty state - placeholder text removed as requested
-                EmptyView()
             }
         }
     }
