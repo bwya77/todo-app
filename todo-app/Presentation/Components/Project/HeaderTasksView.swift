@@ -55,10 +55,21 @@ struct HeaderTasksView: View {
                     .reorderableForEachContainer(active: $activeTask)
                     .padding(.leading, 8) // Indent tasks under header
                 } else {
-                    // Empty state - placeholder text removed as requested
-                    EmptyView()
+                    // Empty placeholder to accept drops when no tasks exist
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 30)
+                        .contentShape(Rectangle())
+                        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+                            return handleTaskDrop(providers: providers)
+                        }
+                        .padding(.leading, 8) // Consistent with other tasks
                 }
             }
+        }
+        // Add drop support to the entire VStack
+        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+            return handleTaskDrop(providers: providers)
         }
     }
     
@@ -81,5 +92,42 @@ struct HeaderTasksView: View {
         
         // Ensure changes are saved to disk
         PersistentOrder.save(context: viewContext)
+    }
+    
+    // Handle task drop from anywhere onto this header
+    private func handleTaskDrop(providers: [NSItemProvider]) -> Bool {
+        guard let activeTask = activeTask else { return false }
+        
+        // Safety check - if the task is already in this header, just update order
+        if activeTask.header == header {
+            // Move to the end of the list
+            let taskArray = Array(tasks)
+            if let index = taskArray.firstIndex(of: activeTask) {
+                reorderTasks(from: index, to: taskArray.count)
+            }
+            return true
+        }
+        
+        // Move the active task to this header
+        let oldHeader = activeTask.header
+        activeTask.header = header
+        
+        // Update display order to be at the end of this header's tasks
+        let allTasks = header.tasks()
+        activeTask.displayOrder = allTasks.isEmpty ? 0 : (allTasks.map { $0.displayOrder }.max() ?? 0) + 10
+        
+        // Save changes
+        do {
+            try viewContext.save()
+            
+            // Reset active task
+            self.activeTask = nil
+            return true
+        } catch {
+            print("Error moving task to header: \(error)")
+            // Attempt to revert the change
+            activeTask.header = oldHeader
+            return false
+        }
     }
 }

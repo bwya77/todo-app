@@ -92,22 +92,34 @@ struct ProjectTasksView: View {
                         AddHeaderButton(project: project)
                             .padding(.bottom, 4)
                         
-                        // Tasks without headers
-                        if !unheaderedTasks.isEmpty {
-                            ReorderableForEach(Array(unheaderedTasks), active: $activeTask) { task in
-                                TaskRow(task: task, onToggleComplete: onToggleComplete)
-                                    .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
+                        // Tasks without headers - wrapped in a VStack for drop area
+                        VStack {
+                            if !unheaderedTasks.isEmpty {
+                                ReorderableForEach(Array(unheaderedTasks), active: $activeTask) { task in
+                                    TaskRow(task: task, onToggleComplete: onToggleComplete)
+                                        .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
+                                        .contentShape(Rectangle())
+                                        .padding(.vertical, 2)
+                                        .background(Color.white)
+                                        .scaleEffect(activeTask == task ? 1.03 : 1.0)
+                                        .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
+                                        .zIndex(activeTask == task ? 1 : 0)
+                                        .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
+                                } moveAction: { fromOffsets, toOffset in
+                                    reorderUnheaderedTasks(from: fromOffsets.first ?? 0, to: toOffset)
+                                }
+                                .reorderableForEachContainer(active: $activeTask)
+                            } else {
+                                // Empty placeholder for dropping tasks
+                                Rectangle()
+                                    .fill(Color.clear)
+                                    .frame(height: 40)
                                     .contentShape(Rectangle())
-                                    .padding(.vertical, 2)
-                                    .background(Color.white)
-                                    .scaleEffect(activeTask == task ? 1.03 : 1.0)
-                                    .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
-                                    .zIndex(activeTask == task ? 1 : 0)
-                                    .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
-                            } moveAction: { fromOffsets, toOffset in
-                                reorderUnheaderedTasks(from: fromOffsets.first ?? 0, to: toOffset)
                             }
-                            .reorderableForEachContainer(active: $activeTask)
+                        }
+                        // Make the entire unheadered section a drop target
+                        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+                            return handleUnheaderedTaskDrop(providers: providers)
                         }
                         
                         // Headers with tasks
@@ -160,8 +172,8 @@ struct ProjectTasksView: View {
         VStack(spacing: 8) {
             ForEach(Array(headers), id: \.id) { header in
                 VStack(spacing: 0) {
-                    // Use the updated ProjectHeaderView
-                    ProjectHeaderView(header: header, expandedHeaders: $expandedHeaders)
+                    // Use the updated ProjectHeaderView with activeTask binding
+                    ProjectHeaderView(header: header, expandedHeaders: $expandedHeaders, activeTask: $activeTask)
                     
                     // Tasks under this header with expanded/collapsed support
                     HeaderTasksView(
@@ -170,28 +182,6 @@ struct ProjectTasksView: View {
                         activeTask: $activeTask,
                         expandedHeaders: $expandedHeaders
                     )
-                    .onDrop(of: [.text], isTargeted: nil) { providers, _ in
-                        guard let activeTask = activeTask else { return false }
-                        
-                        // Move the active task to this header
-                        activeTask.header = header
-                        
-                        // Update display order to be at the end of the header's tasks
-                        let tasks = header.tasks()
-                        activeTask.displayOrder = tasks.isEmpty ? 0 : (tasks.map { $0.displayOrder }.max() ?? 0) + 10
-                        
-                        // Save changes
-                        do {
-                            try viewContext.save()
-                            
-                            // Reset active task
-                            self.activeTask = nil
-                            return true
-                        } catch {
-                            print("Error moving task to header: \(error)")
-                            return false
-                        }
-                    }
                 }
             }
         }
@@ -286,6 +276,40 @@ struct ProjectTasksView: View {
         // Delete header
         viewContext.delete(header)
         try? viewContext.save()
+    }
+    
+    // Handle drop of a task onto the unheadered tasks section
+    private func handleUnheaderedTaskDrop(providers: [NSItemProvider]) -> Bool {
+        guard let activeTask = activeTask else { return false }
+        
+        // Safety check - if the task already has no header, just update order
+        if activeTask.header == nil {
+            // Move to the end of the unheadered tasks
+            let taskArray = Array(unheaderedTasks)
+            if let index = taskArray.firstIndex(of: activeTask) {
+                reorderUnheaderedTasks(from: index, to: taskArray.count)
+            }
+            return true
+        }
+        
+        // Move the task out of its current header
+        activeTask.header = nil
+        
+        // Update display order to be at the end of unheadered tasks
+        let tasksWithoutHeader = project.tasksWithoutHeader()
+        activeTask.displayOrder = tasksWithoutHeader.isEmpty ? 0 : (tasksWithoutHeader.map { $0.displayOrder }.max() ?? 0) + 10
+        
+        // Save changes
+        do {
+            try viewContext.save()
+            
+            // Reset active task
+            self.activeTask = nil
+            return true
+        } catch {
+            print("Error moving task to unheadered section: \(error)")
+            return false
+        }
     }
     
     // Reorder headers (unused but kept for future reference)
