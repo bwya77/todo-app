@@ -214,7 +214,7 @@ struct InitializeDisplayOrderMigration {
             }
             
             // Update project modification date
-            project.lastModifiedDate = Date()
+            project.modifiedAt = Date()
             
             // Save changes
             try context.save()

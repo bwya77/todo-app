@@ -86,7 +86,7 @@ struct UnifiedTaskListView: View {
         
         // Update the parent project's modification date if applicable
         if let project = project ?? taskToMove.project {
-            project.lastModifiedDate = Date()
+            project.modifiedAt = Date()
         }
         
         // Notify UI to refresh

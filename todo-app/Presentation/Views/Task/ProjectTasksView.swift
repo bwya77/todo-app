@@ -41,45 +41,105 @@ private struct CompletedTasksToggle: View {
     }
 }
 
+// Simple inline header component to avoid using the separate file
+private struct SimpleHeaderView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var header: ProjectHeader
+    // onDelete parameter removed since delete button is no longer used
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(header.title ?? "Untitled Header")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.getColor(from: header.project?.color ?? "gray"))
+                    .padding(8)
+                
+                Spacer()
+                // Trash icon removed as requested
+            }
+            // Background color removed as requested
+            
+            // Grey divider line added underneath the header
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 1)
+                .padding(.top, 2)
+                .padding(.bottom, 4)
+        }
+    }
+}
+
 struct ProjectTasksView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var project: Project
     let onToggleComplete: (Item) -> Void
     
     // Task lists using the optimized fetch request
-    @FetchRequest private var activeTasks: FetchedResults<Item>
+    @FetchRequest private var unheaderedTasks: FetchedResults<Item>
     @FetchRequest private var loggedTasks: FetchedResults<Item>
+    @FetchRequest private var headers: FetchedResults<ProjectHeader>
     
     // UI state
     @State private var showLoggedItems: Bool = false
     @State private var pendingLoggedTaskIds: [UUID] = []
     @State private var taskUpdateCounter: Int = 0
     @State private var activeTask: Item?
+    @State private var activeHeader: ProjectHeader?
     
     init(project: Project, onToggleComplete: @escaping (Item) -> Void) {
         self.project = project
         self.onToggleComplete = onToggleComplete
         
-        // Initialize fetch requests using the helper
-        self._activeTasks = FetchRequest(fetchRequest: ProjectTasksRequest.activeTasksRequest(for: project))
+        // Initialize fetch requests for unheadered tasks (tasks not in any header)
+        let unheaderedRequest: NSFetchRequest<Item> = Item.fetchRequest()
+        unheaderedRequest.predicate = NSPredicate(format: "project == %@ AND header == nil AND (completed == NO OR (completed == YES AND logged == NO))", project)
+        unheaderedRequest.sortDescriptors = [
+            NSSortDescriptor(key: "displayOrder", ascending: true)
+        ]
+        self._unheaderedTasks = FetchRequest(fetchRequest: unheaderedRequest)
+        
+        // Fetch logged tasks
         self._loggedTasks = FetchRequest(fetchRequest: ProjectTasksRequest.loggedTasksRequest(for: project))
+        
+        // Fetch headers
+        self._headers = FetchRequest(fetchRequest: ProjectHeadersRequest.headersRequest(for: project))
     }
     
     var body: some View {
         VStack(spacing: 0) {
             // Empty state
-            if activeTasks.isEmpty && loggedTasks.isEmpty {
+            if unheaderedTasks.isEmpty && headers.isEmpty && loggedTasks.isEmpty {
                 emptyStateView
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        // Active tasks with reordering
-                        ReorderableTaskList(
-                            tasks: activeTasks,
-                            onToggleComplete: onToggleComplete,
-                            projectId: project.id,
-                            activeTask: $activeTask
-                        )
+                        // Add header button
+                        AddHeaderButton(project: project)
+                            .padding(.bottom, 4)
+                        
+                        // Tasks without headers
+                        if !unheaderedTasks.isEmpty {
+                            ReorderableForEach(Array(unheaderedTasks), active: $activeTask) { task in
+                                TaskRow(task: task, onToggleComplete: onToggleComplete)
+                                    .id("task-\(task.id?.uuidString ?? UUID().uuidString)")
+                                    .contentShape(Rectangle())
+                                    .padding(.vertical, 2)
+                                    .background(Color.white)
+                                    .scaleEffect(activeTask == task ? 1.03 : 1.0)
+                                    .shadow(color: activeTask == task ? Color.black.opacity(0.1) : Color.clear, radius: 2, x: 0, y: activeTask == task ? 2 : 0)
+                                    .zIndex(activeTask == task ? 1 : 0)
+                                    .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.1), value: activeTask)
+                            } moveAction: { fromOffsets, toOffset in
+                                reorderUnheaderedTasks(from: fromOffsets.first ?? 0, to: toOffset)
+                            }
+                            .reorderableForEachContainer(active: $activeTask)
+                        }
+                        
+                        // Headers with tasks
+                        if !headers.isEmpty {
+                            headersList
+                        }
                         
                         // Logged tasks section
                         if !loggedTasks.isEmpty {
@@ -113,38 +173,84 @@ struct ProjectTasksView: View {
         }
     }
     
+    // Headers list with drag/drop support
+    private var headersList: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(headers), id: \.id) { header in
+                VStack(spacing: 0) {
+                    SimpleHeaderView(header: header)
+                    
+                    // Tasks under this header
+                    HeaderTasksView(header: header, onToggleComplete: onToggleComplete, activeTask: $activeTask)
+                        .onDrop(of: [.text], isTargeted: nil) { providers, _ in
+                            guard let activeTask = activeTask else { return false }
+                            
+                            // Move the active task to this header
+                            activeTask.header = header
+                            
+                            // Update display order to be at the end of the header's tasks
+                            let tasks = header.tasks()
+                            activeTask.displayOrder = tasks.isEmpty ? 0 : (tasks.map { $0.displayOrder }.max() ?? 0) + 10
+                            
+                            // Save changes
+                            do {
+                                try viewContext.save()
+                                
+                                // Reset active task
+                                self.activeTask = nil
+                                return true
+                            } catch {
+                                print("Error moving task to header: \(error)")
+                                return false
+                            }
+                        }
+                }
+            }
+        }
+    }
+    
     // Empty state view
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        VStack(spacing: 0) {
+            // Add padding at top to match non-empty projects
+            Spacer().frame(height: 8)
             
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 48))
-                .foregroundColor(Color.gray.opacity(0.5))
+            // Add header button - exactly like in non-empty projects
+            AddHeaderButton(project: project)
+                .padding(.horizontal, 16)
             
-            Text("No tasks in this project")
-                .font(.headline)
-                .foregroundColor(.secondary)
+            Spacer().frame(height: 16) // Space between add header and empty state message
             
-            Text("Add a task to get started")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
-            Button(action: {
-                showAddTaskPopup()
-            }) {
-                Text("Add Task")
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(AppColors.getColor(from: project.color).opacity(0.2))
-                    .cornerRadius(8)
+            VStack(spacing: 16) {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 48))
+                    .foregroundColor(Color.gray.opacity(0.5))
+                
+                Text("No tasks in this project")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                
+                Text("Add a task to get started")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Button(action: {
+                    showAddTaskPopup()
+                }) {
+                    Text("Add Task")
+                        .font(.system(size: 14, weight: .medium))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(AppColors.getColor(from: project.color).opacity(0.2))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
             
             Spacer()
         }
-        .frame(maxWidth: .infinity)
     }
     
     // Show add task popup
@@ -154,5 +260,59 @@ struct ProjectTasksView: View {
             object: nil,
             userInfo: ["project": project]
         )
+    }
+    
+    // Reorder unheadered tasks
+    private func reorderUnheaderedTasks(from: Int, to: Int) {
+        guard from < unheaderedTasks.count else { return }
+        
+        // Safe array operations
+        var taskArray = Array(unheaderedTasks)
+        let safeFrom = min(from, taskArray.count - 1)
+        let taskToMove = taskArray.remove(at: safeFrom)
+        
+        // Safe insertion
+        let safeTo = min(to, taskArray.count)
+        taskArray.insert(taskToMove, at: safeTo)
+        
+        // Update display order with spacing for future insertions
+        for (index, task) in taskArray.enumerated() {
+            task.setValue(Int32(index * 10), forKey: "displayOrder")
+        }
+        
+        // Ensure changes are saved to disk
+        PersistentOrder.save(context: viewContext)
+        
+        // Update the project's modification date
+        project.modifiedAt = Date()
+    }
+    
+    // Delete header
+    private func deleteHeader(_ header: ProjectHeader) {
+        // First move all tasks in this header to no header
+        if let project = header.project {
+            let tasks = header.tasks()
+            project.moveTasks(tasks, toHeader: nil, save: false)
+        }
+        
+        // Delete header
+        viewContext.delete(header)
+        try? viewContext.save()
+    }
+    
+    // Reorder headers (unused but kept for future reference)
+    private func reorderHeaders(from: Int, to: Int) {
+        guard from < headers.count else { return }
+        
+        // Use the ProjectHeader reordering function
+        ProjectHeader.reorderHeaders(
+            from: from,
+            to: to,
+            headers: Array(headers),
+            context: viewContext
+        )
+        
+        // Update the project's modification date
+        project.modifiedAt = Date()
     }
 }

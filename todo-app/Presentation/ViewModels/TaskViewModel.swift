@@ -116,7 +116,7 @@ class TaskViewModel: ObservableObject {
         saveContext()
     }
     
-    private func saveContext() {
+    func saveContext() {
         do {
             try viewContext.save()
         } catch {
